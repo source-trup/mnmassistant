@@ -1,0 +1,112 @@
+<div class="card" [class.reached]="reachedTarget()" [class.nph-card]="nph()">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name" [title]="counter().name">{{ counter().name }}</span>
+    @if (linkedTimer()) {
+      <span class="tag" [title]="'Restarts timer: ' + linkedTimerText()">🔗</span>
+    }
+    @if (nph()) {
+      <button class="icon" (click)="openHistory()" title="Camp history & loot">📜</button>
+    }
+    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+  </div>
+
+  @if (std(); as s) {
+    <div class="body">
+      <button class="minus" (click)="store.bump(s.id, -1)" title="Subtract {{ s.step }}">−</button>
+      <button class="value" (click)="store.bump(s.id, 1)" title="Add {{ s.step }}">
+        <span class="num">{{ s.value }}</span>
+        @if (s.target !== null) {
+          <span class="target">/ {{ s.target }}</span>
+        }
+      </button>
+      <button class="plus" (click)="store.bump(s.id, 1)" [title]="linkedTimer() ? 'Add ' + s.step + ' & restart timer' : 'Add ' + s.step">
+        +
+      </button>
+    </div>
+  }
+
+  @if (nph(); as n) {
+    <div class="stats">
+      <div class="stat">
+        <span class="label">Placeholder</span>
+        <span class="big ph">{{ n.ph }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Named</span>
+        <span class="big named">{{ n.named }}</span>
+      </div>
+    </div>
+    <div class="info">
+      <span title="Placeholders since the last named">{{ n.phSinceNamed }} PH since named</span>
+      <span [title]="'Named odds this session: ' + namedOdds()">{{ lastNamedText() }}</span>
+    </div>
+    <div class="kills">
+      <button class="kill ph" (click)="store.phKill(n.id)" [title]="linkedTimer() ? '+1 PH and restart ' + linkedTimerText() : '+1 PH'">
+        + PH @if (linkedTimer()) { <span class="re">↻</span> }
+      </button>
+      <button class="kill named" (click)="store.namedKill(n.id)" [title]="linkedTimer() ? '+1 named and restart ' + linkedTimerText() : '+1 named'">
+        + Named @if (linkedTimer()) { <span class="re">↻</span> }
+      </button>
+    </div>
+  }
+
+  <div class="foot">
+    @if (nph(); as n) {
+      <button class="small" (click)="store.undo(n.id, 'ph')" title="Undo one PH">−PH</button>
+      <button class="small" (click)="store.undo(n.id, 'named')" title="Undo one named">−N</button>
+    }
+    <span class="rate">
+      @if (perHour(); as rate) { {{ rate }}/hr }
+    </span>
+    <button class="small" (click)="reset()">Reset</button>
+  </div>
+</div>
+
+<dialog #hist class="wide" (close)="historyOpen.set(false)">
+  @if (historyOpen() && nph(); as n) {
+    <app-camp-history [counter]="n" (closed)="closeHistory()" />
+  }
+</dialog>
+
+<dialog #dlg>
+  <h3>{{ nph() ? 'Named / PH counter' : 'Counter' }} settings</h3>
+  <div class="edit">
+    <label>Name <input [value]="counter().name" (change)="rename($event)" /></label>
+    @if (std(); as s) {
+      <label>Value <input type="number" [value]="s.value" (change)="setNumber('value', $event)" /></label>
+      <label>Step <input type="number" min="1" [value]="s.step" (change)="setNumber('step', $event)" /></label>
+      <label>
+        Goal
+        <input type="number" [value]="s.target ?? ''" (change)="setNumber('target', $event)" placeholder="none" />
+      </label>
+    }
+    @if (nph(); as n) {
+      <label>PH <input type="number" min="0" [value]="n.ph" (change)="setNumber('ph', $event)" /></label>
+      <label>Named <input type="number" min="0" [value]="n.named" (change)="setNumber('named', $event)" /></label>
+      <label>PH streak <input type="number" min="0" [value]="n.phSinceNamed" (change)="setNumber('phSinceNamed', $event)" /></label>
+    }
+    <label>
+      Timer
+      <select (change)="setLink($event)">
+        <option value="" [selected]="!counter().linkedTimerId">— not linked —</option>
+        @for (t of store.timers(); track t.id) {
+          <option [value]="t.id" [selected]="t.id === counter().linkedTimerId">{{ t.name }}</option>
+        }
+      </select>
+    </label>
+    <p class="hint">
+      @if (nph()) {
+        With a linked timer, “+ PH” / “+ Named” also restart that timer.
+      } @else {
+        With a linked timer, “+” also restarts that timer.
+      }
+    </p>
+  </div>
+  <div class="dialog-actions">
+    <button class="danger" (click)="remove($event)">Delete</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeEdit()">Done</button>
+  </div>
+</dialog>

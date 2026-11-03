@@ -1,0 +1,108 @@
+<app-backdrop />
+
+<header>
+  <div class="brand">
+    <app-dalgrimm-mark />
+    <div>
+      <h1>MnM Assistant</h1>
+      <span class="tagline">Dalgrimm's spirit ledger</span>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="lbl">Add timer</span>
+    @for (m of quickMinutes; track m) {
+      <button class="primary" (click)="addQuickTimer(m)" [title]="'Add a ' + m + ' minute timer'">{{ m }}m</button>
+    }
+    <input
+      #custom
+      class="custom"
+      placeholder="7:30"
+      title="Custom duration: 7:30, 90s, 1h30m, or minutes"
+      [class.invalid]="customError()"
+      (input)="customError.set(false)"
+      (keydown.enter)="addCustomTimer(custom)"
+    />
+    <button (click)="addCustomTimer(custom)" title="Add custom timer">+</button>
+  </div>
+
+  <div class="group">
+    <span class="lbl">Add</span>
+    <button class="primary" (click)="store.addCounter('standard')">Count</button>
+    <button class="primary" (click)="store.addCounter('namedPh')">Named / PH</button>
+    <button class="primary" (click)="store.addBuffPanel()">Buff Tracker</button>
+  </div>
+
+  <span class="spacer"></span>
+
+  <div class="group">
+    <button (click)="store.autoArrange()" title="Pack all panels neatly onto the grid">Tidy</button>
+    <button (click)="store.toggleSound()" [title]="store.soundOn() ? 'Mute alerts' : 'Unmute alerts'">
+      {{ store.soundOn() ? '🔔' : '🔕' }}
+    </button>
+    <button popovertarget="main-menu" title="Menu">☰</button>
+  </div>
+
+  <div #menu id="main-menu" class="menu" popover (click)="onMenuClick($event, menu)">
+    <button (click)="saveLayout()">💾 Save layout to file…</button>
+    <button (click)="fileInput.click()">📂 Load layout from file…</button>
+    <hr />
+    <button (click)="resetAllTimers()">Reset all timers</button>
+    <button (click)="resetAllCounters()">Reset all counters</button>
+    <hr />
+    <button (click)="store.toggleTheme()">Theme: {{ store.theme() === 'spirit' ? 'Spirit' : 'Classic' }}</button>    <button (click)="store.testSound()">Test sound &amp; voice</button>
+  </div>
+  <input #fileInput type="file" accept=".json,application/json" hidden (change)="loadLayout(fileInput)" />
+</header>
+
+<div class="board-wrap">
+  <div
+    #board
+    class="board"
+    [class.dragging]="drag()"
+    [style.height.px]="boardHeight()"
+  >
+    @if (preview(); as g) {
+      <div
+        class="ghost"
+        [class.invalid]="!g.valid"
+        [style.left.px]="g.x * GRID"
+        [style.top.px]="g.y * GRID"
+        [style.width.px]="(g.w - 1) * GRID"
+        [style.height.px]="(g.h - 1) * GRID"
+      ></div>
+    }
+
+    @for (p of store.panels(); track p.id) {
+      <div
+        class="panel"
+        [class.lifted]="drag()?.id === p.id"
+        [style.left.px]="left(p)"
+        [style.top.px]="top(p)"
+        [style.width.px]="(p.w - 1) * GRID"
+        [style.height.px]="(p.h - 1) * GRID"
+        (pointerdown)="onPointerDown($event, p)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp()"
+        (pointercancel)="onPointerCancel()"
+      >
+        @switch (p.kind) {
+          @case ('timer') {
+            <app-timer-card [timer]="p.item" />
+          }
+          @case ('counter') {
+            <app-counter-card [counter]="p.item" />
+          }
+          @case ('buffs') {
+            <app-buff-card [panel]="p.item" />
+          }
+        }
+      </div>
+    } @empty {
+      <p class="empty">The spirits are quiet… add a timer or counter from the toolbar.</p>
+    }
+  </div>
+</div>
+
+<app-loot-prompt />
+<app-confirm-dialog />

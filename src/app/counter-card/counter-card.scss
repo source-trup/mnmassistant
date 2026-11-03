@@ -1,0 +1,154 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--counter);
+  border-radius: 8px;
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &.reached {
+    border-left-color: var(--goal);
+    .num { color: var(--goal); }
+  }
+  &.nph-card {
+    border-left-color: var(--named);
+  }
+}
+
+/* ---- standard ---- */
+
+.body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minus,
+.plus {
+  width: 44px;
+  height: 44px;
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.plus {
+  background: var(--counter-bg);
+  border-color: var(--counter);
+}
+
+.value {
+  flex: 1;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.num {
+  font-size: 2.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--counter);
+}
+
+.target {
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+/* ---- named / placeholder ---- */
+
+.stats {
+  display: flex;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.big {
+  font-size: 2.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+
+  &.ph { color: var(--counter); }
+  &.named { color: var(--named); }
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.kills {
+  display: flex;
+  gap: 6px;
+}
+
+.kill {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 4px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.ph {
+    background: var(--counter-bg);
+    border-color: var(--counter);
+  }
+  &.named {
+    background: var(--named-bg);
+    border-color: var(--named);
+  }
+  .re {
+    opacity: 0.7;
+  }
+}
+
+/* ---- shared ---- */
+
+.foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rate {
+  flex: 1;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.small {
+  padding: 2px 8px;
+  font-size: 0.8rem;
+}

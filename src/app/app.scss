@@ -1,0 +1,204 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px 6px;
+  background: var(--header-bg);
+
+  box-shadow: 0 10px 26px -14px var(--spirit-line);
+
+  /* Ghostly veil hanging off the header: soft tendrils that fade out as they fall, slowly drifting. */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Tuck 1px under the header so sub-pixel rounding can never leave a seam. */
+    top: calc(100% - 1px);
+    pointer-events: none;
+  }
+
+  /* The veil itself: header color dissolving into translucent wisps. */
+  &::after {
+    height: 26px;
+    background: linear-gradient(
+      to bottom,
+      var(--header-bg) 15%,
+      color-mix(in srgb, var(--header-bg) 55%, transparent) 55%,
+      transparent
+    );
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='26' viewBox='0 0 200 26'%3E%3Cfilter id='b' x='-10%25' y='-20%25' width='120%25' height='140%25'%3E%3CfeGaussianBlur stdDeviation='0.9'/%3E%3C/filter%3E%3Cpath filter='url(%23b)' d='M-12 -10H212V7L200 7C190 7 188 20 178 20C168 20 168 9 158 9C146 9 145 24 132 24C120 24 121 11 110 11C100 11 98 17 88 17C78 17 78 7 66 7C55 7 54 21 42 21C30 21 31 10 20 10C10 10 9 7 0 7L-12 7Z' fill='black'/%3E%3C/svg%3E")
+      0 0 / 200px 26px repeat-x;
+    animation: veil-drift 70s linear infinite;
+  }
+
+  /* A faint spirit-green glow trailing beneath the veil, drifting the other way. */
+  &::before {
+    height: 34px;
+    /* Starts fully transparent so the glow has no top edge; it only lives in the hanging tendrils. */
+    background: linear-gradient(to bottom, transparent 0%, var(--spirit) 40%, transparent 95%);
+    opacity: 0.3;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='34' viewBox='0 0 260 34'%3E%3Cfilter id='b' x='-10%25' y='-30%25' width='120%25' height='160%25'%3E%3CfeGaussianBlur stdDeviation='4.5'/%3E%3C/filter%3E%3Cpath filter='url(%23b)' d='M-20 -10H280V4L260 4C246 4 242 26 230 26C220 26 222 8 204 8C186 8 182 30 168 30C156 30 160 6 138 6C120 6 116 22 104 22C92 22 96 5 76 5C58 5 54 28 40 28C28 28 26 4 0 4L-20 4Z' fill='black'/%3E%3C/svg%3E")
+      0 0 / 260px 34px repeat-x;
+    animation: veil-drift-back 110s linear infinite;
+  }
+}
+
+@keyframes veil-drift {
+  to { mask-position: 200px 0; }
+}
+
+@keyframes veil-drift-back {
+  to { mask-position: -260px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  header::before,
+  header::after {
+    animation: none;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+  color: var(--bone);
+  text-shadow: 0 0 12px var(--title-glow);
+}
+
+.tagline {
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lbl {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.custom {
+  width: 70px;
+}
+
+/* ☰ dropdown (native popover: closes on outside click / Esc). */
+.menu {
+  position: fixed;
+  inset: auto;
+  top: 56px;
+  right: 16px;
+  margin: 0;
+  padding: 6px;
+  min-width: 230px;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--dialog-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 20px var(--card-glow);
+
+  &:popover-open {
+    display: flex;
+  }
+  button {
+    text-align: left;
+    background: none;
+    border-color: transparent;
+    &:hover {
+      background: var(--spirit-soft);
+      filter: none;
+    }
+  }
+  hr {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 4px 0;
+  }
+}
+
+.board-wrap {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 24px 16px 16px;
+  overflow-x: auto;
+}
+
+.board {
+  --grid: 20px; /* keep in sync with GRID in layout.ts */
+  position: relative;
+  min-width: calc(13 * var(--grid));
+  min-height: calc(100vh - 100px);
+  background-size: var(--grid) var(--grid);
+  background-position: calc(var(--grid) / -2) calc(var(--grid) / -2);
+
+  /* The snap grid only appears while a panel is being dragged. */
+  &.dragging {
+    background-image: radial-gradient(circle, var(--grid-dot-strong) 1.5px, transparent 2px);
+    cursor: grabbing;
+  }
+}
+
+.panel {
+  position: absolute;
+  transition:
+    left 0.15s ease,
+    top 0.15s ease;
+
+  &.lifted {
+    z-index: 10;
+    transition: none;
+    opacity: 0.9;
+    filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.5));
+  }
+}
+
+.ghost {
+  position: absolute;
+  border: 2px dashed var(--spirit);
+  border-radius: 8px;
+  background: var(--spirit-soft);
+  pointer-events: none;
+
+  &.invalid {
+    border-color: var(--done);
+    background: rgb(255 107 107 / 0.08);
+  }
+}
+
+.empty {
+  color: var(--muted);
+  margin: 0;
+  padding-top: 8px;
+}

@@ -1,0 +1,72 @@
+<div class="card" [attr.data-status]="status()">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name" [title]="timer().name">{{ timer().name }}</span>
+    @if (timer().repeat) {
+      <span class="tag" title="Repeats automatically">↻</span>
+    }
+    @if (linkedBy()) {
+      <span class="tag" [title]="'Restarted by: ' + linkedBy()">🔗</span>
+    }
+    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+  </div>
+
+  <button class="clock" (click)="primary()" [title]="status() === 'idle' ? 'Start' : 'Restart'">
+    <span class="time">{{ status() === 'done' ? 'READY' : display() }}</span>
+    <span class="sub">
+      @switch (status()) {
+        @case ('idle') { click to start · {{ durationText() }} }
+        @case ('running') { click to restart }
+        @case ('paused') { paused · click to resume }
+        @case ('done') { {{ overtime() }} · click to restart }
+      }
+    </span>
+  </button>
+
+  <div class="bar"><div class="fill" [style.width.%]="progress() * 100"></div></div>
+
+  <div class="actions">
+    <button (click)="store.adjustTimer(timer().id, -60000)" [title]="adjustTitle('Subtract')">−1m</button>
+    @if (status() === 'running') {
+      <button (click)="store.pauseTimer(timer().id)">Pause</button>
+    } @else if (status() === 'paused') {
+      <button (click)="store.resumeTimer(timer().id)">Resume</button>
+    }
+    <button (click)="store.adjustTimer(timer().id, 60000)" [title]="adjustTitle('Add')">+1m</button>
+    @if (status() !== 'idle') {
+      <button (click)="store.resetTimer(timer().id)">Reset</button>
+    }
+  </div>
+</div>
+
+<dialog #dlg>
+  <h3>Timer settings</h3>
+  <div class="edit">
+    <label>Name <input [value]="timer().name" (change)="rename($event)" /></label>
+    <label>
+      Duration
+      <input
+        [value]="durationText()"
+        (change)="setDuration($event)"
+        [class.invalid]="durationError()"
+        placeholder="6:40, 90s, 1h30m, 5"
+      />
+    </label>
+    <label class="check">
+      <input type="checkbox" [checked]="timer().repeat" (change)="setRepeat($event)" /> Auto-repeat when it reaches zero
+    </label>
+    <p class="hint">
+      @if (timer().autoNamed) {
+        Using a generated name, so it chimes when done. Give it your own name to have it spoken (“{{ timer().name }} is up”).
+      } @else {
+        When done, it will say “{{ timer().name }} is up”.
+      }
+    </p>
+  </div>
+  <div class="dialog-actions">
+    <button class="danger" (click)="remove($event)">Delete</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeEdit()">Done</button>
+  </div>
+</dialog>

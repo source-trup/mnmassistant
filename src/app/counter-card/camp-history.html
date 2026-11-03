@@ -1,0 +1,89 @@
+<div class="top">
+  <h3>{{ counter().name }} — history</h3>
+  <div class="seg">
+    <button [class.on]="scope() === 'session'" (click)="scope.set('session')" title="Since the counter was last reset">Session</button>
+    <button [class.on]="scope() === 'all'" (click)="scope.set('all')">All time</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div><span class="k">Placeholders</span><span class="v ph">{{ stats().ph }}</span></div>
+  <div><span class="k">Named</span><span class="v named">{{ stats().named }}</span></div>
+  <div><span class="k">Named odds</span><span class="v">{{ stats().odds }}</span></div>
+  <div><span class="k">Last named</span><span class="v">{{ stats().lastNamed }}</span></div>
+  <div><span class="k">Typical respawn</span><span class="v" title="Median time between kills">{{ stats().median }}</span></div>
+  <div><span class="k">Last respawn</span><span class="v">{{ stats().last }}</span></div>
+  <div><span class="k">Longest PH streak</span><span class="v">{{ stats().longest }}</span></div>
+  <div><span class="k">Kills / hr</span><span class="v">{{ stats().killsPerHour }}</span></div>
+  <div><span class="k">Named / hr</span><span class="v">{{ stats().namedPerHour }}</span></div>
+</div>
+
+@if (loot().length) {
+  <h4>Loot</h4>
+  <ul class="loot">
+    @for (l of loot(); track l.name) {
+      <li>
+        @if (l.url) {
+          <a [href]="l.url" target="_blank" rel="noopener">{{ l.name }}</a>
+        } @else {
+          <span>{{ l.name }}</span>
+        }
+        <span class="cnt">×{{ l.count }}</span>
+        <span class="pct" title="Share of named kills that dropped it">{{ l.pct }}%</span>
+      </li>
+    }
+  </ul>
+}
+
+<h4>Kill log</h4>
+@if (rows().length) {
+  <ul class="log">
+    @for (e of rows(); track e.id) {
+      <li [class.named]="e.type === 'named'">
+        <span class="when">{{ clock(e.t) }}</span>
+        <span class="badge">{{ e.type === 'named' ? 'NAMED' : 'PH' }}</span>
+        <span class="items">
+          @for (item of e.loot; track $index) {
+            @if (item.url) {
+              <a [href]="item.url" target="_blank" rel="noopener">{{ item.name }}</a>
+            } @else {
+              <span>{{ item.name }}</span>
+            }
+          }
+        </span>
+        @if (e.type === 'named') {
+          <button class="small" [class.primary]="editing() === e.id" (click)="toggleLoot(e)" title="Add or edit loot for this kill">
+            {{ editing() === e.id ? 'done' : 'loot' }}
+          </button>
+        }
+        <button class="small icon" (click)="deleteEvent(e, $event)" title="Delete entry (Shift+click to skip confirmation)">✕</button>
+        @if (editing() === e.id) {
+          <div class="loot-edit">
+            @if (e.loot.length) {
+              <div class="chips">
+                @for (item of e.loot; track $index) {
+                  <span class="chip">
+                    {{ item.name }}
+                    <button class="x" (click)="store.removeLoot(counter().id, e.id, $index)" title="Remove">✕</button>
+                  </span>
+                }
+              </div>
+            }
+            <app-item-search (picked)="addLoot(e, $event)" />
+          </div>
+        }
+      </li>
+    }
+  </ul>
+  @if (truncated()) {
+    <p class="hint">Showing the latest {{ rows().length }} kills.</p>
+  }
+} @else {
+  <p class="hint">No kills logged {{ scope() === 'session' ? 'this session' : 'yet' }}. Use “+ PH” / “+ Named” on the panel.</p>
+}
+
+<div class="dialog-actions">
+  <button class="danger" (click)="clearAll()" [disabled]="!counter().history.length">Clear history</button>
+  <span class="spacer"></span>
+  <button class="primary" (click)="closed.emit()">Close</button>
+</div>

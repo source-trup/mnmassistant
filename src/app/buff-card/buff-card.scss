@@ -1,0 +1,156 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--spirit);
+  border-radius: 8px;
+  padding: 8px 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.buffs {
+  list-style: none;
+  margin: 0;
+  padding: 0 2px 0 0;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  li {
+    --c: var(--muted);
+    display: flex;
+    gap: 4px;
+
+    &[data-state='active'] { --c: var(--spirit); }
+    &[data-state='warn'] {
+      --c: var(--paused);
+      .cast { animation: warn 1.4s ease-in-out infinite; }
+    }
+    &[data-state='faded'] {
+      --c: var(--done);
+      .cast { background: var(--done-bg); }
+    }
+  }
+  .empty {
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 6px 2px;
+  }
+}
+
+@keyframes warn {
+  50% { background: rgb(229 184 75 / 0.18); }
+}
+
+.cast {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 4px 8px 5px;
+  text-align: left;
+  border-left: 3px solid var(--c);
+}
+
+.bname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
+.btime {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--c);
+  font-size: 0.9rem;
+}
+
+.bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--c);
+  transition: width 0.25s linear;
+}
+
+.stop {
+  padding: 0 6px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* ---- settings dialog ---- */
+
+.buff-table {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .th,
+  .tr {
+    display: grid;
+    grid-template-columns: 1fr 84px 70px 78px;
+    gap: 6px;
+    align-items: center;
+  }
+  .th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .row-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.quick {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .lbl {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+  button {
+    flex: 1;
+    padding: 2px 0;
+    font-size: 0.8rem;
+  }
+  &.add {
+    margin-top: 10px;
+    button { flex: none; padding: 3px 10px; }
+  }
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}

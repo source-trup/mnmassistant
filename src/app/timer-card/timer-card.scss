@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  --accent: var(--idle);
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &[data-status='running'] { --accent: var(--running); }
+  &[data-status='paused'] { --accent: var(--paused); }
+  &[data-status='done'] {
+    --accent: var(--done);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    background: var(--done-bg);
+    box-shadow: 0 0 22px rgb(255 107 107 / 0.35);
+  }
+}
+
+.clock {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent);
+
+  &:hover .time { filter: brightness(1.2); }
+}
+
+.time {
+  font-size: 2.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}
+
+.actions {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  min-height: 30px;
+
+  /* Compact so −1m / Pause / +1m / Reset fit on one line in a 240px panel. */
+  button {
+    padding: 3px 7px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+}

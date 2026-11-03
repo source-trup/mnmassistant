@@ -1,0 +1,75 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name" [title]="panel().name">{{ panel().name }}</span>
+    <button class="icon" (click)="addBuff()" title="Add a buff">＋</button>
+    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+  </div>
+
+  <ul class="buffs">
+    @for (r of rows(); track r.buff.id) {
+      <li [attr.data-state]="r.state">
+        <button class="cast" (click)="cast(r.buff)" [title]="r.state === 'idle' ? 'Cast ' + r.buff.name : 'Recast ' + r.buff.name">
+          <span class="bname">{{ r.buff.name }}</span>
+          <span class="btime">{{ r.text }}</span>
+          <span class="bar"><span class="fill" [style.width.%]="r.progress * 100"></span></span>
+        </button>
+        @if (r.state !== 'idle') {
+          <button class="stop" (click)="stop(r.buff)" title="Clear">✕</button>
+        }
+      </li>
+    } @empty {
+      <li class="empty">No buffs yet — add one below.</li>
+    }
+  </ul>
+
+  <div class="quick">
+    <span class="lbl">Add</span>
+    @for (q of quickAdds; track q.label) {
+      <button class="primary" (click)="quickAdd(q.ms)" [title]="'Add a ' + q.label + ' buff'">{{ q.label }}</button>
+    }
+  </div>
+</div>
+
+<dialog #dlg class="wide">
+  <h3>Buff panel settings</h3>
+  <div class="edit">
+    <label>Panel name <input [value]="panel().name" (change)="renamePanel($event)" /></label>
+  </div>
+
+  <div class="buff-table">
+    <div class="th">
+      <span>Buff</span><span>Duration</span><span title="Warn this long before it fades">Warn at</span><span></span>
+    </div>
+    @for (b of panel().buffs; track b.id; let first = $first; let last = $last) {
+      <div class="tr">
+        <input [value]="b.name" (change)="renameBuff(b, $event)" placeholder="Spirit of the Wolf" />
+        <input [value]="fmt(b.durationMs)" (change)="setTime(b, 'durationMs', $event)" placeholder="36:00" />
+        <input [value]="fmt(b.warnMs)" (change)="setTime(b, 'warnMs', $event)" placeholder="1:00" />
+        <span class="row-actions">
+          <button class="icon" [disabled]="first" (click)="store.moveBuff(panel().id, b.id, -1)" title="Move up">▲</button>
+          <button class="icon" [disabled]="last" (click)="store.moveBuff(panel().id, b.id, 1)" title="Move down">▼</button>
+          <button class="icon" (click)="removeBuff(b, $event)" title="Remove (Shift+click to skip confirmation)">✕</button>
+        </span>
+      </div>
+    }
+  </div>
+  <div class="quick add">
+    <span class="lbl">Add</span>
+    @for (q of quickAdds; track q.label) {
+      <button class="primary" (click)="quickAdd(q.ms)">{{ q.label }}</button>
+    }
+    <button (click)="addBuff()" title="Add a buff and set its time yourself">Custom</button>
+  </div>
+  <p class="hint">
+    Times accept 36:00, 1:30:00, 90s, 1h30m or plain minutes. Buffs you name are spoken (“… is fading”); ones with a
+    generated name like “35:00 buff” just chime.
+  </p>
+
+  <div class="dialog-actions">
+    <button class="danger" (click)="remove($event)">Delete panel</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeEdit()">Done</button>
+  </div>
+</dialog>
