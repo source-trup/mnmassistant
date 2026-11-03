@@ -7,6 +7,7 @@ import { LootPrompt } from './loot/loot-prompt';
 import { ConfirmService } from './confirm.service';
 import { CounterCard } from './counter-card/counter-card';
 import { GRID, maxX } from './layout';
+import { NoteCard } from './note-card/note-card';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
 import { Panel, TrackerStore } from './tracker.store';
@@ -25,7 +26,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

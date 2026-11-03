@@ -11,6 +11,7 @@ import {
   CounterKind,
   LootItem,
   NamedPhCounter,
+  NoteItem,
   StandardCounter,
   Theme,
   TimerItem,
@@ -29,7 +30,11 @@ const AUTO_BUFF_NAME = /^New buff$|^(\d+:)?\d+:\d{2} buff$/;
 export type Panel =
   | ({ id: string; kind: 'timer'; item: TimerItem } & Rect)
   | ({ id: string; kind: 'counter'; item: CounterItem } & Rect)
-  | ({ id: string; kind: 'buffs'; item: BuffPanel } & Rect);
+  | ({ id: string; kind: 'buffs'; item: BuffPanel } & Rect)
+  | ({ id: string; kind: 'note'; item: NoteItem } & Rect);
+
+/** Note text size limits and step, in px. */
+export const NOTE_FONT = { min: 10, max: 32, step: 2, default: 14 };
 
 /** A named kill waiting for (optional) loot entry. */
 export interface LootRequest {
@@ -87,17 +92,26 @@ function makeBuffPanel(): BuffPanel {
   return { id: newId(), name: 'Buff Tracker', buffs: [], ...UNPLACED };
 }
 
+function makeNote(): NoteItem {
+  return { id: newId(), name: 'Note', text: '', fontSize: NOTE_FONT.default, ...UNPLACED };
+}
+
+function clampFont(px: number): number {
+  return Math.min(NOTE_FONT.max, Math.max(NOTE_FONT.min, px));
+}
+
 function defaultState(): AppState {
   const camp = makeTimer(6 * 60_000, 'Camp spawn');
   const nph = makeCounter('namedPh', 'Camp named / PH') as NamedPhCounter;
   nph.linkedTimerId = camp.id;
   return {
-    version: 3,
+    version: 4,
     soundOn: true,
     theme: 'spirit',
     timers: [camp],
     counters: [nph, makeCounter('standard', 'Kills')],
     buffPanels: [],
+    notes: [],
   };
 }
 
@@ -116,12 +130,21 @@ function normalizeCounter(raw: any): CounterItem {
 
 /** Accepts state saved by any version of the app (or a layout file) and upgrades it. */
 function normalizeState(parsed: any): AppState | null {
-  if (!parsed || ![1, 2, 3].includes(parsed.version)) return null;
+  if (!parsed || ![1, 2, 3, 4].includes(parsed.version)) return null;
   if (!Array.isArray(parsed.timers) || !Array.isArray(parsed.counters)) return null;
   return {
-    version: 3,
+    version: 4,
     soundOn: parsed.soundOn ?? true,
-    theme: parsed.theme === 'classic' ? 'classic' : 'spirit',    timers: parsed.timers.map((t: any) => ({
+    theme: parsed.theme === 'classic' ? 'classic' : 'spirit',
+    notes: (Array.isArray(parsed.notes) ? parsed.notes : []).map((n: any) => ({
+      ...makeNote(),
+      ...n,
+      text: typeof n.text === 'string' ? n.text : '',
+      fontSize: clampFont(Number(n.fontSize) || NOTE_FONT.default),
+      x: n.x ?? -1,
+      y: n.y ?? -1,
+    })),
+    timers: parsed.timers.map((t: any) => ({
       repeat: false,
       endsAt: null,
       pausedRemainingMs: null,
@@ -155,8 +178,10 @@ export class TrackerStore {
   readonly timers = signal<TimerItem[]>([]);
   readonly counters = signal<CounterItem[]>([]);
   readonly buffPanels = signal<BuffPanel[]>([]);
+  readonly notes = signal<NoteItem[]>([]);
   readonly soundOn = signal(true);
-  readonly theme = signal<Theme>('spirit');  /** Named kills waiting for loot entry; the first one is shown in the loot drawer. */
+  readonly theme = signal<Theme>('spirit');
+  /** Named kills waiting for loot entry; the first one is shown in the loot drawer. */
   readonly lootQueue = signal<LootRequest[]>([]);
   /** Board width in grid cells; kept up to date by the app shell. */
   readonly cols = signal(Math.max(13, Math.floor((window.innerWidth - 32) / GRID)));
@@ -166,6 +191,7 @@ export class TrackerStore {
     ...this.timers().map((t) => ({ id: t.id, kind: 'timer' as const, item: t, x: t.x, y: t.y, ...PANEL_SIZE.timer })),
     ...this.counters().map((c) => ({ id: c.id, kind: 'counter' as const, item: c, x: c.x, y: c.y, ...PANEL_SIZE[c.kind] })),
     ...this.buffPanels().map((b) => ({ id: b.id, kind: 'buffs' as const, item: b, x: b.x, y: b.y, ...PANEL_SIZE.buffs })),
+    ...this.notes().map((n) => ({ id: n.id, kind: 'note' as const, item: n, x: n.x, y: n.y, ...PANEL_SIZE.note })),
   ]);
 
   /** Every distinct item ever entered, most recent first (for autocomplete). */
@@ -207,7 +233,8 @@ export class TrackerStore {
   movePanel(id: string, x: number, y: number): void {
     if (this.timers().some((t) => t.id === id)) this.updateTimer(id, { x, y });
     else if (this.counters().some((c) => c.id === id)) this.updateCounter(id, { x, y });
-    else this.updateBuffPanel(id, { x, y });
+    else if (this.buffPanels().some((b) => b.id === id)) this.updateBuffPanel(id, { x, y });
+    else this.updateNote(id, { x, y });
   }
 
   /** Packs every panel into the grid, keeping their current reading order. */
@@ -223,6 +250,7 @@ export class TrackerStore {
     this.timers.update((list) => list.map((t) => ({ ...t, ...pos.get(t.id)! })));
     this.counters.update((list) => list.map((c) => ({ ...c, ...pos.get(c.id)! })) as CounterItem[]);
     this.buffPanels.update((list) => list.map((b) => ({ ...b, ...pos.get(b.id)! })));
+    this.notes.update((list) => list.map((n) => ({ ...n, ...pos.get(n.id)! })));
   }
 
   /** Gives a grid position to any item that doesn't have one yet (new, migrated or loaded). */
@@ -237,6 +265,7 @@ export class TrackerStore {
     this.timers.update((list) => list.map((t) => place(t, PANEL_SIZE.timer)));
     this.counters.update((list) => list.map((c) => place(c, PANEL_SIZE[c.kind])));
     this.buffPanels.update((list) => list.map((b) => place(b, PANEL_SIZE.buffs)));
+    this.notes.update((list) => list.map((n) => place(n, PANEL_SIZE.note)));
   }
 
   // ---------- timers ----------
@@ -524,6 +553,27 @@ export class TrackerStore {
     this.buffFaded.delete(buffId);
   }
 
+  // ---------- notes ----------
+
+  addNote(): void {
+    this.notes.update((list) => [...list, makeNote()]);
+    this.placeUnplaced();
+  }
+
+  removeNote(id: string): void {
+    this.notes.update((list) => list.filter((n) => n.id !== id));
+  }
+
+  updateNote(id: string, patch: Partial<NoteItem>): void {
+    this.notes.update((list) => list.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+  }
+
+  /** Bigger (+1) or smaller (-1) note text, within NOTE_FONT limits. */
+  stepNoteFont(id: string, dir: -1 | 1): void {
+    const n = this.notes().find((x) => x.id === id);
+    if (n) this.updateNote(id, { fontSize: clampFont(n.fontSize + dir * NOTE_FONT.step) });
+  }
+
   // ---------- ordering ----------
 
   moveTimer(id: string, dir: -1 | 1): void {
@@ -570,6 +620,7 @@ export class TrackerStore {
     this.buffPanels.set(
       state.buffPanels.map((p) => ({ ...p, buffs: p.buffs.map((b) => ({ ...b, endsAt: null })) })),
     );
+    this.notes.set(state.notes);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);
     this.placeUnplaced();
@@ -645,10 +696,11 @@ export class TrackerStore {
 
   private snapshot(): AppState {
     return {
-      version: 3,
+      version: 4,
       timers: this.timers(),
       counters: this.counters(),
       buffPanels: this.buffPanels(),
+      notes: this.notes(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -665,6 +717,7 @@ export class TrackerStore {
     this.timers.set(state.timers);
     this.counters.set(state.counters);
     this.buffPanels.set(state.buffPanels);
+    this.notes.set(state.notes);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);
   }

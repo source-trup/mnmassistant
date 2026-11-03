@@ -31,6 +31,7 @@
     <button class="primary" (click)="store.addCounter('standard')">Count</button>
     <button class="primary" (click)="store.addCounter('namedPh')">Named / PH</button>
     <button class="primary" (click)="store.addBuffPanel()">Buff Tracker</button>
+    <button class="primary" (click)="store.addNote()">Note</button>
   </div>
 
   <span class="spacer"></span>
@@ -95,6 +96,9 @@
           }
           @case ('buffs') {
             <app-buff-card [panel]="p.item" />
+          }
+          @case ('note') {
+            <app-note-card [note]="p.item" />
           }
         }
       </div>

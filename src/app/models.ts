@@ -85,13 +85,23 @@ export interface BuffPanel extends GridPos {
   buffs: BuffEntry[];
 }
 
+/** A free-text note panel. */
+export interface NoteItem extends GridPos {
+  id: string;
+  name: string;
+  text: string;
+  /** Text size in px. */
+  fontSize: number;
+}
+
 export type Theme = 'spirit' | 'classic';
 
 export interface AppState {
-  version: 3;
+  version: 4;
   timers: TimerItem[];
   counters: CounterItem[];
   buffPanels: BuffPanel[];
+  notes: NoteItem[];
   soundOn: boolean;
   theme: Theme;
 }

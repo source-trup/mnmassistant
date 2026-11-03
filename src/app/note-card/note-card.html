@@ -1,0 +1,31 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name" [title]="note().name" (dblclick)="openEdit()">{{ note().name }}</span>
+    <button class="icon font" (click)="font(-1)" [disabled]="note().fontSize <= FONT.min" title="Smaller text">A−</button>
+    <button class="icon font" (click)="font(1)" [disabled]="note().fontSize >= FONT.max" title="Larger text">A+</button>
+    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+  </div>
+
+  <textarea
+    [value]="note().text"
+    (input)="onText($event)"
+    [style.font-size.px]="note().fontSize"
+    placeholder="Write anything… camp notes, quest steps, who to group with."
+    spellcheck="true"
+  ></textarea>
+</div>
+
+<dialog #dlg>
+  <h3>Note settings</h3>
+  <div class="edit">
+    <label>Title <input [value]="note().name" (change)="rename($event)" (keydown.enter)="closeEdit()" /></label>
+    <p class="hint">Text size: {{ note().fontSize }}px — use A− / A+ on the note to change it.</p>
+  </div>
+  <div class="dialog-actions">
+    <button class="danger" (click)="remove($event)">Delete</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeEdit()">Done</button>
+  </div>
+</dialog>

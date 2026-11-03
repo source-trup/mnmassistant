@@ -17,6 +17,7 @@ Monsters and Memories Wiki.
 - [Counters](#counters)
 - [Camp history and loot](#camp-history-and-loot)
 - [Buff Tracker](#buff-tracker)
+- [Notes](#notes)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -54,7 +55,7 @@ site and `localhost` keep separate boards. To move a board between them, use ☰
 
 ## The board
 
-The page is a free-form board of panels. There are three panel types: **timers**, **counters** and **Buff Trackers**.
+The page is a free-form board of panels. There are four panel types: **timers**, **counters**, **Buff Trackers** and **notes**.
 
 | Action | How |
 | --- | --- |
@@ -71,7 +72,7 @@ Panels snap to a 20px grid with a built-in gutter, so panels placed side by side
 | Section | Buttons |
 | --- | --- |
 | **Add timer** | `5m` `6m` `8m` `10m` (common placeholder respawns), or type a custom time in the box and press Enter / `+` |
-| **Add** | `Count` (standard counter), `Named / PH` (camp counter), `Buff Tracker` |
+| **Add** | `Count` (standard counter), `Named / PH` (camp counter), `Buff Tracker`, `Note` |
 | Right side | `Tidy`, 🔔 / 🔕 mute all alerts, ☰ menu |
 
 **☰ menu:** Save layout to file, Load layout from file, Reset all timers, Reset all counters, Theme switch, Test
@@ -187,6 +188,20 @@ as one for self buffs and one for group buffs.
 
 ---
 
+## Notes
+
+A free-text panel for camp notes, quest steps, who to group with, and so on.
+
+| Action | How |
+| --- | --- |
+| Write / edit | Click in the text area and type. It saves as you type. |
+| Text size | **A−** / **A+** in the header (10px to 32px, 2px per click) |
+| Rename | **⚙** (or double-click the title) |
+
+The text area takes up the whole panel and scrolls if the note gets long.
+
+---
+
 ## Alerts: chimes and voice
 
 | Event | Name you gave it | Generated name (`6:00 spawn`, `35:00 buff`) |
@@ -207,7 +222,7 @@ Everything saves automatically to your browser (`localStorage`). To keep a copy 
 between setups such as one layout per camp:
 
 - **☰ → Save layout to file…** writes a `.json` file with every panel and its position, counts, settings, the full
-  kill and loot history, and your theme.
+  kill and loot history, your notes, and your theme.
 - **☰ → Load layout from file…** replaces the whole board with a saved file, after confirming. Timers and buffs come
   back **stopped**.
 
@@ -294,6 +309,7 @@ src/
     timer-card/             Timer panel
     counter-card/           Standard and Named/PH panels, camp-history dialog
     buff-card/              Buff Tracker panel
+    note-card/              Note panel
     loot/                   Loot drawer and item autocomplete
     art/                    SVG art: Dalgrimm's eyes logo, background scene
 proxy.conf.mjs              Dev-server proxy that adds the wiki API key
