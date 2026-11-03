@@ -44,6 +44,12 @@ Open **http://localhost:4200** in a browser window and drag it onto your second 
 Everything you do is saved automatically. Closing the browser doesn't stop running timers: they're stored as end
 times, so they're still correct when you come back.
 
+### Hosted version
+
+The app is also published at **https://source-trup.github.io/mnmassistant/**, with nothing to install. Everything works the same
+except wiki item search, which needs the local dev server. Data is saved per browser *and per address*, so the hosted
+site and `localhost` keep separate boards. To move a board between them, use ☰ → Save layout / Load layout.
+
 ---
 
 ## The board
@@ -308,5 +314,17 @@ proxy.conf.mjs              Dev-server proxy that adds the wiki API key
 
 ```bash
 npm start          # dev server with wiki proxy at http://localhost:4200
-npx ng build       # production build to dist/
+npx ng build       # production build to dist/mnm-assistant/browser
 ```
+
+**Deployment (GitHub Pages)**
+
+`.github/workflows/deploy.yml` builds the app and publishes `dist/mnm-assistant/browser` to GitHub Pages on every push
+to `main`. You can also run it by hand from the Actions tab. One-time repo setup:
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. The repo must be **public** (it is). Pages on private repos needs a paid GitHub plan.
+
+This is a project site served from `/mnmassistant/`, so the workflow builds with `--base-href /mnmassistant/`.
+If the repo is renamed, update that path in the workflow. On the hosted site, wiki search is switched off with a
+short note, because the proxy that adds the API key only exists in the local dev server.

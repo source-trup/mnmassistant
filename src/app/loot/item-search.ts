@@ -39,6 +39,8 @@ interface Suggestion {
         <a class="attrib" [href]="wikiHome" target="_blank" rel="noopener">Data from the Monsters and Memories Wiki</a>
       } @else if (wiki.status() === 'no-key' && query().length >= 2) {
         <span class="attrib">Wiki search is off (no API key) — showing your past items.</span>
+      } @else if (wiki.status() === 'local-only' && query().length >= 2) {
+        <span class="attrib">Wiki search works when running locally (npm start) — showing your past items.</span>
       } @else if (wiki.status() === 'rate-limited') {
         <span class="attrib">Wiki search is resting (rate limit) — try again shortly.</span>
       }

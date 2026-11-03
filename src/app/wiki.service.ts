@@ -8,7 +8,10 @@ export interface WikiItem {
   slot: string[];
 }
 
-export type WikiStatus = 'unknown' | 'ok' | 'no-key' | 'rate-limited' | 'offline';
+export type WikiStatus = 'unknown' | 'ok' | 'no-key' | 'rate-limited' | 'offline' | 'local-only';
+
+/** Wiki search needs the dev-server proxy, which only exists when running locally (npm start). */
+const HAS_PROXY = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 
 export const WIKI_HOME = 'https://monstersandmemories.wiki/';
 
@@ -20,7 +23,7 @@ export const WIKI_HOME = 'https://monstersandmemories.wiki/';
  */
 @Injectable({ providedIn: 'root' })
 export class WikiService {
-  readonly status = signal<WikiStatus>('unknown');
+  readonly status = signal<WikiStatus>(HAS_PROXY ? 'unknown' : 'local-only');
 
   private readonly cache = new Map<string, WikiItem[]>();
   private blockedUntil = 0;
@@ -31,7 +34,7 @@ export class WikiService {
     const key = q.toLowerCase();
     const cached = this.cache.get(key);
     if (cached) return cached;
-    if (this.status() === 'no-key' || Date.now() < this.blockedUntil) return [];
+    if (!HAS_PROXY || this.status() === 'no-key' || Date.now() < this.blockedUntil) return [];
 
     try {
       const res = await fetch(`/api/partner/v1/search?type=item&limit=8&q=${encodeURIComponent(q)}`);
