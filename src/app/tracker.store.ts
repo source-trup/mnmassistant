@@ -14,6 +14,9 @@ import {
   LootItem,
   NamedPhCounter,
   NoteItem,
+  PlayerEntry,
+  PlayerListKind,
+  PlayerListPanel,
   StandardCounter,
   Theme,
   TimerItem,
@@ -34,7 +37,50 @@ export type Panel =
   | ({ id: string; kind: 'timer'; item: TimerItem } & Rect)
   | ({ id: string; kind: 'counter'; item: CounterItem } & Rect)
   | ({ id: string; kind: 'buffs'; item: BuffPanel } & Rect)
-  | ({ id: string; kind: 'note'; item: NoteItem } & Rect);
+  | ({ id: string; kind: 'note'; item: NoteItem } & Rect)
+  | ({ id: string; kind: 'players'; item: PlayerListPanel } & Rect);
+
+export const PLAYER_LISTS: PlayerListKind[] = ['naughty', 'nice'];
+
+/** Board id of a list panel. */
+export function listPanelId(kind: PlayerListKind): string {
+  return 'list:' + kind;
+}
+
+/** Player names compare case-insensitively, ignoring extra spaces. */
+export function playerKey(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function defaultListPanels(): Record<PlayerListKind, PlayerListPanel> {
+  return {
+    naughty: { kind: 'naughty', shown: false, ...UNPLACED },
+    nice: { kind: 'nice', shown: false, ...UNPLACED },
+  };
+}
+
+function normalizePlayers(raw: any): Record<PlayerListKind, PlayerEntry[]> {
+  const out = { naughty: [] as PlayerEntry[], nice: [] as PlayerEntry[] };
+  for (const kind of PLAYER_LISTS) {
+    const seen = new Set<string>();
+    for (const p of Array.isArray(raw?.[kind]) ? raw[kind] : []) {
+      const name = typeof p?.name === 'string' ? p.name.trim().replace(/\s+/g, ' ') : '';
+      if (!name || seen.has(playerKey(name))) continue;
+      seen.add(playerKey(name));
+      out[kind].push({ name, note: typeof p.note === 'string' ? p.note : '', added: Number(p.added) || Date.now() });
+    }
+  }
+  return out;
+}
+
+function normalizeListPanels(raw: any): Record<PlayerListKind, PlayerListPanel> {
+  const out = defaultListPanels();
+  for (const kind of PLAYER_LISTS) {
+    const p = raw?.[kind];
+    if (p) out[kind] = { kind, shown: p.shown === true, x: p.x ?? -1, y: p.y ?? -1 };
+  }
+  return out;
+}
 
 /** Note text size limits and step, in px. */
 export const NOTE_FONT = { min: 10, max: 32, step: 2, default: 14 };
@@ -186,6 +232,8 @@ function defaultState(): AppState {
     buffPanels: [],
     buffSets: [],
     notes: [],
+    players: { naughty: [], nice: [] },
+    listPanels: defaultListPanels(),
   };
 }
 
@@ -232,6 +280,8 @@ function normalizeState(parsed: any): AppState | null {
     soundOn: parsed.soundOn ?? true,
     theme: normalizeThemeId(parsed.theme),
     buffSets: normalizeBuffSets(parsed.buffSets),
+    players: normalizePlayers(parsed.players),
+    listPanels: normalizeListPanels(parsed.listPanels),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).map((n: any) => ({
       ...makeNote(),
       ...n,
@@ -272,6 +322,9 @@ export class TrackerStore {
   readonly lootLibrary = signal<LootItem[]>([]);
   readonly buffPanels = signal<BuffPanel[]>([]);
   readonly notes = signal<NoteItem[]>([]);
+  /** Naughty / Nice player lists, and their single panels. */
+  readonly players = signal<Record<PlayerListKind, PlayerEntry[]>>({ naughty: [], nice: [] });
+  readonly listPanels = signal<Record<PlayerListKind, PlayerListPanel>>(defaultListPanels());
   /** Saved buff lists, sorted by name when shown. */
   readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
@@ -289,6 +342,9 @@ export class TrackerStore {
     ...this.notes()
       .filter((n) => !n.closed)
       .map((n) => ({ id: n.id, kind: 'note' as const, item: n, x: n.x, y: n.y, ...PANEL_SIZE.note })),
+    ...PLAYER_LISTS.map((k) => this.listPanels()[k])
+      .filter((p) => p.shown)
+      .map((p) => ({ id: listPanelId(p.kind), kind: 'players' as const, item: p, x: p.x, y: p.y, ...PANEL_SIZE.players })),
   ]);
 
   /** Notes that have been put away, in the order they were created. */
@@ -353,6 +409,7 @@ export class TrackerStore {
     if (this.timers().some((t) => t.id === id)) this.updateTimer(id, { x, y });
     else if (this.counters().some((c) => c.id === id)) this.updateCounter(id, { x, y });
     else if (this.buffPanels().some((b) => b.id === id)) this.updateBuffPanel(id, { x, y });
+    else if (id.startsWith('list:')) this.updateListPanel(id.slice(5) as PlayerListKind, { x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -370,6 +427,10 @@ export class TrackerStore {
     this.counters.update((list) => list.map((c) => ({ ...c, ...pos.get(c.id)! })) as CounterItem[]);
     this.buffPanels.update((list) => list.map((b) => ({ ...b, ...pos.get(b.id)! })));
     this.notes.update((list) => list.map((n) => ({ ...n, ...pos.get(n.id) }))); // closed notes aren't in `pos`
+    for (const k of PLAYER_LISTS) {
+      const spot = pos.get(listPanelId(k)); // hidden lists aren't in `pos`
+      if (spot) this.updateListPanel(k, spot);
+    }
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -392,6 +453,11 @@ export class TrackerStore {
     this.counters.update((list) => list.map((c) => place(c, PANEL_SIZE[c.kind])));
     this.buffPanels.update((list) => list.map((b) => place(b, PANEL_SIZE.buffs)));
     this.notes.update((list) => list.map((n) => (n.closed ? n : place(n, PANEL_SIZE.note))));
+    this.listPanels.update((lp) => {
+      const next = { ...lp };
+      for (const k of PLAYER_LISTS) if (lp[k].shown) next[k] = place(lp[k], PANEL_SIZE.players);
+      return next;
+    });
   }
 
   // ---------- timers ----------
@@ -904,6 +970,74 @@ export class TrackerStore {
     if (n) this.updateNote(id, { fontSize: clampFont(n.fontSize + dir * NOTE_FONT.step) });
   }
 
+  // ---------- naughty / nice lists ----------
+
+  private updateListPanel(kind: PlayerListKind, patch: Partial<PlayerListPanel>): void {
+    this.listPanels.update((lp) => ({ ...lp, [kind]: { ...lp[kind], ...patch } }));
+  }
+
+  /** Shows or hides a list's panel (its names are always kept). Reappears in its old spot if that's free. */
+  toggleList(kind: PlayerListKind): void {
+    const p = this.listPanels()[kind];
+    if (p.shown) {
+      this.updateListPanel(kind, { shown: false });
+      return;
+    }
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(listPanelId(kind), { x: p.x, y: p.y, ...PANEL_SIZE.players });
+    this.updateListPanel(kind, { shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** Which list a player is on, if any. */
+  findPlayer(name: string): { kind: PlayerListKind; entry: PlayerEntry } | null {
+    const key = playerKey(name);
+    if (!key) return null;
+    for (const kind of PLAYER_LISTS) {
+      const entry = this.players()[kind].find((p) => playerKey(p.name) === key);
+      if (entry) return { kind, entry };
+    }
+    return null;
+  }
+
+  /**
+   * Adds a player to a list. If they're on the other list they move over (keeping their note).
+   * Returns what happened.
+   */
+  addPlayer(kind: PlayerListKind, name: string): 'added' | 'moved' | 'exists' | 'invalid' {
+    name = name.trim().replace(/\s+/g, ' ');
+    if (!name) return 'invalid';
+    const found = this.findPlayer(name);
+    if (found?.kind === kind) return 'exists';
+    const entry: PlayerEntry = found ? { ...found.entry, added: Date.now() } : { name, note: '', added: Date.now() };
+    this.players.update((lists) => {
+      const next = { ...lists, [kind]: [...lists[kind], entry] };
+      if (found) next[found.kind] = lists[found.kind].filter((p) => p !== found.entry);
+      return next;
+    });
+    return found ? 'moved' : 'added';
+  }
+
+  /** Removes a player; returns the entry so it can be restored (undo). */
+  removePlayer(kind: PlayerListKind, name: string): PlayerEntry | null {
+    const key = playerKey(name);
+    const entry = this.players()[kind].find((p) => playerKey(p.name) === key) ?? null;
+    if (entry) this.players.update((lists) => ({ ...lists, [kind]: lists[kind].filter((p) => p !== entry) }));
+    return entry;
+  }
+
+  restorePlayer(kind: PlayerListKind, entry: PlayerEntry): void {
+    if (this.findPlayer(entry.name)) return;
+    this.players.update((lists) => ({ ...lists, [kind]: [...lists[kind], entry] }));
+  }
+
+  setPlayerNote(kind: PlayerListKind, name: string, note: string): void {
+    const key = playerKey(name);
+    this.players.update((lists) => ({
+      ...lists,
+      [kind]: lists[kind].map((p) => (playerKey(p.name) === key ? { ...p, note: note.trim() } : p)),
+    }));
+  }
+
   // ---------- ordering ----------
 
   moveTimer(id: string, dir: -1 | 1): void {
@@ -961,6 +1095,16 @@ export class TrackerStore {
       state.buffPanels.map((p) => ({ ...p, buffs: p.buffs.map((b) => ({ ...b, endsAt: null })) })),
     );
     this.notes.set(state.notes);
+    // Player lists are kept across layouts: the file's names are added to yours (yours win on conflicts).
+    this.players.update((mine) => {
+      const next = { naughty: [...mine.naughty], nice: [...mine.nice] };
+      const known = new Set([...mine.naughty, ...mine.nice].map((p) => playerKey(p.name)));
+      for (const k of PLAYER_LISTS) {
+        for (const p of state.players[k]) if (!known.has(playerKey(p.name))) next[k].push(p);
+      }
+      return next;
+    });
+    this.listPanels.set(state.listPanels);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1048,6 +1192,8 @@ export class TrackerStore {
       buffPanels: this.buffPanels(),
       buffSets: this.buffSets(),
       notes: this.notes(),
+      players: this.players(),
+      listPanels: this.listPanels(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -1067,6 +1213,8 @@ export class TrackerStore {
     this.lootLibrary.set(state.lootLibrary);
     this.buffPanels.set(state.buffPanels);
     this.notes.set(state.notes);
+    this.players.set(state.players);
+    this.listPanels.set(state.listPanels);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);

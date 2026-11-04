@@ -147,6 +147,18 @@ h1 {
   }
 }
 
+/* Show/hide toggles for the Naughty / Nice lists. */
+.toggle {
+  opacity: 0.75;
+
+  &.on {
+    opacity: 1;
+    background: var(--spirit-soft);
+    border-color: var(--spirit-line);
+    box-shadow: inset 0 0 0 1px var(--spirit-line);
+  }
+}
+
 /* ---- Theme picker ---- */
 .themes-dlg {
   width: min(720px, calc(100vw - 32px));

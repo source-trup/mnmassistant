@@ -9,10 +9,11 @@ import { CounterCard } from './counter-card/counter-card';
 import { GRID, maxX } from './layout';
 import { NoteItem } from './models';
 import { NoteCard } from './note-card/note-card';
+import { PlayerListCard } from './player-list/player-list-card';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
-import { Panel, TrackerStore } from './tracker.store';
+import { PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
 
 interface DragState {
   id: string;
@@ -28,7 +29,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -39,6 +40,7 @@ export class App {
 
   protected readonly GRID = GRID;
   protected readonly quickMinutes = [5, 6, 8, 10];
+  protected readonly playerLists = PLAYER_LISTS;
   protected readonly customError = signal(false);
 
   protected readonly drag = signal<DragState | null>(null);

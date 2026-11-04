@@ -63,6 +63,21 @@
     <button (click)="store.addNote(); notesMenu.hidePopover()">＋ New note</button>
   </div>
 
+  <div class="group lists">
+    <span class="lbl">Lists</span>
+    @for (k of playerLists; track k) {
+      <button
+        class="toggle"
+        [class.on]="store.listPanels()[k].shown"
+        [attr.aria-pressed]="store.listPanels()[k].shown"
+        (click)="store.toggleList(k)"
+        [title]="(store.listPanels()[k].shown ? 'Hide' : 'Show') + ' your ' + (k === 'naughty' ? 'Naughty' : 'Nice') + ' list (' + store.players()[k].length + ')'"
+      >
+        {{ k === 'naughty' ? '😈 Naughty' : '😇 Nice' }}
+      </button>
+    }
+  </div>
+
   <span class="spacer"></span>
 
   <div class="group">
@@ -131,6 +146,9 @@
           }
           @case ('note') {
             <app-note-card [note]="p.item" />
+          }
+          @case ('players') {
+            <app-player-list-card [panel]="p.item" />
           }
         }
       </div>

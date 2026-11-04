@@ -118,6 +118,24 @@ export interface NoteItem extends GridPos {
   closed: boolean;
 }
 
+/** The two player lists. */
+export type PlayerListKind = 'naughty' | 'nice';
+
+/** A player on the Naughty or Nice list. */
+export interface PlayerEntry {
+  name: string;
+  /** Optional reason, e.g. "ninja-looted the FBSS". */
+  note: string;
+  /** Epoch ms when added. */
+  added: number;
+}
+
+/** Position and visibility of a list panel (each list has exactly one panel). */
+export interface PlayerListPanel extends GridPos {
+  kind: PlayerListKind;
+  shown: boolean;
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -131,6 +149,9 @@ export interface AppState {
   buffPanels: BuffPanel[];
   buffSets: BuffSet[];
   notes: NoteItem[];
+  /** Naughty / Nice player lists. */
+  players: Record<PlayerListKind, PlayerEntry[]>;
+  listPanels: Record<PlayerListKind, PlayerListPanel>;
   soundOn: boolean;
   theme: Theme;
 }

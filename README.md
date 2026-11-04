@@ -18,6 +18,7 @@ Monsters and Memories Wiki.
 - [Camp history and loot](#camp-history-and-loot)
 - [Buff Tracker](#buff-tracker)
 - [Notes](#notes)
+- [Naughty and Nice lists](#naughty-and-nice-lists)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -75,6 +76,7 @@ evenly spaced. (Boards saved when panels were narrower are tidied automatically 
 | --- | --- |
 | **Add timer** | `5m` `6m` `8m` `10m` (common placeholder respawns), or type a custom time in the box and press Enter / `+` |
 | **Add** | `Count` (standard counter), `Named / PH` (camp counter), `Buff Tracker`, `Note` (▾ next to it lists [saved notes](#notes)) |
+| **Lists** | `😈 Naughty` / `😇 Nice` show or hide the [player lists](#naughty-and-nice-lists) |
 | Right side | `Tidy`, 🔔 / 🔕 mute all alerts, ☰ menu |
 
 **☰ menu:** Save layout to file, Load layout from file, Reset all timers, Reset all counters, [Theme](#themes)
@@ -251,6 +253,25 @@ away.
 
 ---
 
+## Naughty and Nice lists
+
+Two lists of players: the **😈 Naughty list** for people you'd rather not group with again, and the **😇 Nice
+list** for people you'd happily group with again. Each list has one panel. **Lists → 😈 Naughty / 😇 Nice** in the
+toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in the same spot.
+
+| Action | How |
+| --- | --- |
+| Check a name | Type it in either list's box. The list filters as you type, and a line under the box says whether that exact name is on **this** list, on the **other** list (highlighted, with its note), or on neither. |
+| Add | Type the name and press **Enter** (or **＋**). Names match regardless of capitals, and duplicates aren't added. |
+| Move between lists | Type a name that's on the other list and click **Move here**. Its note comes along. |
+| Note | Click a name to add or edit a reason, e.g. *"ninja-looted the FBSS"*. |
+| Remove | **✕** next to the name. **Undo** appears for a few seconds. |
+
+The lists are saved with everything else and included in layout files. Loading a layout file adds its names to
+yours rather than replacing them.
+
+---
+
 ## Alerts: chimes and voice
 
 | Event | Name you gave it | Generated name (`6:00 spawn`, `35:00 buff`) |
@@ -381,6 +402,7 @@ src/
     counter-card/           Standard and Named/PH panels, camp-history dialog
     buff-card/              Buff Tracker panel
     note-card/              Note panel
+    player-list/            Naughty / Nice list panel
     loot/                   Loot drawer and item autocomplete
     themes.ts               Class themes: palettes, glyphs, corner art, particles
     art/                    Dalgrimm's eyes logo, theme-driven background

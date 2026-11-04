@@ -1,7 +1,7 @@
 /** Size of one grid cell in pixels. */
 export const GRID = 20;
 
-export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note';
+export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'players';
 
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
@@ -15,6 +15,7 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   namedPh: { w: 15, h: 12 }, // 280 x 220
   buffs: { w: 15, h: 14 }, // 280 x 260
   note: { w: 15, h: 12 }, // 280 x 220
+  players: { w: 15, h: 15 }, // 280 x 280
 };
 
 export interface Rect {

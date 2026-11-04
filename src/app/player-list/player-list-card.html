@@ -1,0 +1,85 @@
+<div class="card" [attr.data-kind]="kind()">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">{{ info().icon }} {{ info().title }}</span>
+    <span class="count" [title]="entries().length + ' players'">{{ entries().length }}</span>
+    <button class="icon" (click)="store.toggleList(kind())" title="Hide (the list is kept; show it again from the toolbar)">✕</button>
+  </div>
+
+  <div class="search">
+    <input
+      #box
+      [value]="query()"
+      (input)="query.set(box.value)"
+      (keydown)="onKey($event)"
+      placeholder="Check or add a name…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    @if (query().trim()) {
+      <button class="primary add" [disabled]="check()?.state === 'here'" (click)="add()" [title]="'Add to ' + info().title">＋</button>
+    }
+  </div>
+
+  @if (check(); as c) {
+    <div class="status" [attr.data-state]="c.state">
+      @switch (c.state) {
+        @case ('here') {
+          <span>{{ info().icon }} <b>{{ c.name }}</b> is on your {{ info().title }}@if (c.note) {: {{ c.note }} }</span>
+        }
+        @case ('other') {
+          <span>{{ otherInfo().icon }} <b>{{ c.name }}</b> is on your <b>{{ otherInfo().title }}</b>@if (c.note) {: {{ c.note }} }</span>
+          <button (click)="add()">Move here</button>
+        }
+        @case ('none') {
+          <span>Not on either list. <kbd>Enter</kbd> to add.</span>
+        }
+      }
+    </div>
+  } @else if (flash()) {
+    <div class="status" data-state="flash">{{ flash() }}</div>
+  }
+
+  <ul class="players">
+    @for (p of shown(); track p.name) {
+      <li>
+        @if (editing() === p.name) {
+          <span class="pname">{{ p.name }}</span>
+          <input
+            #noteBox
+            [id]="'note-' + kind()"
+            class="note-edit"
+            [value]="p.note"
+            placeholder="Why? (optional)"
+            (keydown.enter)="saveNote(p, noteBox)"
+            (keydown.escape)="editing.set(null)"
+            (blur)="saveNote(p, noteBox)"
+          />
+        } @else {
+          <button class="row" (click)="editNote(p)" [title]="added(p) + ' — click to add or edit a note'">
+            <span class="pname">{{ p.name }}</span>
+            <span class="pnote">{{ p.note || '' }}</span>
+          </button>
+        }
+        <button class="icon del" (click)="remove(p)" [title]="'Remove ' + p.name">✕</button>
+      </li>
+    } @empty {
+      <li class="empty">
+        @if (query().trim()) {
+          No match.
+        } @else if (kind() === 'naughty') {
+          Nobody yet. Type a name and press Enter to add someone you'd rather not group with again.
+        } @else {
+          Nobody yet. Type a name and press Enter to add someone you'd happily group with again.
+        }
+      </li>
+    }
+  </ul>
+
+  @if (undo(); as u) {
+    <div class="undo">
+      Removed <b>{{ u.name }}</b>
+      <button (click)="undoRemove()">Undo</button>
+    </div>
+  }
+</div>
