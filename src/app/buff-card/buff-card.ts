@@ -13,6 +13,7 @@ import { ConfirmService } from '../confirm.service';
 import { BuffEntry, BuffPanel } from '../models';
 import { formatDuration, parseDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { PanelTitle } from '../panel-title';
 
 type BuffState = 'idle' | 'active' | 'warn' | 'faded';
 
@@ -25,6 +26,7 @@ interface BuffRow {
 
 @Component({
   selector: 'app-buff-card',
+  imports: [PanelTitle],
   templateUrl: './buff-card.html',
   styleUrl: './buff-card.scss',
 })
@@ -141,6 +143,52 @@ export class BuffCard {
     const ms = parseDuration(input.value);
     input.classList.toggle('invalid', ms === null);
     if (ms !== null) this.store.updateBuff(this.panel().id, b.id, { [field]: ms });
+  }
+
+  // ---------- buff sets ----------
+
+  protected readonly sets = computed(() =>
+    [...this.store.buffSets()].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
+  );
+
+  protected async saveSet(input: HTMLInputElement): Promise<void> {
+    const name = input.value.trim();
+    input.classList.toggle('invalid', !name);
+    if (!name || !this.panel().buffs.length) return;
+    const existing = this.store.findBuffSet(name);
+    if (
+      existing &&
+      !(await this.confirm.ask('Replace buff set?', `A set named "${existing.name}" already exists. Replace it?`, 'Replace'))
+    ) {
+      return;
+    }
+    this.store.saveBuffSet(this.panel().id, name);
+  }
+
+  protected async loadSet(setId: string): Promise<void> {
+    const set = this.store.buffSets().find((s) => s.id === setId);
+    if (!set) return;
+    const p = this.panel();
+    const active = p.buffs.some((b) => b.endsAt !== null);
+    if (
+      p.buffs.length &&
+      !(await this.confirm.ask(
+        'Load buff set?',
+        `Replace the ${p.buffs.length} buffs in "${p.name}" with "${set.name}"?${active ? ' Running buffs will be cleared.' : ''}`,
+        'Load',
+      ))
+    ) {
+      return;
+    }
+    this.store.loadBuffSet(p.id, set.id);
+  }
+
+  protected async deleteSet(setId: string, e: MouseEvent): Promise<void> {
+    const set = this.store.buffSets().find((s) => s.id === setId);
+    if (!set) return;
+    if (e.shiftKey || (await this.confirm.ask('Delete buff set?', `Delete the saved set "${set.name}"?`))) {
+      this.store.deleteBuffSet(set.id);
+    }
   }
 
   protected async removeBuff(b: BuffEntry, e: MouseEvent): Promise<void> {

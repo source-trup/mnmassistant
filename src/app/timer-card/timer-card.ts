@@ -11,11 +11,14 @@ import {
 } from '@angular/core';
 import { ConfirmService } from '../confirm.service';
 import { TimerItem, TimerStatus } from '../models';
+import { NameInput } from '../name-input';
+import { PanelTitle } from '../panel-title';
 import { formatDuration, parseDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
 
 @Component({
   selector: 'app-timer-card',
+  imports: [PanelTitle, NameInput],
   templateUrl: './timer-card.html',
   styleUrl: './timer-card.scss',
 })
@@ -126,9 +129,17 @@ export class TimerCard {
     this.dlg().nativeElement.close();
   }
 
-  protected rename(e: Event): void {
-    const name = (e.target as HTMLInputElement).value.trim();
-    if (name) this.store.renameTimer(this.timer().id, name);
+  protected rename(name: string): void {
+    if (name && name !== this.timer().name) this.store.renameTimer(this.timer().id, name);
+  }
+
+  /** ✕ on an NPC suggestion: forget it and its history, after asking. */
+  protected async forgetNpc(name: string): Promise<void> {
+    const kills = this.store.npcLog(name)?.history.length ?? 0;
+    const what = kills ? ` and its ${kills} logged kill${kills === 1 ? '' : 's'}` : '';
+    if (await this.confirm.ask('Forget NPC?', `Forget "${name}"${what}? This can't be undone.`, 'Forget')) {
+      this.store.forgetNpc(name);
+    }
   }
 
   protected setDuration(e: Event): void {

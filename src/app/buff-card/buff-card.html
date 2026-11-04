@@ -1,9 +1,9 @@
 <div class="card">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
-    <span class="name" [title]="panel().name">{{ panel().name }}</span>
+    <app-panel-title [name]="panel().name" (renamed)="store.updateBuffPanel(panel().id, { name: $event })" />
     <button class="icon" (click)="addBuff()" title="Add a buff">＋</button>
-    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="openEdit()" title="Settings &amp; buff sets">⚙</button>
     <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>
 
@@ -85,9 +85,29 @@
     }
     <button (click)="addBuff()" title="Add a buff and set its time yourself">Custom</button>
   </div>
+  <section class="sets">
+    <h4>Buff sets</h4>
+    <div class="set-row">
+      <select #setSel [disabled]="!sets().length" aria-label="Saved buff set">
+        @for (s of sets(); track s.id) {
+          <option [value]="s.id">{{ s.name }} ({{ s.buffs.length }})</option>
+        } @empty {
+          <option value="">No saved sets yet</option>
+        }
+      </select>
+      <button class="primary" [disabled]="!sets().length" (click)="loadSet(setSel.value)" title="Replace this panel's buffs with the set">Load</button>
+      <button [disabled]="!sets().length" (click)="deleteSet(setSel.value, $event)" title="Delete the set (Shift+click to skip confirmation)">Delete</button>
+    </div>
+    <div class="set-row">
+      <input #setName [value]="panel().name" placeholder="Set name, e.g. Group buffs" (keydown.enter)="saveSet(setName)" />
+      <button [disabled]="!panel().buffs.length" (click)="saveSet(setName)" title="Save this panel's buffs as a set">Save as set</button>
+    </div>
+  </section>
+
   <p class="hint">
     Times accept 36:00, 1:30:00, 90s, 1h30m or plain minutes. Buffs you name are spoken (“… is fading”); ones with a
-    generated name like “35:00 buff” just chime.
+    generated name like “35:00 buff” just chime. Buff sets save the names and timings, so you can load your usual
+    buffs into any Buff Tracker; they're also included in saved layout files.
   </p>
 
   <div class="dialog-actions">

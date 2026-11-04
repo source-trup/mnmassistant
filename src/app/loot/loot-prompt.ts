@@ -22,7 +22,7 @@ import { ItemSearch } from './item-search';
         </div>
         <div class="where">{{ r.camp }} · {{ clock(r.event.t) }}</div>
         <label class="ask">What dropped? <em>(optional)</em></label>
-        <app-item-search (picked)="add(r.counterId, r.event.id, $event)" />
+        <app-item-search [drops]="r.drops" (picked)="add(r.counterId, r.event.id, $event)" />
         @if (r.event.loot.length) {
           <div class="chips">
             @for (item of r.event.loot; track $index) {
@@ -97,8 +97,8 @@ export class LootPrompt {
     if (!req) return [];
     const c = this.store.counters().find((x) => x.id === req.counterId);
     if (!c || c.kind !== 'namedPh') return [];
-    const event = c.history.find((e) => e.id === req.eventId);
-    return event ? [{ counterId: c.id, camp: c.name, event }] : [];
+    const event = this.store.findEvent(req.eventId);
+    return event ? [{ counterId: c.id, camp: c.name, event, drops: this.store.dropsOf(c) }] : [];
   });
 
   constructor() {

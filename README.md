@@ -63,20 +63,22 @@ The page is a free-form board of panels. There are four panel types: **timers**,
 | See where it will land | A dashed outline shows the snap spot: **green** is free, **red** would overlap (the panel springs back). |
 | Neat layout | **Tidy** in the toolbar packs every panel onto the grid, keeping their order. |
 | Delete a panel | **✕** in its header asks for confirmation. **Shift + click ✕** deletes immediately. |
+| Rename a panel | **Right-click its title**, type, then Enter (or click away). Esc cancels. Works on every panel type. |
 | Panel settings | **⚙** in its header. |
 
-Panels snap to a 20px grid with a built-in gutter, so panels placed side by side are always evenly spaced.
+Panels are 280px wide and snap to a 20px grid with a built-in gutter, so panels placed side by side are always
+evenly spaced. (Boards saved when panels were narrower are tidied automatically if anything would overlap.)
 
 ### Toolbar
 
 | Section | Buttons |
 | --- | --- |
 | **Add timer** | `5m` `6m` `8m` `10m` (common placeholder respawns), or type a custom time in the box and press Enter / `+` |
-| **Add** | `Count` (standard counter), `Named / PH` (camp counter), `Buff Tracker`, `Note` |
+| **Add** | `Count` (standard counter), `Named / PH` (camp counter), `Buff Tracker`, `Note` (▾ next to it lists [saved notes](#notes)) |
 | Right side | `Tidy`, 🔔 / 🔕 mute all alerts, ☰ menu |
 
-**☰ menu:** Save layout to file, Load layout from file, Reset all timers, Reset all counters, Theme switch, Test
-sound & voice.
+**☰ menu:** Save layout to file, Load layout from file, Reset all timers, Reset all counters, [Theme](#themes)
+picker, Test sound & voice.
 
 ---
 
@@ -97,6 +99,11 @@ Countdown timers for respawns, events, or anything else.
 a minute ago".
 
 **Settings (⚙):** name, duration, **auto-repeat** (starts over by itself at zero).
+
+**Name camp timers after the named NPC** (e.g. *Grimfang*). That's what ties [kill history](#history-is-saved-per-named-npc)
+to the NPC. When you rename a timer (right-click the title, or click the Name box in ⚙), a list of every NPC you've
+tracked opens, with kills and nameds for each. Type to narrow it, use ↑/↓ and Enter, or click one. **✕** on a row
+forgets that NPC and its history, after asking.
 
 A 🔗 in the header means a counter restarts this timer (see [linking](#linking-a-counter-to-a-timer)). A ↻ means
 auto-repeat is on.
@@ -131,13 +138,19 @@ The panel also shows **PH since the last named**, **how long ago the last named 
 
 ### Linking a counter to a timer
 
-In a counter's **⚙ settings**, choose a timer under **Timer**. From then on:
+In a counter's **⚙ settings**, choose a timer under **Timer**. Or, for a Named/PH counter, **drag it onto the
+timer** (or the timer onto it). The target lights up with **🔗 Link**, and dropping asks you to confirm before
+linking. The dragged panel goes back to where it was. If the counter was linked to a different timer, the prompt
+says so before replacing that link. From then on:
 
 - **Named/PH counter:** **+ PH** and **+ Named** each restart that timer at full time, even mid-countdown. A **↻** on
   the buttons shows the link is active.
 - **Standard counter:** **+** restarts the timer.
 
 The timer restarts **the instant you click**. It never waits for loot entry or anything else.
+
+Linking a Named/PH counter to a timer you've named also **names the counter after it**: *Grimfang's log*. If you
+rename the timer, the counter follows. A name you gave the counter yourself is never changed.
 
 ---
 
@@ -147,9 +160,12 @@ The timer restarts **the instant you click**. It never waits for loot entry or a
 
 After **+ Named**, a **"Named down!"** drawer slides in on the right. It doesn't block anything else on the board.
 
+- Before you type, it lists what **this NPC has dropped before** (most frequent first), so a repeat drop is one
+  click.
 - Type an item name and press **Enter**. Add as many items as dropped.
-- Suggestions come from items you've entered before, and from the wiki if [item search](#wiki-item-search-optional)
-  is set up. Use ↑/↓ and Enter, or click a suggestion.
+- Suggestions come from this NPC's past drops first, then **every item you've ever entered at any camp** (kept even
+  if that camp's counter or history is deleted), then the wiki if [item search](#wiki-item-search-optional) is set
+  up. Use ↑/↓ and Enter, or click a suggestion.
 - Entering loot is **optional**: **Skip** closes the drawer without adding anything. If several nameds die quickly,
   the drawer shows "+1 more" and steps through them.
 
@@ -166,7 +182,23 @@ Toggle between **Session** (since the counter's last reset) and **All time**.
     corrects the counts.
 - **Clear history** erases the log for this camp (counts unchanged).
 
-The log keeps up to 5,000 kills per camp.
+The log keeps up to 5,000 kills per NPC.
+
+### History is saved per named NPC
+
+When a Named/PH counter is linked to a timer you've named (e.g. *Grimfang*), its kills are saved to **Grimfang's
+history**, not to the counter:
+
+- The NPC is remembered as soon as the counter is linked, even before any kills.
+- Delete the timer and counter, and later create a new timer: *Grimfang* is in the name list. Pick it, link a
+  Named/PH counter, and all of Grimfang's past kills and loot are back.
+- Kills logged before you linked the counter move into the NPC's history.
+- Rename the timer to a different NPC and the counter switches to that NPC's history. Each NPC keeps its own.
+- A counter that isn't linked (or is linked to a timer with a generated name like `6:00 spawn`) keeps a history of its
+  own, which is deleted with the counter. Deleting such a counter always asks first and says how many kills would be
+  lost, even with Shift + click.
+
+The 📜 dialog's title shows whose history you're looking at. **Clear history** erases that NPC's whole log.
 
 ---
 
@@ -184,6 +216,18 @@ A panel listing your buffs, with reminders before they fade.
 
 **States:** grey = not active · green = active · **amber pulsing** = within the warn time · **red "FADED"** = expired.
 
+**Buff sets:** save a Buff Tracker's list of buffs and load it again later, into this or any other Buff Tracker.
+In **⚙ → Buff sets**:
+
+- **Save as set** stores the buffs' names, durations and warn times under the name you type. Saving with an existing
+  set's name replaces it, after asking.
+- Pick a set and click **Load** to replace the panel's buffs with it (it asks first if the panel already has buffs).
+  Loaded buffs start idle.
+- **Delete** removes the selected set (Shift + click skips the confirmation).
+
+Sets are saved with the app and included in layout files. Loading a layout file adds its sets to yours instead of
+replacing them.
+
 New buffs are named after their length (`35:00 buff`) until you rename them, for example to *Spirit of the Wolf*.
 Renamed buffs are spoken aloud; see [alerts](#alerts-chimes-and-voice). You can have several Buff Trackers, such
 as one for self buffs and one for group buffs.
@@ -198,9 +242,12 @@ A free-text panel for camp notes, quest steps, who to group with, and so on.
 | --- | --- |
 | Write / edit | Click in the text area and type. It saves as you type. |
 | Text size | **A−** / **A+** in the header (10px to 32px, 2px per click) |
-| Rename | **⚙** (or double-click the title) |
+| Rename | Right-click the title, or **⚙** (or double-click the title) |
+| Put away | **—** in the header (or **Put away** in ⚙). The note leaves the board but keeps its text. |
+| Bring it back | **▾** next to `Note` in the toolbar lists saved notes with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
 
-The text area takes up the whole panel and scrolls if the note gets long.
+The text area takes up the whole panel and scrolls if the note gets long. The **▾** shows how many notes are put
+away.
 
 ---
 
@@ -224,9 +271,9 @@ Everything saves automatically to your browser (`localStorage`). To keep a copy 
 between setups such as one layout per camp:
 
 - **☰ → Save layout to file…** writes a `.json` file with every panel and its position, counts, settings, the full
-  kill and loot history, your notes, and your theme.
+  kill and loot history, your notes, buff sets, and your theme.
 - **☰ → Load layout from file…** replaces the whole board with a saved file, after confirming. Timers and buffs come
-  back **stopped**.
+  back **stopped**. Kill history and buff sets from the file are **added** to yours, not swapped out.
 
 > Browser data can be wiped by clearing site data or using a different browser or profile. Save a layout file now
 > and then if your history matters to you.
@@ -235,14 +282,36 @@ between setups such as one layout per camp:
 
 ## Themes
 
-☰ → **Theme** switches between:
+☰ → **🎨 Theme…** opens a picker with a theme for **every Monsters & Memories class**. Clicking a tile applies it
+right away, so you can try them out.
 
-- **Spirit** (default): spirit green is the dominant color, and running timers are a cool spirit blue.
-- **Classic**: darker cave-stone look with green accents and green running timers.
+Each theme takes its colors from the class concept art and its decorations from the class description:
 
-The decorations are the same in both: Dalgrimm's glowing eyes, the ghostly veil under the toolbar, the slowly
-turning rune circle ("the Spirals"), bioluminescent mushrooms, a carved spirit stone, drifting mist and spirit
-motes. All animation stops if your system's *reduce motion* setting is on.
+| Theme | Look | Corner prop | Ambient |
+| --- | --- | --- | --- |
+| **Shaman** (default) | Spirit green and spirit blue, the Spirals | Cave mushrooms, carved spirit stone | Spirit motes |
+| Monk | Saffron and umber, an ensō | Balanced cairn with incense | Golden dust |
+| Beastmaster | Amber, bone and leather | Claw-raked boulder | Fireflies |
+| Spellblade | Midnight blue and violet | Humming sword planted in the ground | Blink sparks |
+| Elementalist | Terracotta and flame | Brazier of living fire | Embers |
+| Enchanter | Mint and violet, a hypnotic eye | Crystal on puppet strings | Shimmer |
+| Druid | Leaf green and moonlight | Ferns, crescent-moon staff | Falling leaves |
+| Necromancer | Bone, shadow, sickly green | Bone pile, grave rune | Falling ash |
+| Wizard | Starlit blue, a glyph star | Burning staff and glyphs | Glyph sparks |
+| Bard | Yellow and blue | Lute and a red feather | Music notes |
+| Rogue | Near-black, poison green | Knives in a post, poison vial | Drifting soot |
+| Archer | Rust and leather, a target | Quiver of arrows | Dust |
+| Ranger | Forest green, a compass star | Pines | Fireflies |
+| Shadow Knight | Black iron, blood red | Jagged greatsword | Red embers |
+| Inquisitor | Violet and silver, a warding sign | Tome with a violet gem | Falling arcane motes |
+| Fighter | Bronze and steel | Shield, sword and mace | Forge sparks |
+| Cleric | Ivory and gold, a sunburst | Shining chalice | Holy light |
+| Paladin | Gleaming gold | Winged shield | Golden light |
+| Classic | The original grey cave stone with green accents | Mushrooms, spirit stone | Spirit motes |
+
+Every theme also uses its class glyph for the slowly turning sigil in the background and the faint mark in the
+corner of each panel. Dalgrimm's glowing eyes and the ghostly veil under the toolbar stay in all of them. All
+animation stops if your system's *reduce motion* setting is on.
 
 ---
 
@@ -313,7 +382,8 @@ src/
     buff-card/              Buff Tracker panel
     note-card/              Note panel
     loot/                   Loot drawer and item autocomplete
-    art/                    SVG art: Dalgrimm's eyes logo, background scene
+    themes.ts               Class themes: palettes, glyphs, corner art, particles
+    art/                    Dalgrimm's eyes logo, theme-driven background
 proxy.conf.mjs              Dev-server proxy that adds the wiki API key
 ```
 
@@ -325,8 +395,9 @@ proxy.conf.mjs              Dev-server proxy that adds the wiki API key
   and reloads.
 - Panel positions are grid cells. Footprints in `layout.ts` include one cell of gutter. The drawn size is
   `(w − 1) × 20px` by `(h − 1) × 20px`.
-- Theme colors are CSS variables in `styles.scss`: `:root` is Classic, and `:root[data-theme='spirit']` overrides
-  them.
+- Themes live in `themes.ts`. A theme sets nine base colors (plus its glyph mask) as CSS variables on `<html>`;
+  `styles.scss` derives every other color from them with `color-mix()`, and `overrides` can pin exact values. To add
+  a theme, add an entry to the list and a case in `corners()`.
 
 **Commands**
 

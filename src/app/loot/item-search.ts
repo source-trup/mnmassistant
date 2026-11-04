@@ -1,12 +1,18 @@
-import { Component, ElementRef, afterNextRender, computed, inject, output, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { LootItem } from '../models';
 import { TrackerStore } from '../tracker.store';
 import { WIKI_HOME, WikiService } from '../wiki.service';
 
 interface Suggestion {
   item: LootItem;
-  source: 'recent' | 'wiki';
+  source: 'drop' | 'recent' | 'wiki';
   detail: string;
+}
+
+/** An item this NPC has dropped before, and how many times. */
+export interface KnownDrop {
+  item: LootItem;
+  count: number;
 }
 
 /** Text box with autocomplete from previously entered items and the M&M wiki. */
@@ -77,6 +83,8 @@ interface Suggestion {
 })
 export class ItemSearch {
   readonly picked = output<LootItem>();
+  /** What this NPC has dropped before: listed before you type, and ranked first while you type. */
+  readonly drops = input<KnownDrop[]>([]);
 
   protected readonly store = inject(TrackerStore);
   protected readonly wiki = inject(WikiService);
@@ -92,12 +100,21 @@ export class ItemSearch {
 
   protected readonly suggestions = computed<Suggestion[]>(() => {
     const q = this.query().trim().toLowerCase();
-    if (!q) return [];
-    const wiki = this.wikiResults();
+    const dropRow = (d: KnownDrop): Suggestion => ({ item: d.item, source: 'drop', detail: `dropped ×${d.count}` });
+    if (!q) return this.drops().slice(0, 8).map(dropRow);
+    const drops = this.drops()
+      .filter((d) => d.item.name.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map(dropRow);
+    const dropNames = new Set(drops.map((d) => d.item.name.toLowerCase()));
+    const wiki = this.wikiResults().filter((w) => !dropNames.has(w.name.toLowerCase()));
     const wikiNames = new Set(wiki.map((w) => w.name.toLowerCase()));
     const recent: Suggestion[] = this.store
       .knownItems()
-      .filter((i) => i.name.toLowerCase().includes(q) && !wikiNames.has(i.name.toLowerCase()))
+      .filter((i) => {
+        const n = i.name.toLowerCase();
+        return n.includes(q) && !wikiNames.has(n) && !dropNames.has(n);
+      })
       .slice(0, 5)
       .map((item) => ({ item, source: 'recent', detail: 'recent' }));
     const fromWiki: Suggestion[] = wiki.map((item) => ({
@@ -105,7 +122,7 @@ export class ItemSearch {
       source: 'wiki',
       detail: this.wikiSlots.get(item.name) || 'wiki',
     }));
-    return [...recent, ...fromWiki];
+    return [...drops, ...recent, ...fromWiki];
   });
 
   protected readonly hasWikiResults = computed(() => this.wikiResults().length > 0);

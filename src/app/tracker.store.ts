@@ -6,7 +6,9 @@ import {
   AppState,
   BuffEntry,
   BuffPanel,
+  BuffSet,
   CampEvent,
+  CampLog,
   CounterItem,
   CounterKind,
   LootItem,
@@ -16,6 +18,7 @@ import {
   Theme,
   TimerItem,
 } from './models';
+import { DEFAULT_THEME, applyTheme, normalizeThemeId, themeById } from './themes';
 import { formatDuration } from './time';
 
 const STORAGE_KEY = 'mnm-assistant.state.v1';
@@ -77,7 +80,75 @@ function makeCounter(kind: CounterKind, name?: string): CounterItem {
   const base = { id: newId(), since: Date.now(), linkedTimerId: null, ...UNPLACED };
   return kind === 'standard'
     ? { ...base, kind, name: name ?? 'Counter', value: 0, step: 1, target: null }
-    : { ...base, kind, name: name ?? 'Named / PH', ph: 0, named: 0, phSinceNamed: 0, history: [] };
+    : { ...base, kind, name: name ?? DEFAULT_NPH_NAME, ph: 0, named: 0, phSinceNamed: 0 };
+}
+
+const DEFAULT_NPH_NAME = 'Named / PH';
+
+/** Name a Named/PH counter gets when linked to a timer you've named. */
+function campLogName(timerName: string): string {
+  return `${timerName}'s log`;
+}
+
+function npcKey(npc: string): string {
+  return 'npc:' + npc.trim().toLowerCase();
+}
+
+/** Which log a Named/PH counter writes to: its named timer's NPC, or its own private log. */
+function logKeyFor(c: { id: string; linkedTimerId: string | null }, timers: TimerItem[]): string {
+  const t = c.linkedTimerId ? timers.find((x) => x.id === c.linkedTimerId) : undefined;
+  return t && !t.autoNamed && t.name.trim() ? npcKey(t.name) : 'counter:' + c.id;
+}
+
+/** Merges two kill lists (no duplicates), oldest first. */
+function mergeHistory(a: CampEvent[], b: CampEvent[]): CampEvent[] {
+  const ids = new Set(a.map((e) => e.id));
+  return [...a, ...b.filter((e) => !ids.has(e.id))].sort((x, y) => x.t - y.t).slice(-MAX_HISTORY);
+}
+
+/** Adds items to a library, one entry per name (case-insensitive); a wiki link is kept once known. */
+function addToLibrary(library: LootItem[], items: LootItem[]): LootItem[] {
+  const byName = new Map(library.map((i) => [i.name.toLowerCase(), i]));
+  let changed = false;
+  for (const item of items) {
+    const name = item?.name?.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    const prev = byName.get(key);
+    if (!prev) {
+      byName.set(key, { ...item, name });
+      changed = true;
+    } else if (!prev.url && item.url) {
+      byName.set(key, { ...prev, url: item.url, wikiId: item.wikiId });
+      changed = true;
+    }
+  }
+  return changed ? [...byName.values()] : library;
+}
+
+function normalizeLootLibrary(raw: unknown, logs: CampLog[]): LootItem[] {
+  const saved = Array.isArray(raw) ? raw.filter((i: any) => i && typeof i.name === 'string') : [];
+  // Older saves had no library: seed it from every logged drop.
+  return addToLibrary(saved, logs.flatMap((l) => l.history.flatMap((e) => e.loot ?? [])));
+}
+
+function normalizeLogs(parsed: any, timers: TimerItem[]): CampLog[] {
+  const logs = new Map<string, CampLog>();
+  const add = (key: string, name: string, history: CampEvent[]) => {
+    const prev = logs.get(key);
+    logs.set(key, { key, name: prev?.name ?? name, history: mergeHistory(prev?.history ?? [], history) });
+  };
+  for (const l of Array.isArray(parsed.campLogs) ? parsed.campLogs : []) {
+    if (l && typeof l.key === 'string' && Array.isArray(l.history)) add(l.key, String(l.name ?? ''), l.history);
+  }
+  // Before v5 each counter kept its own history: move it to the NPC's log (or the counter's private log).
+  for (const c of parsed.counters) {
+    if (c?.kind !== 'namedPh' || !Array.isArray(c.history) || !c.history.length) continue;
+    const key = logKeyFor(c, timers);
+    const t = timers.find((x) => x.id === c.linkedTimerId);
+    add(key, key.startsWith('npc:') && t ? t.name : String(c.name ?? ''), c.history);
+  }
+  return [...logs.values()];
 }
 
 function autoBuffName(durationMs: number): string {
@@ -93,7 +164,7 @@ function makeBuffPanel(): BuffPanel {
 }
 
 function makeNote(): NoteItem {
-  return { id: newId(), name: 'Note', text: '', fontSize: NOTE_FONT.default, ...UNPLACED };
+  return { id: newId(), name: 'Note', text: '', fontSize: NOTE_FONT.default, closed: false, ...UNPLACED };
 }
 
 function clampFont(px: number): number {
@@ -102,57 +173,75 @@ function clampFont(px: number): number {
 
 function defaultState(): AppState {
   const camp = makeTimer(6 * 60_000, 'Camp spawn');
-  const nph = makeCounter('namedPh', 'Camp named / PH') as NamedPhCounter;
+  const nph = makeCounter('namedPh', campLogName(camp.name)) as NamedPhCounter;
   nph.linkedTimerId = camp.id;
   return {
-    version: 4,
+    version: 5,
     soundOn: true,
-    theme: 'spirit',
+    theme: DEFAULT_THEME,
     timers: [camp],
     counters: [nph, makeCounter('standard', 'Kills')],
+    campLogs: [],
+    lootLibrary: [],
     buffPanels: [],
+    buffSets: [],
     notes: [],
   };
+}
+
+function normalizeBuffSets(raw: unknown): BuffSet[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((s: any) => s && typeof s.name === 'string' && Array.isArray(s.buffs))
+    .map((s: any) => ({
+      id: typeof s.id === 'string' ? s.id : newId(),
+      name: s.name,
+      buffs: s.buffs
+        .filter((b: any) => b && typeof b.name === 'string' && Number(b.durationMs) > 0)
+        .map((b: any) => ({ name: b.name, durationMs: Number(b.durationMs), warnMs: Number(b.warnMs) || 60_000 })),
+    }));
 }
 
 function normalizeCounter(raw: any): CounterItem {
   const pos = { x: raw.x ?? -1, y: raw.y ?? -1 };
   if (raw.kind === 'namedPh') {
-    return {
-      ...makeCounter('namedPh'),
-      ...raw,
-      history: Array.isArray(raw.history) ? raw.history : [],
-      ...pos,
-    };
+    const { history: _moved, ...rest } = raw; // history now lives in campLogs
+    return { ...makeCounter('namedPh'), ...rest, ...pos };
   }
   return { ...makeCounter('standard'), ...raw, kind: 'standard', ...pos };
 }
 
 /** Accepts state saved by any version of the app (or a layout file) and upgrades it. */
 function normalizeState(parsed: any): AppState | null {
-  if (!parsed || ![1, 2, 3, 4].includes(parsed.version)) return null;
+  if (!parsed || ![1, 2, 3, 4, 5].includes(parsed.version)) return null;
   if (!Array.isArray(parsed.timers) || !Array.isArray(parsed.counters)) return null;
+  const timers: TimerItem[] = parsed.timers.map((t: any) => ({
+    repeat: false,
+    endsAt: null,
+    pausedRemainingMs: null,
+    ...t,
+    autoNamed: t.autoNamed ?? AUTO_TIMER_NAME.test(t.name ?? ''),
+    x: t.x ?? -1,
+    y: t.y ?? -1,
+  }));
+  const campLogs = normalizeLogs(parsed, timers);
   return {
-    version: 4,
+    version: 5,
+    campLogs,
+    lootLibrary: normalizeLootLibrary(parsed.lootLibrary, campLogs),
     soundOn: parsed.soundOn ?? true,
-    theme: parsed.theme === 'classic' ? 'classic' : 'spirit',
+    theme: normalizeThemeId(parsed.theme),
+    buffSets: normalizeBuffSets(parsed.buffSets),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).map((n: any) => ({
       ...makeNote(),
       ...n,
       text: typeof n.text === 'string' ? n.text : '',
       fontSize: clampFont(Number(n.fontSize) || NOTE_FONT.default),
+      closed: n.closed === true,
       x: n.x ?? -1,
       y: n.y ?? -1,
     })),
-    timers: parsed.timers.map((t: any) => ({
-      repeat: false,
-      endsAt: null,
-      pausedRemainingMs: null,
-      ...t,
-      autoNamed: t.autoNamed ?? AUTO_TIMER_NAME.test(t.name ?? ''),
-      x: t.x ?? -1,
-      y: t.y ?? -1,
-    })),
+    timers,
     counters: parsed.counters.map(normalizeCounter),
     buffPanels: (parsed.buffPanels ?? []).map((p: any) => ({
       ...p,
@@ -177,28 +266,39 @@ export class TrackerStore {
   readonly now = signal(Date.now());
   readonly timers = signal<TimerItem[]>([]);
   readonly counters = signal<CounterItem[]>([]);
+  /** Kill history per named NPC (and per un-named camp). */
+  readonly campLogs = signal<CampLog[]>([]);
+  /** Every loot name ever entered, for autocomplete everywhere. */
+  readonly lootLibrary = signal<LootItem[]>([]);
   readonly buffPanels = signal<BuffPanel[]>([]);
   readonly notes = signal<NoteItem[]>([]);
+  /** Saved buff lists, sorted by name when shown. */
+  readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
-  readonly theme = signal<Theme>('spirit');
+  readonly theme = signal<Theme>(DEFAULT_THEME);
   /** Named kills waiting for loot entry; the first one is shown in the loot drawer. */
   readonly lootQueue = signal<LootRequest[]>([]);
   /** Board width in grid cells; kept up to date by the app shell. */
-  readonly cols = signal(Math.max(13, Math.floor((window.innerWidth - 32) / GRID)));
+  readonly cols = signal(Math.max(15, Math.floor((window.innerWidth - 32) / GRID)));
 
   /** Every panel on the board with its grid footprint. */
   readonly panels = computed<Panel[]>(() => [
     ...this.timers().map((t) => ({ id: t.id, kind: 'timer' as const, item: t, x: t.x, y: t.y, ...PANEL_SIZE.timer })),
     ...this.counters().map((c) => ({ id: c.id, kind: 'counter' as const, item: c, x: c.x, y: c.y, ...PANEL_SIZE[c.kind] })),
     ...this.buffPanels().map((b) => ({ id: b.id, kind: 'buffs' as const, item: b, x: b.x, y: b.y, ...PANEL_SIZE.buffs })),
-    ...this.notes().map((n) => ({ id: n.id, kind: 'note' as const, item: n, x: n.x, y: n.y, ...PANEL_SIZE.note })),
+    ...this.notes()
+      .filter((n) => !n.closed)
+      .map((n) => ({ id: n.id, kind: 'note' as const, item: n, x: n.x, y: n.y, ...PANEL_SIZE.note })),
   ]);
+
+  /** Notes that have been put away, in the order they were created. */
+  readonly closedNotes = computed(() => this.notes().filter((n) => n.closed));
 
   /** Every distinct item ever entered, most recent first (for autocomplete). */
   readonly knownItems = computed<LootItem[]>(() => {
     const seen = new Map<string, LootItem>();
-    const events = this.counters()
-      .flatMap((c) => (c.kind === 'namedPh' ? c.history : []))
+    const events = this.campLogs()
+      .flatMap((l) => l.history)
       .sort((a, b) => b.t - a.t);
     for (const e of events) {
       for (const item of e.loot) {
@@ -206,7 +306,25 @@ export class TrackerStore {
         if (!seen.has(key)) seen.set(key, item);
       }
     }
+    // Then everything else you've ever entered, even if its kill log is gone.
+    for (const item of this.lootLibrary()) {
+      const key = item.name.toLowerCase();
+      if (!seen.has(key)) seen.set(key, item);
+    }
     return [...seen.values()];
+  });
+
+  /** Named NPCs you've tracked, A–Z, with a short summary (for the timer-name suggestions). */
+  readonly npcs = computed<{ name: string; detail: string; kills: number }[]>(() => {
+    const out = new Map<string, { name: string; detail: string; kills: number }>();
+    for (const l of this.campLogs()) {
+      if (!l.key.startsWith('npc:') || !l.name.trim()) continue;
+      const named = l.history.filter((e) => e.type === 'named').length;
+      const kills = l.history.length;
+      const detail = kills ? `${kills} kill${kills === 1 ? '' : 's'} · ${named} named` : 'no kills yet';
+      out.set(l.key, { name: l.name.trim(), detail, kills });
+    }
+    return [...out.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   });
 
   /** Alert bookkeeping (not persisted). */
@@ -217,9 +335,10 @@ export class TrackerStore {
   constructor() {
     this.load();
     this.placeUnplaced();
+    this.repairOverlaps();
     this.primeAlerts();
     effect(() => this.save());
-    effect(() => document.documentElement.setAttribute('data-theme', this.theme()));
+    effect(() => applyTheme(themeById(this.theme())));
     setInterval(() => this.tick(), TICK_MS);
   }
 
@@ -250,7 +369,14 @@ export class TrackerStore {
     this.timers.update((list) => list.map((t) => ({ ...t, ...pos.get(t.id)! })));
     this.counters.update((list) => list.map((c) => ({ ...c, ...pos.get(c.id)! })) as CounterItem[]);
     this.buffPanels.update((list) => list.map((b) => ({ ...b, ...pos.get(b.id)! })));
-    this.notes.update((list) => list.map((n) => ({ ...n, ...pos.get(n.id)! })));
+    this.notes.update((list) => list.map((n) => ({ ...n, ...pos.get(n.id) }))); // closed notes aren't in `pos`
+  }
+
+  /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
+  private repairOverlaps(): void {
+    const ps = this.panels();
+    const clash = ps.some((a, i) => ps.slice(i + 1).some((b) => overlaps(a, b)));
+    if (clash) this.autoArrange();
   }
 
   /** Gives a grid position to any item that doesn't have one yet (new, migrated or loaded). */
@@ -265,7 +391,7 @@ export class TrackerStore {
     this.timers.update((list) => list.map((t) => place(t, PANEL_SIZE.timer)));
     this.counters.update((list) => list.map((c) => place(c, PANEL_SIZE[c.kind])));
     this.buffPanels.update((list) => list.map((b) => place(b, PANEL_SIZE.buffs)));
-    this.notes.update((list) => list.map((n) => place(n, PANEL_SIZE.note)));
+    this.notes.update((list) => list.map((n) => (n.closed ? n : place(n, PANEL_SIZE.note))));
   }
 
   // ---------- timers ----------
@@ -288,7 +414,19 @@ export class TrackerStore {
   }
 
   renameTimer(id: string, name: string): void {
-    this.updateTimer(id, { name, autoNamed: AUTO_TIMER_NAME.test(name) });
+    const old = this.timers().find((t) => t.id === id);
+    if (!old) return;
+    const autoNamed = AUTO_TIMER_NAME.test(name);
+    this.updateTimer(id, { name, autoNamed });
+    // Linked Named/PH counters still using a generated name follow the timer ("Grimfang's log").
+    this.counters.update(
+      (list) =>
+        list.map((c) => {
+          if (c.kind !== 'namedPh' || c.linkedTimerId !== id || !this.isAutoCampName(c.name, old.name)) return c;
+          return { ...c, name: autoNamed ? DEFAULT_NPH_NAME : campLogName(name) };
+        }) as CounterItem[],
+    );
+    this.adoptPrivateLogs();
   }
 
   /** Changes the timer's length; a generated name follows the new length. */
@@ -371,17 +509,134 @@ export class TrackerStore {
     this.placeUnplaced();
   }
 
+  /** Deletes the counter. A named NPC's history is kept; a camp's private (un-named) log goes with it. */
   removeCounter(id: string): void {
     this.counters.update((list) => list.filter((c) => c.id !== id));
+    this.campLogs.update((logs) => logs.filter((l) => l.key !== 'counter:' + id));
     this.lootQueue.update((q) => q.filter((r) => r.counterId !== id));
   }
 
   updateCounter(id: string, patch: Partial<StandardCounter> | Partial<NamedPhCounter>): void {
+    const before = this.counters().find((c) => c.id === id);
+    if (before?.kind === 'namedPh' && patch.linkedTimerId !== undefined && patch.name === undefined) {
+      // Linking a Named/PH counter names it after the timer ("Grimfang's log") unless you've named it yourself.
+      const prev = this.timers().find((t) => t.id === before.linkedTimerId);
+      const next = this.timers().find((t) => t.id === patch.linkedTimerId);
+      if (this.isAutoCampName(before.name, prev?.name)) {
+        patch = { ...patch, name: next && !next.autoNamed ? campLogName(next.name) : DEFAULT_NPH_NAME };
+      }
+    }
     this.counters.update((list) => list.map((c) => (c.id === id ? ({ ...c, ...patch } as CounterItem) : c)));
+    if (patch.linkedTimerId !== undefined) this.adoptPrivateLogs();
+  }
+
+  /** True for names the app gave a Named/PH counter (so it may rename it). */
+  private isAutoCampName(name: string, linkedTimerName?: string): boolean {
+    return (
+      name === DEFAULT_NPH_NAME ||
+      name === 'Camp named / PH' ||
+      (linkedTimerName !== undefined && name === campLogName(linkedTimerName))
+    );
   }
 
   private updateNph(id: string, fn: (c: NamedPhCounter) => NamedPhCounter): void {
     this.counters.update((list) => list.map((c) => (c.id === id && c.kind === 'namedPh' ? fn(c) : c)));
+  }
+
+  // ---------- camp logs (kill history per named NPC) ----------
+
+  /** Key of the log a counter reads and writes. */
+  logKeyOf(c: CounterItem): string {
+    return logKeyFor(c, this.timers());
+  }
+
+  /** Kill history for a Named/PH counter: its named NPC's log, or its own. */
+  historyOf(c: CounterItem): CampEvent[] {
+    const key = this.logKeyOf(c);
+    return this.campLogs().find((l) => l.key === key)?.history ?? [];
+  }
+
+  /** The NPC whose history a counter shows, or null when it isn't linked to a timer you've named. */
+  npcOf(c: CounterItem): string | null {
+    const key = this.logKeyOf(c);
+    if (!key.startsWith('npc:')) return null;
+    return this.timers().find((t) => t.id === c.linkedTimerId)?.name ?? null;
+  }
+
+  /** Finds a logged kill anywhere. */
+  findEvent(eventId: string): CampEvent | undefined {
+    for (const l of this.campLogs()) {
+      const e = l.history.find((x) => x.id === eventId);
+      if (e) return e;
+    }
+    return undefined;
+  }
+
+  private updateLog(key: string, name: string, fn: (history: CampEvent[]) => CampEvent[]): void {
+    this.campLogs.update((logs) => {
+      const i = logs.findIndex((l) => l.key === key);
+      if (i < 0) return [...logs, { key, name, history: fn([]) }];
+      const copy = [...logs];
+      copy[i] = { ...copy[i], history: fn(copy[i].history) };
+      return copy;
+    });
+  }
+
+  private logNameFor(c: CounterItem): string {
+    return this.npcOf(c) ?? c.name;
+  }
+
+  private updateEvent(eventId: string, fn: (e: CampEvent) => CampEvent): void {
+    this.campLogs.update((logs) =>
+      logs.map((l) =>
+        l.history.some((e) => e.id === eventId)
+          ? { ...l, history: l.history.map((e) => (e.id === eventId ? fn(e) : e)) }
+          : l,
+      ),
+    );
+  }
+
+  /**
+   * When a camp gets tied to a named NPC (linked to, or renaming, a timer), kills it logged before that move into
+   * the NPC's history so nothing is left behind.
+   */
+  private adoptPrivateLogs(): void {
+    for (const c of this.counters()) {
+      if (c.kind !== 'namedPh') continue;
+      const key = this.logKeyOf(c);
+      if (!key.startsWith('npc:')) continue;
+      // Remember the NPC right away (even before any kills), so its name is offered again later.
+      this.updateLog(key, this.logNameFor(c), (h) => h);
+      const own = this.campLogs().find((l) => l.key === 'counter:' + c.id);
+      if (!own) continue;
+      this.updateLog(key, this.logNameFor(c), (h) => mergeHistory(h, own.history));
+      this.campLogs.update((logs) => logs.filter((l) => l !== own));
+    }
+  }
+
+  /** Items this counter's NPC (or camp) has dropped, most often first. */
+  dropsOf(c: CounterItem): { item: LootItem; count: number }[] {
+    const counts = new Map<string, { item: LootItem; count: number }>();
+    for (const e of this.historyOf(c)) {
+      for (const item of e.loot) {
+        const key = item.name.toLowerCase();
+        const row = counts.get(key) ?? { item, count: 0 };
+        row.count++;
+        counts.set(key, row);
+      }
+    }
+    return [...counts.values()].sort((a, b) => b.count - a.count || a.item.name.localeCompare(b.item.name));
+  }
+
+  /** Forgets a named NPC and its whole kill history (counters linked to it start a fresh log). */
+  forgetNpc(name: string): void {
+    const key = npcKey(name);
+    this.campLogs.update((logs) => logs.filter((l) => l.key !== key));
+  }
+
+  npcLog(name: string): CampLog | undefined {
+    const key = npcKey(name);
+    return this.campLogs().find((l) => l.key === key);
   }
 
   /** Standard counter +/-. Incrementing also restarts the linked timer, if any. */
@@ -398,12 +653,8 @@ export class TrackerStore {
     if (!c || c.kind !== 'namedPh') return;
     this.restartLinked(c);
     const event: CampEvent = { id: newId(), t: Date.now(), type: 'ph', loot: [] };
-    this.updateNph(id, (n) => ({
-      ...n,
-      ph: n.ph + 1,
-      phSinceNamed: n.phSinceNamed + 1,
-      history: [...n.history, event].slice(-MAX_HISTORY),
-    }));
+    this.updateNph(id, (n) => ({ ...n, ph: n.ph + 1, phSinceNamed: n.phSinceNamed + 1 }));
+    this.updateLog(this.logKeyOf(c), this.logNameFor(c), (h) => [...h, event].slice(-MAX_HISTORY));
   }
 
   /** Named killed: +1 named, log it, restart the linked timer, then offer loot entry. */
@@ -412,12 +663,8 @@ export class TrackerStore {
     if (!c || c.kind !== 'namedPh') return;
     this.restartLinked(c);
     const event: CampEvent = { id: newId(), t: Date.now(), type: 'named', loot: [] };
-    this.updateNph(id, (n) => ({
-      ...n,
-      named: n.named + 1,
-      phSinceNamed: 0,
-      history: [...n.history, event].slice(-MAX_HISTORY),
-    }));
+    this.updateNph(id, (n) => ({ ...n, named: n.named + 1, phSinceNamed: 0 }));
+    this.updateLog(this.logKeyOf(c), this.logNameFor(c), (h) => [...h, event].slice(-MAX_HISTORY));
     this.lootQueue.update((q) => [...q, { counterId: id, eventId: event.id }]);
   }
 
@@ -425,7 +672,7 @@ export class TrackerStore {
   undo(id: string, type: 'ph' | 'named'): void {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'namedPh') return;
-    const last = [...c.history].reverse().find((e) => e.type === type && e.t >= c.since);
+    const last = [...this.historyOf(c)].reverse().find((e) => e.type === type && e.t >= c.since);
     if (last) this.deleteEvent(id, last.id);
     else if (c[type] > 0) {
       // Count was set by hand with no matching log entry.
@@ -437,41 +684,45 @@ export class TrackerStore {
 
   /** Removes a kill from the log; if it belongs to the current session the counts are corrected too. */
   deleteEvent(counterId: string, eventId: string): void {
-    this.updateNph(counterId, (n) => {
-      const e = n.history.find((x) => x.id === eventId);
-      if (!e) return n;
-      const history = n.history.filter((x) => x.id !== eventId);
-      if (e.t < n.since) return { ...n, history };
-      if (e.type === 'named') return { ...n, history, named: Math.max(0, n.named - 1) };
-      const lastNamed = [...n.history].reverse().find((x) => x.type === 'named');
-      const inStreak = !lastNamed || e.t > lastNamed.t;
-      return {
-        ...n,
-        history,
-        ph: Math.max(0, n.ph - 1),
-        phSinceNamed: inStreak ? Math.max(0, n.phSinceNamed - 1) : n.phSinceNamed,
-      };
-    });
+    const c = this.counters().find((x) => x.id === counterId);
+    if (!c || c.kind !== 'namedPh') return;
+    const history = this.historyOf(c);
+    const e = history.find((x) => x.id === eventId);
+    if (!e) return;
+    if (e.t >= c.since) {
+      // Part of this counter's current session: correct the counts too.
+      if (e.type === 'named') {
+        this.updateNph(counterId, (n) => ({ ...n, named: Math.max(0, n.named - 1) }));
+      } else {
+        const lastNamed = [...history].reverse().find((x) => x.type === 'named');
+        const inStreak = !lastNamed || e.t > lastNamed.t;
+        this.updateNph(counterId, (n) => ({
+          ...n,
+          ph: Math.max(0, n.ph - 1),
+          phSinceNamed: inStreak ? Math.max(0, n.phSinceNamed - 1) : n.phSinceNamed,
+        }));
+      }
+    }
+    this.updateLog(this.logKeyOf(c), this.logNameFor(c), (h) => h.filter((x) => x.id !== eventId));
     this.lootQueue.update((q) => q.filter((r) => r.eventId !== eventId));
   }
 
+  /** Erases the kill log this counter shows (the named NPC's whole history, if it's tied to one). */
   clearHistory(counterId: string): void {
-    this.updateNph(counterId, (n) => ({ ...n, history: [] }));
-    this.lootQueue.update((q) => q.filter((r) => r.counterId !== counterId));
+    const c = this.counters().find((x) => x.id === counterId);
+    if (!c) return;
+    const ids = new Set(this.historyOf(c).map((e) => e.id));
+    this.updateLog(this.logKeyOf(c), this.logNameFor(c), () => []);
+    this.lootQueue.update((q) => q.filter((r) => !ids.has(r.eventId)));
   }
 
-  addLoot(counterId: string, eventId: string, item: LootItem): void {
-    this.updateNph(counterId, (n) => ({
-      ...n,
-      history: n.history.map((e) => (e.id === eventId ? { ...e, loot: [...e.loot, item] } : e)),
-    }));
+  addLoot(_counterId: string, eventId: string, item: LootItem): void {
+    this.updateEvent(eventId, (e) => ({ ...e, loot: [...e.loot, item] }));
+    this.lootLibrary.update((lib) => addToLibrary(lib, [item]));
   }
 
-  removeLoot(counterId: string, eventId: string, index: number): void {
-    this.updateNph(counterId, (n) => ({
-      ...n,
-      history: n.history.map((e) => (e.id === eventId ? { ...e, loot: e.loot.filter((_, i) => i !== index) } : e)),
-    }));
+  removeLoot(_counterId: string, eventId: string, index: number): void {
+    this.updateEvent(eventId, (e) => ({ ...e, loot: e.loot.filter((_, i) => i !== index) }));
   }
 
   /** Open the loot drawer for an existing named kill (e.g. from the history dialog). */
@@ -577,6 +828,42 @@ export class TrackerStore {
     this.updateBuff(panelId, buffId, { endsAt: null });
   }
 
+  // ---------- buff sets ----------
+
+  findBuffSet(name: string): BuffSet | undefined {
+    const key = name.trim().toLowerCase();
+    return this.buffSets().find((s) => s.name.toLowerCase() === key);
+  }
+
+  /** Saves a panel's buffs (names and timings) as a set; a set with the same name is replaced. */
+  saveBuffSet(panelId: string, name: string): void {
+    const panel = this.buffPanels().find((p) => p.id === panelId);
+    name = name.trim();
+    if (!panel || !name) return;
+    const buffs = panel.buffs.map((b) => ({ name: b.name, durationMs: b.durationMs, warnMs: b.warnMs }));
+    const existing = this.findBuffSet(name);
+    this.buffSets.update((sets) =>
+      existing
+        ? sets.map((s) => (s.id === existing.id ? { ...s, name, buffs } : s))
+        : [...sets, { id: newId(), name, buffs }],
+    );
+  }
+
+  /** Replaces a panel's buffs with a saved set. The loaded buffs start idle. */
+  loadBuffSet(panelId: string, setId: string): void {
+    const set = this.buffSets().find((s) => s.id === setId);
+    const panel = this.buffPanels().find((p) => p.id === panelId);
+    if (!set || !panel) return;
+    panel.buffs.forEach((b) => this.clearBuffAlerts(b.id));
+    const buffs: BuffEntry[] = set.buffs.map((b) => ({ ...makeBuff(b.durationMs, b.name), warnMs: b.warnMs }));
+    for (const b of buffs) b.autoNamed = AUTO_BUFF_NAME.test(b.name);
+    this.updateBuffs(panelId, () => buffs);
+  }
+
+  deleteBuffSet(id: string): void {
+    this.buffSets.update((sets) => sets.filter((s) => s.id !== id));
+  }
+
   private clearBuffAlerts(buffId: string): void {
     this.buffWarned.delete(buffId);
     this.buffFaded.delete(buffId);
@@ -586,6 +873,20 @@ export class TrackerStore {
 
   addNote(): void {
     this.notes.update((list) => [...list, makeNote()]);
+    this.placeUnplaced();
+  }
+
+  /** Takes a note off the board, keeping its text. */
+  closeNote(id: string): void {
+    this.updateNote(id, { closed: true });
+  }
+
+  /** Puts a saved note back on the board: in its old spot if that's still free, otherwise the first free spot. */
+  openNote(id: string): void {
+    const n = this.notes().find((x) => x.id === id);
+    if (!n || !n.closed) return;
+    const fits = n.x >= 0 && n.y >= 0 && this.canPlace(id, { x: n.x, y: n.y, ...PANEL_SIZE.note });
+    this.updateNote(id, { closed: false, ...(fits ? {} : UNPLACED) });
     this.placeUnplaced();
   }
 
@@ -620,8 +921,8 @@ export class TrackerStore {
     this.soundOn.update((v) => !v);
   }
 
-  toggleTheme(): void {
-    this.theme.update((t) => (t === 'spirit' ? 'classic' : 'spirit'));
+  setTheme(id: Theme): void {
+    this.theme.set(normalizeThemeId(id));
   }
 
   testSound(): void {
@@ -646,13 +947,27 @@ export class TrackerStore {
     this.lootQueue.set([]);
     this.timers.set(state.timers.map((t) => ({ ...t, endsAt: null, pausedRemainingMs: null })));
     this.counters.set(state.counters);
+    // Kill history is kept per NPC, so a layout file adds to it instead of erasing what you have.
+    this.campLogs.update((mine) => {
+      const merged = new Map(mine.map((l) => [l.key, l]));
+      for (const l of state.campLogs) {
+        const prev = merged.get(l.key);
+        merged.set(l.key, prev ? { ...prev, history: mergeHistory(prev.history, l.history) } : l);
+      }
+      return [...merged.values()];
+    });
+    this.lootLibrary.update((lib) => addToLibrary(lib, state.lootLibrary));
     this.buffPanels.set(
       state.buffPanels.map((p) => ({ ...p, buffs: p.buffs.map((b) => ({ ...b, endsAt: null })) })),
     );
     this.notes.set(state.notes);
+    // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
+    const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
+    this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);
     this.placeUnplaced();
+    this.repairOverlaps();
     return true;
   }
 
@@ -725,10 +1040,13 @@ export class TrackerStore {
 
   private snapshot(): AppState {
     return {
-      version: 4,
+      version: 5,
       timers: this.timers(),
       counters: this.counters(),
+      campLogs: this.campLogs(),
+      lootLibrary: this.lootLibrary(),
       buffPanels: this.buffPanels(),
+      buffSets: this.buffSets(),
       notes: this.notes(),
       soundOn: this.soundOn(),
       theme: this.theme(),
@@ -745,8 +1063,11 @@ export class TrackerStore {
     }
     this.timers.set(state.timers);
     this.counters.set(state.counters);
+    this.campLogs.set(state.campLogs);
+    this.lootLibrary.set(state.lootLibrary);
     this.buffPanels.set(state.buffPanels);
     this.notes.set(state.notes);
+    this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);
   }

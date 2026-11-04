@@ -1,10 +1,11 @@
 <div class="card">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
-    <span class="name" [title]="note().name" (dblclick)="openEdit()">{{ note().name }}</span>
+    <app-panel-title [name]="note().name" (renamed)="store.updateNote(note().id, { name: $event })" (dblclick)="openEdit()" />
     <button class="icon font" (click)="font(-1)" [disabled]="note().fontSize <= FONT.min" title="Smaller text">A−</button>
     <button class="icon font" (click)="font(1)" [disabled]="note().fontSize >= FONT.max" title="Larger text">A+</button>
     <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="store.closeNote(note().id)" title="Put away — the note is saved; bring it back with ▾ next to “Note” in the toolbar">—</button>
     <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>
 
@@ -26,6 +27,7 @@
   <div class="dialog-actions">
     <button class="danger" (click)="remove($event)">Delete</button>
     <span class="spacer"></span>
+    <button (click)="closeEdit(); store.closeNote(note().id)" title="Save it off the board; reopen with ▾ next to “Note”">Put away</button>
     <button class="primary" (click)="closeEdit()">Done</button>
   </div>
 </dialog>

@@ -1,11 +1,13 @@
 import { Component, ElementRef, inject, input, viewChild } from '@angular/core';
 import { ConfirmService } from '../confirm.service';
 import { NoteItem } from '../models';
+import { PanelTitle } from '../panel-title';
 import { NOTE_FONT, TrackerStore } from '../tracker.store';
 
 /** A free-text note with adjustable text size. */
 @Component({
   selector: 'app-note-card',
+  imports: [PanelTitle],
   templateUrl: './note-card.html',
   styleUrl: './note-card.scss',
 })

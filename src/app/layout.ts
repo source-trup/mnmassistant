@@ -6,14 +6,15 @@ export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note';
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
  * right and bottom, so panels placed edge-to-edge always have an even 20px gap between them.
- * Drawn size = (w - 1) * GRID by (h - 1) * GRID.
+ * Drawn size = (w - 1) * GRID by (h - 1) * GRID. (Widths grew from 13 to 15 cells; TrackerStore re-tidies
+ * boards saved with the old size if panels would overlap.)
  */
 export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
-  timer: { w: 13, h: 10 }, // 240 x 180
-  standard: { w: 13, h: 9 }, // 240 x 160
-  namedPh: { w: 13, h: 12 }, // 240 x 220
-  buffs: { w: 13, h: 14 }, // 240 x 260
-  note: { w: 13, h: 12 }, // 240 x 220
+  timer: { w: 15, h: 10 }, // 280 x 180
+  standard: { w: 15, h: 9 }, // 280 x 160
+  namedPh: { w: 15, h: 12 }, // 280 x 220
+  buffs: { w: 15, h: 14 }, // 280 x 260
+  note: { w: 15, h: 12 }, // 280 x 220
 };
 
 export interface Rect {

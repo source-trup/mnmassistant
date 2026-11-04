@@ -1,7 +1,7 @@
 <div class="card" [class.reached]="reachedTarget()" [class.nph-card]="nph()">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
-    <span class="name" [title]="counter().name">{{ counter().name }}</span>
+    <app-panel-title [name]="counter().name" (renamed)="store.updateCounter(counter().id, { name: $event })" />
     @if (linkedTimer()) {
       <span class="tag" [title]="'Restarts timer: ' + linkedTimerText()">🔗</span>
     }

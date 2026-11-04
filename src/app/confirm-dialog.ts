@@ -10,7 +10,7 @@ import { ConfirmService } from './confirm.service';
         <p>{{ p.message }}</p>
         <div class="dialog-actions">
           <button (click)="confirm.answer(false)">Cancel</button>
-          <button class="danger" (click)="confirm.answer(true)" autofocus>{{ p.confirmText }}</button>
+          <button [class]="p.tone" (click)="confirm.answer(true)" autofocus>{{ p.confirmText }}</button>
         </div>
       }
     </dialog>

@@ -23,9 +23,16 @@ export class CampHistory {
 
   protected readonly scope = signal<'session' | 'all'>('session');
 
+  /** Everything logged for this camp's NPC (or the camp itself when it isn't tied to a named timer). */
+  protected readonly history = computed(() => this.store.historyOf(this.counter()));
+  /** What this NPC has dropped before (offered first when adding loot). */
+  protected readonly drops = computed(() => this.store.dropsOf(this.counter()));
+  /** The named NPC this history belongs to, if any. */
+  protected readonly npc = computed(() => this.store.npcOf(this.counter()));
+
   protected readonly events = computed<CampEvent[]>(() => {
     const c = this.counter();
-    return this.scope() === 'session' ? c.history.filter((e) => e.t >= c.since) : c.history;
+    return this.scope() === 'session' ? this.history().filter((e) => e.t >= c.since) : this.history();
   });
 
   protected readonly stats = computed(() => {
@@ -45,7 +52,7 @@ export class CampHistory {
       longest = Math.max(longest, streak);
     }
 
-    const lastNamed = [...this.counter().history].reverse().find((e) => e.type === 'named');
+    const lastNamed = [...this.history()].reverse().find((e) => e.type === 'named');
     const hours = ev.length ? Math.max((now - ev[0].t) / 3_600_000, 1 / 60) : 0;
 
     return {
@@ -107,7 +114,9 @@ export class CampHistory {
 
   protected async clearAll(): Promise<void> {
     const c = this.counter();
-    if (await this.confirm.ask('Clear history?', `Erase all ${c.history.length} logged kills for "${c.name}"? Counts are not changed.`, 'Clear')) {
+    const whose = this.npc() ?? c.name;
+    const n = this.history().length;
+    if (await this.confirm.ask('Clear history?', `Erase all ${n} logged kills for "${whose}"? Counts are not changed.`, 'Clear')) {
       this.store.clearHistory(c.id);
     }
   }

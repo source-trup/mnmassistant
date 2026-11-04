@@ -1,3 +1,5 @@
+import type { ThemeId } from './themes';
+
 /** Position on the layout grid, in grid cells (see layout.ts). */
 export interface GridPos {
   x: number;
@@ -53,14 +55,27 @@ export interface CampEvent {
   loot: LootItem[];
 }
 
-/** Tracks named spawns vs placeholder spawns at a camp, with a full kill history. */
+/**
+ * Tracks named spawns vs placeholder spawns at a camp. The kill history lives in a CampLog: the named NPC's log
+ * when the counter is linked to a timer you've named (e.g. "Grimfang"), otherwise the counter's own log.
+ */
 export interface NamedPhCounter extends CounterBase {
   kind: 'namedPh';
   ph: number;
   named: number;
   /** Placeholders killed since the last named. */
   phSinceNamed: number;
-  /** Every kill, oldest first. Survives counter resets; cleared only from the history dialog. */
+}
+
+/**
+ * Kill history for one named NPC (key "npc:<name>"), or for a camp that isn't tied to a named timer
+ * (key "counter:<id>"). Survives counter resets and deletes; cleared only from the history dialog.
+ */
+export interface CampLog {
+  key: string;
+  /** NPC name (or counter name for a private log), for display. */
+  name: string;
+  /** Every kill, oldest first. */
   history: CampEvent[];
 }
 
@@ -85,6 +100,13 @@ export interface BuffPanel extends GridPos {
   buffs: BuffEntry[];
 }
 
+/** A saved list of buffs (names and timings only) that can be loaded into any Buff Tracker. */
+export interface BuffSet {
+  id: string;
+  name: string;
+  buffs: { name: string; durationMs: number; warnMs: number }[];
+}
+
 /** A free-text note panel. */
 export interface NoteItem extends GridPos {
   id: string;
@@ -92,15 +114,22 @@ export interface NoteItem extends GridPos {
   text: string;
   /** Text size in px. */
   fontSize: number;
+  /** Put away: kept (with its text) but not shown on the board. Reopen it from the Notes menu. */
+  closed: boolean;
 }
 
-export type Theme = 'spirit' | 'classic';
+/** One theme per class (see themes.ts); "shaman" is the default. */
+export type Theme = ThemeId;
 
 export interface AppState {
-  version: 4;
+  version: 5;
   timers: TimerItem[];
   counters: CounterItem[];
+  campLogs: CampLog[];
+  /** Every item name ever entered as loot (kept even if the kill log it came from is deleted). */
+  lootLibrary: LootItem[];
   buffPanels: BuffPanel[];
+  buffSets: BuffSet[];
   notes: NoteItem[];
   soundOn: boolean;
   theme: Theme;

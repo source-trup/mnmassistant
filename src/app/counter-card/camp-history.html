@@ -1,5 +1,15 @@
 <div class="top">
-  <h3>{{ counter().name }} — history</h3>
+  <h3>
+    {{ npc() ?? counter().name }} — history
+    <span class="owner">
+      @if (npc()) {
+        Saved to {{ npc() }}: kept even if this counter is deleted, and shown by any camp linked to a timer named
+        “{{ npc() }}”.
+      } @else {
+        Link this counter to a timer named after the NPC to keep its history with that NPC.
+      }
+    </span>
+  </h3>
   <div class="seg">
     <button [class.on]="scope() === 'session'" (click)="scope.set('session')" title="Since the counter was last reset">Session</button>
     <button [class.on]="scope() === 'all'" (click)="scope.set('all')">All time</button>
@@ -69,7 +79,7 @@
                 }
               </div>
             }
-            <app-item-search (picked)="addLoot(e, $event)" />
+            <app-item-search [drops]="drops()" (picked)="addLoot(e, $event)" />
           </div>
         }
       </li>
@@ -83,7 +93,7 @@
 }
 
 <div class="dialog-actions">
-  <button class="danger" (click)="clearAll()" [disabled]="!counter().history.length">Clear history</button>
+  <button class="danger" (click)="clearAll()" [disabled]="!history().length">Clear history</button>
   <span class="spacer"></span>
   <button class="primary" (click)="closed.emit()">Close</button>
 </div>

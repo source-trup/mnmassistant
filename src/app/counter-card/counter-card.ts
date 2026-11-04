@@ -3,11 +3,12 @@ import { ConfirmService } from '../confirm.service';
 import { CounterItem } from '../models';
 import { formatAgo, formatDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { PanelTitle } from '../panel-title';
 import { CampHistory } from './camp-history';
 
 @Component({
   selector: 'app-counter-card',
-  imports: [CampHistory],
+  imports: [PanelTitle, CampHistory],
   templateUrl: './counter-card.html',
   styleUrl: './counter-card.scss',
 })
@@ -54,7 +55,7 @@ export class CounterCard {
   /** "1 in N" spawns were named. */
   protected readonly namedOdds = computed(() => {
     const c = this.nph();
-    if (!c || c.named === 0) return '—';
+    if (!c || c.named === 0) return 'â€”';
     return `1 in ${((c.ph + c.named) / c.named).toFixed(1)}`;
   });
 
@@ -64,7 +65,7 @@ export class CounterCard {
   protected readonly lastNamedText = computed(() => {
     const c = this.nph();
     if (!c) return '';
-    const last = [...c.history].reverse().find((e) => e.type === 'named');
+    const last = [...this.store.historyOf(c)].reverse().find((e) => e.type === 'named');
     return last ? `named ${formatAgo(this.store.now() - last.t)} ago` : 'no named yet';
   });
 
@@ -120,7 +121,16 @@ export class CounterCard {
   /** Shift+click skips the confirmation. */
   protected async remove(e?: MouseEvent): Promise<void> {
     const c = this.counter();
-    if (e?.shiftKey || (await this.confirm.ask('Delete counter?', `Delete "${c.name}"?`))) {
+    const npc = this.store.npcOf(c);
+    const kills = c.kind === 'namedPh' ? this.store.historyOf(c).length : 0;
+    let extra = '';
+    if (npc) extra = ` Its kill history stays saved to "${npc}".`;
+    else if (kills) {
+      extra = ` Its ${kills} logged kill${kills === 1 ? '' : 's'} will be deleted too. To keep them, first link it to a timer named after the NPC.`;
+    }
+    // Shift+click skips the prompt, except when it would silently throw away kill history.
+    const skip = e?.shiftKey && (npc || !kills);
+    if (skip || (await this.confirm.ask('Delete counter?', `Delete "${c.name}"?${extra}`))) {
       this.closeEdit();
       this.store.removeCounter(c.id);
     }

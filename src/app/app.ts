@@ -7,7 +7,9 @@ import { LootPrompt } from './loot/loot-prompt';
 import { ConfirmService } from './confirm.service';
 import { CounterCard } from './counter-card/counter-card';
 import { GRID, maxX } from './layout';
+import { NoteItem } from './models';
 import { NoteCard } from './note-card/note-card';
+import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
 import { Panel, TrackerStore } from './tracker.store';
@@ -51,6 +53,36 @@ export class App {
     return { ...rect, valid: this.store.canPlace(d.id, rect) };
   });
 
+  /**
+   * While dragging a Named/PH panel over a timer (or a timer over a Named/PH panel): the pair that dropping would
+   * link. The panel under the pointer is the target.
+   */
+  protected readonly linkDrop = computed(() => {
+    const d = this.drag();
+    if (!d) return null;
+    const panels = this.store.panels();
+    const dragged = panels.find((p) => p.id === d.id);
+    if (!dragged) return null;
+    const pointerX = d.px + d.offX;
+    const pointerY = d.py + d.offY;
+    const target = panels.find(
+      (p) =>
+        p.id !== d.id &&
+        pointerX >= p.x * GRID &&
+        pointerX < (p.x + p.w - 1) * GRID &&
+        pointerY >= p.y * GRID &&
+        pointerY < (p.y + p.h - 1) * GRID,
+    );
+    if (!target) return null;
+    const isNph = (p: Panel) => p.kind === 'counter' && p.item.kind === 'namedPh';
+    let counter: Panel | undefined;
+    let timer: Panel | undefined;
+    if (isNph(dragged) && target.kind === 'timer') [counter, timer] = [dragged, target];
+    else if (dragged.kind === 'timer' && isNph(target)) [counter, timer] = [target, dragged];
+    if (!counter || !timer || counter.kind !== 'counter' || timer.kind !== 'timer') return null;
+    return { targetId: target.id, counter: counter.item, timer: timer.item };
+  });
+
   protected readonly boardHeight = computed(() => {
     let rows = 0;
     for (const p of this.store.panels()) rows = Math.max(rows, p.y + p.h);
@@ -62,7 +94,7 @@ export class App {
   constructor() {
     afterNextRender(() => {
       const el = this.board().nativeElement;
-      const update = () => this.store.cols.set(Math.max(13, Math.floor(el.clientWidth / GRID)));
+      const update = () => this.store.cols.set(Math.max(15, Math.floor(el.clientWidth / GRID)));
       update();
       new ResizeObserver(update).observe(el);
     });
@@ -85,6 +117,36 @@ export class App {
   /** Close the ☰ menu after any of its buttons is used. */
   protected onMenuClick(e: Event, menu: HTMLElement): void {
     if ((e.target as Element).closest('button')) menu.hidePopover();
+  }
+
+  // ---------- themes ----------
+
+  protected readonly themes = THEMES;
+  protected readonly currentTheme = computed(() => themeById(this.store.theme()));
+  private readonly themeDlg = viewChild.required<ElementRef<HTMLDialogElement>>('themeDlg');
+
+  /** Picking a tile applies the theme right away (so you can preview); Done closes. */
+  protected openThemes(): void {
+    this.themeDlg().nativeElement.showModal();
+  }
+
+  // ---------- saved notes ----------
+
+  protected openNote(id: string, menu: HTMLElement): void {
+    this.store.openNote(id);
+    menu.hidePopover();
+  }
+
+  /** First line of a note, for the saved-notes list. */
+  protected notePreview(text: string): string {
+    const line = text.split('\n').find((l) => l.trim()) ?? '';
+    return line.trim() || '(empty)';
+  }
+
+  protected async deleteNote(n: NoteItem, e: MouseEvent): Promise<void> {
+    if (e.shiftKey || (await this.confirm.ask('Delete note?', `Permanently delete "${n.name}"?`))) {
+      this.store.removeNote(n.id);
+    }
   }
 
   // ---------- save / load ----------
@@ -187,8 +249,34 @@ export class App {
   protected onPointerUp(): void {
     const prev = this.preview();
     const d = this.drag();
-    if (d && prev?.valid) this.store.movePanel(d.id, prev.x, prev.y);
+    const link = this.linkDrop();
     this.drag.set(null);
+    if (link) {
+      // Dropped onto a partner panel: the dragged panel goes back to its spot, and we offer to link the pair.
+      void this.confirmLink(link.counter.id, link.timer.id);
+      return;
+    }
+    if (d && prev?.valid) this.store.movePanel(d.id, prev.x, prev.y);
+  }
+
+  /** Links a Named/PH counter to a timer after asking (always). */
+  private async confirmLink(counterId: string, timerId: string): Promise<void> {
+    const c = this.store.counters().find((x) => x.id === counterId);
+    const t = this.store.timers().find((x) => x.id === timerId);
+    if (!c || !t) return;
+    if (c.linkedTimerId === t.id) {
+      await this.confirm.ask('Already linked', `"${c.name}" already restarts "${t.name}".`, 'OK', 'primary');
+      return;
+    }
+    const current = c.linkedTimerId ? this.store.timers().find((x) => x.id === c.linkedTimerId) : undefined;
+    const replace = current ? ` It is currently linked to "${current.name}"; that link will be replaced.` : '';
+    const ok = await this.confirm.ask(
+      'Link to timer?',
+      `Link "${c.name}" to "${t.name}"? + PH and + Named will restart "${t.name}".${replace}`,
+      'Link',
+      'primary',
+    );
+    if (ok) this.store.updateCounter(c.id, { linkedTimerId: t.id });
   }
 
   protected onPointerCancel(): void {

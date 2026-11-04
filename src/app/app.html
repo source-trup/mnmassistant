@@ -31,7 +31,36 @@
     <button class="primary" (click)="store.addCounter('standard')">Count</button>
     <button class="primary" (click)="store.addCounter('namedPh')">Named / PH</button>
     <button class="primary" (click)="store.addBuffPanel()">Buff Tracker</button>
-    <button class="primary" (click)="store.addNote()">Note</button>
+    <span class="split">
+      <button class="primary" (click)="store.addNote()" title="New note">Note</button>
+      <button
+        class="primary more"
+        popovertarget="notes-menu"
+        [title]="store.closedNotes().length ? 'Saved notes (' + store.closedNotes().length + ')' : 'Saved notes'"
+      >
+        @if (store.closedNotes().length) {
+          <span class="badge">{{ store.closedNotes().length }}</span>
+        }
+        ▾
+      </button>
+    </span>
+  </div>
+
+  <div #notesMenu id="notes-menu" class="menu notes-menu" popover>
+    <span class="menu-title">Saved notes</span>
+    @for (n of store.closedNotes(); track n.id) {
+      <div class="saved-note">
+        <button class="open" (click)="openNote(n.id, notesMenu)" title="Put this note back on the board">
+          <span class="nm">{{ n.name }}</span>
+          <span class="preview">{{ notePreview(n.text) }}</span>
+        </button>
+        <button class="del" (click)="deleteNote(n, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+      </div>
+    } @empty {
+      <p class="menu-empty">No saved notes. Click <b>—</b> on a note to put it away here; its text is kept.</p>
+    }
+    <hr />
+    <button (click)="store.addNote(); notesMenu.hidePopover()">＋ New note</button>
   </div>
 
   <span class="spacer"></span>
@@ -51,7 +80,7 @@
     <button (click)="resetAllTimers()">Reset all timers</button>
     <button (click)="resetAllCounters()">Reset all counters</button>
     <hr />
-    <button (click)="store.toggleTheme()">Theme: {{ store.theme() === 'spirit' ? 'Spirit' : 'Classic' }}</button>    <button (click)="store.testSound()">Test sound &amp; voice</button>
+    <button (click)="openThemes()">🎨 Theme: {{ currentTheme().label }}…</button>    <button (click)="store.testSound()">Test sound &amp; voice</button>
   </div>
   <input #fileInput type="file" accept=".json,application/json" hidden (change)="loadLayout(fileInput)" />
 </header>
@@ -66,6 +95,7 @@
     @if (preview(); as g) {
       <div
         class="ghost"
+        [class.hidden]="linkDrop()"
         [class.invalid]="!g.valid"
         [style.left.px]="g.x * GRID"
         [style.top.px]="g.y * GRID"
@@ -78,6 +108,8 @@
       <div
         class="panel"
         [class.lifted]="drag()?.id === p.id"
+        [class.link-target]="linkDrop()?.targetId === p.id"
+        [class.linking]="drag()?.id === p.id && !!linkDrop()"
         [style.left.px]="left(p)"
         [style.top.px]="top(p)"
         [style.width.px]="(p.w - 1) * GRID"
@@ -107,6 +139,37 @@
     }
   </div>
 </div>
+
+<dialog #themeDlg class="themes-dlg">
+  <h3>Choose a class theme</h3>
+  <div class="theme-grid">
+    @for (t of themes; track t.id) {
+      <button
+        class="theme-tile"
+        [class.on]="t.id === store.theme()"
+        [style.--t-bg]="t.colors.bgCenter"
+        [style.--t-surface]="t.colors.surface"
+        [style.--t-accent]="t.colors.accent"
+        [style.--t-accent2]="t.colors.accent2"
+        [style.--t-named]="t.colors.named"
+        [style.--t-bone]="t.colors.bone"
+        [style.--t-muted]="t.colors.muted"
+        (click)="store.setTheme(t.id)"
+        [title]="t.blurb"
+      >
+        <svg viewBox="-24 -24 48 48" aria-hidden="true">
+          <path [attr.d]="t.glyph" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="t-name">{{ t.label }}</span>
+        <span class="t-dots"><i class="d1"></i><i class="d2"></i><i class="d3"></i></span>
+      </button>
+    }
+  </div>
+  <p class="theme-blurb">{{ currentTheme().blurb }}</p>
+  <div class="dialog-actions">
+    <button class="primary" (click)="themeDlg.close()">Done</button>
+  </div>
+</dialog>
 
 <app-loot-prompt />
 <app-confirm-dialog />

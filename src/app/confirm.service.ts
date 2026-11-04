@@ -4,6 +4,8 @@ export interface ConfirmRequest {
   title: string;
   message: string;
   confirmText: string;
+  /** 'danger' (red) for destructive actions, 'primary' for everything else. */
+  tone: 'danger' | 'primary';
   resolve: (ok: boolean) => void;
 }
 
@@ -12,9 +14,9 @@ export interface ConfirmRequest {
 export class ConfirmService {
   readonly pending = signal<ConfirmRequest | null>(null);
 
-  ask(title: string, message: string, confirmText = 'Delete'): Promise<boolean> {
+  ask(title: string, message: string, confirmText = 'Delete', tone: 'danger' | 'primary' = 'danger'): Promise<boolean> {
     this.pending()?.resolve(false);
-    return new Promise((resolve) => this.pending.set({ title, message, confirmText, resolve }));
+    return new Promise((resolve) => this.pending.set({ title, message, confirmText, tone, resolve }));
   }
 
   answer(ok: boolean): void {

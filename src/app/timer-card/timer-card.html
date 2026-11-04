@@ -1,7 +1,13 @@
 <div class="card" [attr.data-status]="status()">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
-    <span class="name" [title]="timer().name">{{ timer().name }}</span>
+    <app-panel-title
+      [name]="timer().name"
+      [suggestions]="store.npcs()"
+      [forgettable]="true"
+      (renamed)="store.renameTimer(timer().id, $event)"
+      (forget)="forgetNpc($event)"
+    />
     @if (timer().repeat) {
       <span class="tag" title="Repeats automatically">↻</span>
     }
@@ -62,7 +68,17 @@
 <dialog #dlg>
   <h3>Timer settings</h3>
   <div class="edit">
-    <label>Name <input [value]="timer().name" (change)="rename($event)" /></label>
+    <label>
+      Name
+      <app-name-input
+        [value]="timer().name"
+        [suggestions]="store.npcs()"
+        [forgettable]="true"
+        placeholder="NPC name, e.g. Grimfang"
+        (committed)="rename($event)"
+        (forget)="forgetNpc($event)"
+      />
+    </label>
     <label>
       Duration
       <input
@@ -79,7 +95,8 @@
       @if (timer().autoNamed) {
         Using a generated name, so it chimes when done. Give it your own name to have it spoken (“{{ timer().name }} is up”).
       } @else {
-        When done, it will say “{{ timer().name }} is up”.
+        When done, it will say “{{ timer().name }} is up”. A linked Named/PH counter saves its kill history to
+        “{{ timer().name }}”.
       }
     </p>
   </div>

@@ -12,10 +12,20 @@
   h3 {
     margin: 0;
   }
+  .owner {
+    display: block;
+    margin-top: 3px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
 }
 
 .seg {
   display: flex;
+  flex: none;
+  white-space: nowrap;
 
   button {
     border-radius: 0;
