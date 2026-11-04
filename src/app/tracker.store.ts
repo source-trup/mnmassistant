@@ -320,6 +320,20 @@ export class TrackerStore {
     this.updateTimer(id, { endsAt: Date.now() + t.pausedRemainingMs, pausedRemainingMs: null });
   }
 
+  /**
+   * Sets how long is left without changing the timer's duration, so the next restart still uses the full
+   * length. A paused timer stays paused; otherwise it runs from the new time.
+   */
+  setTimerRemaining(id: string, remainingMs: number): void {
+    if (remainingMs <= 0) return;
+    this.alerts.unlock();
+    const t = this.timers().find((x) => x.id === id);
+    if (!t) return;
+    this.timerAlerted.delete(id);
+    if (t.pausedRemainingMs !== null) this.updateTimer(id, { pausedRemainingMs: remainingMs });
+    else this.updateTimer(id, { endsAt: Date.now() + remainingMs, pausedRemainingMs: null });
+  }
+
   resetTimer(id: string): void {
     this.timerAlerted.delete(id);
     this.updateTimer(id, { endsAt: null, pausedRemainingMs: null });
@@ -541,6 +555,21 @@ export class TrackerStore {
     if (!b) return;
     this.clearBuffAlerts(buffId);
     this.updateBuff(panelId, buffId, { endsAt: Date.now() + b.durationMs });
+  }
+
+  /**
+   * Sets how long is left on a buff (starting it if needed) without changing its duration, so the next
+   * recast still uses the full length. For syncing with the game when a recast click was missed.
+   */
+  setBuffRemaining(panelId: string, buffId: string, remainingMs: number): void {
+    if (remainingMs <= 0) return;
+    this.alerts.unlock();
+    const b = this.buffPanels().find((p) => p.id === panelId)?.buffs.find((x) => x.id === buffId);
+    if (!b) return;
+    this.clearBuffAlerts(buffId);
+    // You just set it, so don't immediately announce "fading" if it's already inside the warn window.
+    if (remainingMs <= b.warnMs) this.buffWarned.add(buffId);
+    this.updateBuff(panelId, buffId, { endsAt: Date.now() + remainingMs });
   }
 
   stopBuff(panelId: string, buffId: string): void {

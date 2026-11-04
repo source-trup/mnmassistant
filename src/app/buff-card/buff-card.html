@@ -10,11 +10,34 @@
   <ul class="buffs">
     @for (r of rows(); track r.buff.id) {
       <li [attr.data-state]="r.state">
-        <button class="cast" (click)="cast(r.buff)" [title]="r.state === 'idle' ? 'Cast ' + r.buff.name : 'Recast ' + r.buff.name">
-          <span class="bname">{{ r.buff.name }}</span>
-          <span class="btime">{{ r.text }}</span>
-          <span class="bar"><span class="fill" [style.width.%]="r.progress * 100"></span></span>
-        </button>
+        <div class="slot">
+          <button class="cast" (click)="cast(r.buff)" [title]="r.state === 'idle' ? 'Cast ' + r.buff.name : 'Recast ' + r.buff.name">
+            <span class="bname">{{ r.buff.name }}</span>
+            <!-- Reserves room for the time; the visible time is the button/input on top. -->
+            <span class="btime placeholder" aria-hidden="true">{{ r.text }}</span>
+            <span class="bar"><span class="fill" [style.width.%]="r.progress * 100"></span></span>
+          </button>
+          @if (editingId() === r.buff.id) {
+            <input
+              #left
+              class="btime-edit"
+              [value]="editStart"
+              placeholder="12:30"
+              title="Time left — Enter to set, Esc to cancel"
+              (keydown.enter)="applyRemaining(r.buff, left)"
+              (keydown.escape)="editingId.set(null)"
+              (blur)="applyRemaining(r.buff, left)"
+            />
+          } @else {
+            <button
+              class="btime"
+              (click)="editRemaining(r.buff)"
+              title="Set the time left (keeps the full duration for the next recast)"
+            >
+              {{ r.text }}
+            </button>
+          }
+        </div>
         @if (r.state !== 'idle') {
           <button class="stop" (click)="stop(r.buff)" title="Clear">✕</button>
         }

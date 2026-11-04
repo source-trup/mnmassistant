@@ -12,8 +12,14 @@
     <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>
 
-  <button class="clock" (click)="primary()" [title]="status() === 'idle' ? 'Start' : 'Restart'">
-    <span class="time">{{ status() === 'done' ? 'READY' : display() }}</span>
+  <div class="clock-wrap">
+  <button
+    class="clock"
+    (click)="primary()"
+    (contextmenu)="editRemaining($event)"
+    [title]="(status() === 'idle' ? 'Start' : 'Restart') + ' · right-click to set the time left'"
+  >
+    <span class="time" [class.hidden]="editing()">{{ status() === 'done' ? 'READY' : display() }}</span>
     <span class="sub">
       @switch (status()) {
         @case ('idle') { click to start · {{ durationText() }} }
@@ -23,6 +29,19 @@
       }
     </span>
   </button>
+  @if (editing()) {
+    <input
+      #left
+      class="time-edit"
+      [value]="editStart"
+      placeholder="4:30"
+      title="Time left — Enter to set, Esc to cancel"
+      (keydown.enter)="applyRemaining(left)"
+      (keydown.escape)="editing.set(false)"
+      (blur)="applyRemaining(left)"
+    />
+  }
+  </div>
 
   <div class="bar"><div class="fill" [style.width.%]="progress() * 100"></div></div>
 

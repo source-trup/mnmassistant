@@ -1,4 +1,14 @@
-import { Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ConfirmService } from '../confirm.service';
 import { TimerItem, TimerStatus } from '../models';
 import { formatDuration, parseDuration } from '../time';
@@ -14,6 +24,8 @@ export class TimerCard {
   protected readonly store = inject(TrackerStore);
   private readonly confirm = inject(ConfirmService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly durationError = signal(false);
 
@@ -67,6 +79,42 @@ export class TimerCard {
   protected primary(): void {
     if (this.status() === 'paused') this.store.resumeTimer(this.timer().id);
     else this.store.startTimer(this.timer().id);
+  }
+
+  /** Whether the time-left box is open. */
+  protected readonly editing = signal(false);
+  /** Time left when the box opened (a snapshot, so the ticking countdown doesn't overwrite what you type). */
+  protected editStart = '';
+
+  /** Right-click on the clock: type how long is actually left. */
+  protected editRemaining(e: MouseEvent): void {
+    e.preventDefault();
+    const s = this.status();
+    this.editStart = s === 'running' || s === 'paused' ? this.display() : '';
+    this.editing.set(true);
+    afterNextRender(
+      () => {
+        const box = this.host.nativeElement.querySelector<HTMLInputElement>('.time-edit');
+        box?.focus();
+        box?.select();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  protected applyRemaining(input: HTMLInputElement): void {
+    if (!this.editing()) return; // already applied (Enter, then blur)
+    const text = input.value.trim();
+    if (text) {
+      const ms = parseDuration(text);
+      if (ms === null || ms <= 0) {
+        input.classList.add('invalid');
+        input.select();
+        return;
+      }
+      this.store.setTimerRemaining(this.timer().id, ms);
+    }
+    this.editing.set(false);
   }
 
   protected openEdit(): void {

@@ -89,6 +89,7 @@ Countdown timers for respawns, events, or anything else.
 | Start / restart | Click the **big clock**. While running, a click restarts from full. |
 | Pause / resume | **Pause** and **Resume** buttons. Clicking the clock while paused also resumes. |
 | Nudge | **−1m / +1m**. While running or paused they change the time **remaining**. While stopped they change the timer's **length** (minimum 1:00). |
+| Fix the time left | **Right-click the big clock**, type what's actually left (e.g. `4:30`), then Enter. Esc cancels. The timer's full length doesn't change, so the next restart is still the full time. A paused timer stays paused, and an idle or finished timer starts from the time you typed. |
 | Stop | **Reset** |
 
 **States:** grey = stopped · blue (Spirit theme) or green (Classic) = running · amber = paused ·
@@ -177,6 +178,7 @@ A panel listing your buffs, with reminders before they fade.
 | --- | --- |
 | Add a buff | Quick-add **10m · 20m · 35m · 1h** along the bottom of the panel (the most common MnM buff lengths), or **＋** in the header for a custom one |
 | Cast / recast | Click the buff. It counts down from full. |
+| Fix the time left | Click the buff's **time** and type what's actually left (e.g. `12:30`), then Enter. Esc cancels. This starts an idle buff too. The full duration doesn't change, so the next recast still runs the full length. Handy when you forgot to click on recast. |
 | Clear | **✕** next to an active buff |
 | Edit | **⚙**: rename the panel; for each buff set name, duration and **warn at** (default 1:00), reorder ▲▼, remove |
 

@@ -1,4 +1,14 @@
-import { Component, ElementRef, computed, inject, input, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ConfirmService } from '../confirm.service';
 import { BuffEntry, BuffPanel } from '../models';
 import { formatDuration, parseDuration } from '../time';
@@ -23,6 +33,8 @@ export class BuffCard {
   protected readonly store = inject(TrackerStore);
   private readonly confirm = inject(ConfirmService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly rows = computed<BuffRow[]>(() => {
     const now = this.store.now();
@@ -63,6 +75,42 @@ export class BuffCard {
 
   protected stop(b: BuffEntry): void {
     this.store.stopBuff(this.panel().id, b.id);
+  }
+
+  /** Buff whose time-left box is open. */
+  protected readonly editingId = signal<string | null>(null);
+
+  /** Time left when the box opened (a snapshot, so the ticking countdown doesn't overwrite what you type). */
+  protected editStart = '';
+
+  protected editRemaining(b: BuffEntry): void {
+    const left = b.endsAt === null ? 0 : b.endsAt - this.store.now();
+    this.editStart = left > 0 ? formatDuration(left) : '';
+    this.editingId.set(b.id);
+    // Focus and select the box once it has rendered.
+    afterNextRender(
+      () => {
+        const box = this.host.nativeElement.querySelector<HTMLInputElement>('.btime-edit');
+        box?.focus();
+        box?.select();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  protected applyRemaining(b: BuffEntry, input: HTMLInputElement): void {
+    if (this.editingId() !== b.id) return; // already applied (Enter, then blur)
+    const text = input.value.trim();
+    if (text) {
+      const ms = parseDuration(text);
+      if (ms === null || ms <= 0) {
+        input.classList.add('invalid');
+        input.select();
+        return;
+      }
+      this.store.setBuffRemaining(this.panel().id, b.id, ms);
+    }
+    this.editingId.set(null);
   }
 
   protected openEdit(): void {

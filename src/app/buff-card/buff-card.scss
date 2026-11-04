@@ -52,6 +52,14 @@
   50% { background: rgb(229 184 75 / 0.18); }
 }
 
+/* Holds the cast button with the clickable time laid over its top-right corner. */
+.slot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
 .cast {
   flex: 1;
   min-width: 0;
@@ -76,6 +84,43 @@
   font-variant-numeric: tabular-nums;
   color: var(--c);
   font-size: 0.9rem;
+
+  &.placeholder {
+    visibility: hidden;
+    padding: 0 4px;
+  }
+}
+
+/* The visible time: click it to type how long is actually left. */
+button.btime {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  padding: 1px 4px;
+  line-height: 1.25;
+  background: none;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  cursor: text;
+
+  &:hover {
+    filter: none;
+    border-color: var(--c);
+    background: var(--panel-2);
+  }
+}
+
+.btime-edit {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  width: 64px;
+  padding: 1px 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  border-color: var(--spirit-line);
 }
 
 .bar {

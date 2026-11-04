@@ -49,6 +49,31 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+
+  &.hidden { visibility: hidden; }
+}
+
+/* Holds the clock with the time-left box laid over the big digits while editing. */
+.clock-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.time-edit {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: calc(2.6rem * 1.1);
+  padding: 0 6px;
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--accent);
+  border-color: var(--spirit-line);
 }
 
 .sub {
