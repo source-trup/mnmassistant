@@ -112,6 +112,26 @@ export class CampHistory {
     }
   }
 
+  /** "Started 3:12 PM (2h 5m ago)" for the current session. */
+  protected readonly sessionStart = computed(() => {
+    const since = this.counter().since;
+    return `${formatClock(since)} (${formatAgo(this.store.now() - since)} ago)`;
+  });
+
+  protected async newSession(): Promise<void> {
+    const c = this.counter();
+    const ok = await this.confirm.ask(
+      'Start a new session?',
+      `Set "${c.name}" back to 0 PH / 0 named and start session stats from now? The kill log is kept (see "All time").`,
+      'New session',
+      'primary',
+    );
+    if (ok) {
+      this.store.newSession(c.id);
+      this.scope.set('session');
+    }
+  }
+
   protected async clearAll(): Promise<void> {
     const c = this.counter();
     const whose = this.npc() ?? c.name;

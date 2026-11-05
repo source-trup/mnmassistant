@@ -173,7 +173,12 @@ After **+ Named**, a **"Named down!"** drawer slides in on the right. It doesn't
 
 ### History view (📜)
 
-Toggle between **Session** (since the counter's last reset) and **All time**.
+Toggle between **Session** and **All time**. The Session view shows when the current session started.
+
+- **New session** (asks first) sets the counts back to 0 and starts session stats from now. The kill log is kept.
+  **Reset** on the panel does the same.
+- A new session also starts **automatically**: a + PH / + Named logged more than an hour after the camp's previous
+  kill opens a fresh session before it's counted.
 
 - **Stats:** placeholders, named, named odds ("1 in 7.0"), last named, typical respawn (median time between kills),
   last respawn, longest PH streak, kills/hr, named/hr.

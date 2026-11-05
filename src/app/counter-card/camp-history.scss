@@ -192,6 +192,12 @@ a {
   white-space: nowrap;
 }
 
+.session-line {
+  margin: -4px 0 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .hint {
   font-size: 0.8rem;
   color: var(--muted);

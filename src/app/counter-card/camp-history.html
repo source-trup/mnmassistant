@@ -11,10 +11,16 @@
     </span>
   </h3>
   <div class="seg">
-    <button [class.on]="scope() === 'session'" (click)="scope.set('session')" title="Since the counter was last reset">Session</button>
+    <button [class.on]="scope() === 'session'" (click)="scope.set('session')" title="Since the session started">Session</button>
     <button [class.on]="scope() === 'all'" (click)="scope.set('all')">All time</button>
   </div>
 </div>
+
+@if (scope() === 'session') {
+  <p class="session-line">
+    Session started {{ sessionStart() }}. A kill logged more than an hour after the last one starts a new session.
+  </p>
+}
 
 <div class="stats">
   <div><span class="k">Placeholders</span><span class="v ph">{{ stats().ph }}</span></div>
@@ -95,5 +101,6 @@
 <div class="dialog-actions">
   <button class="danger" (click)="clearAll()" [disabled]="!history().length">Clear history</button>
   <span class="spacer"></span>
+  <button (click)="newSession()" title="Reset the counts and start session stats from now (the log is kept)">New session</button>
   <button class="primary" (click)="closed.emit()">Close</button>
 </div>

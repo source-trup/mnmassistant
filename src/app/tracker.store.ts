@@ -28,6 +28,8 @@ const STORAGE_KEY = 'mnm-assistant.state.v1';
 const TICK_MS = 250;
 /** Per-camp cap so localStorage can't grow without bound. */
 const MAX_HISTORY = 5000;
+/** A Named/PH kill logged this long after the previous one starts a new session. */
+export const SESSION_GAP_MS = 3_600_000;
 
 /** Names the app generates; timers/buffs still using one of these chime instead of speaking. */
 const AUTO_TIMER_NAME = /^(\d+:)?\d+:\d{2} spawn$|^New timer$/;
@@ -718,6 +720,7 @@ export class TrackerStore {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'namedPh') return;
     this.restartLinked(c);
+    this.autoSession(c);
     const event: CampEvent = { id: newId(), t: Date.now(), type: 'ph', loot: [] };
     this.updateNph(id, (n) => ({ ...n, ph: n.ph + 1, phSinceNamed: n.phSinceNamed + 1 }));
     this.updateLog(this.logKeyOf(c), this.logNameFor(c), (h) => [...h, event].slice(-MAX_HISTORY));
@@ -728,6 +731,7 @@ export class TrackerStore {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'namedPh') return;
     this.restartLinked(c);
+    this.autoSession(c);
     const event: CampEvent = { id: newId(), t: Date.now(), type: 'named', loot: [] };
     this.updateNph(id, (n) => ({ ...n, named: n.named + 1, phSinceNamed: 0 }));
     this.updateLog(this.logKeyOf(c), this.logNameFor(c), (h) => [...h, event].slice(-MAX_HISTORY));
@@ -806,6 +810,20 @@ export class TrackerStore {
     const since = Date.now();
     if (c.kind === 'standard') this.updateCounter(id, { value: 0, since });
     else this.updateCounter(id, { ph: 0, named: 0, phSinceNamed: 0, since });
+  }
+
+  /** Starts a new Named/PH session: the counts go back to 0 and "Session" stats start from now. The log is kept. */
+  newSession(id: string): void {
+    this.resetCounter(id);
+  }
+
+  /**
+   * Called just before a kill is logged: if the camp's last logged kill is over an hour old
+   * (and no session was started since), this kill opens a new session.
+   */
+  private autoSession(c: NamedPhCounter): void {
+    const last = this.historyOf(c).at(-1);
+    if (last && Date.now() - last.t >= SESSION_GAP_MS && c.since <= last.t) this.newSession(c.id);
   }
 
   resetAllCounters(): void {
