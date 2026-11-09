@@ -251,10 +251,30 @@ A free-text panel for camp notes, quest steps, who to group with, and so on.
 | Text size | **A−** / **A+** in the header (10px to 32px, 2px per click) |
 | Rename | Right-click the title, or **⚙** (or double-click the title) |
 | Put away | **—** in the header (or **Put away** in ⚙). The note leaves the board but keeps its text. |
-| Bring it back | **▾** next to `Note` in the toolbar lists saved notes with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
+| Bring it back | **▾** next to `Note` in the toolbar lists saved notes (and checklists) with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
+| Resize | Drag the bottom-right corner. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. |
 
 The text area takes up the whole panel and scrolls if the note gets long. The **▾** shows how many notes are put
 away.
+
+### Checklists
+
+**Checklist** in the toolbar adds a note whose content is a list of items you check off, such as a shopping list
+for a tradeskill run. It has the same title, text size, put away and resize controls as a note.
+
+| Action | How |
+| --- | --- |
+| Add an item | Type in the box at the bottom and press Enter: `18x Copper Ore`, `Copper Ore x18`, `18 Copper Ore` or just `Copper Ore`. |
+| Paste a list | Paste several lines into the box to add them all, e.g. `-18xCopper Ore` lines. |
+| Paste from the wiki | Copy the **Material / Total / From** table from a [tradeskill page](https://monstersandmemories.wiki/tradeskills) and paste it into the box. Names split over two lines ("Whitefish" / "or Basa or Grouper") become `Whitefish/Basa/Grouper`; the From column shows when you hover an item. |
+| Check / uncheck | Click the item. The footer shows how many are done. |
+| Edit an item | Right-click (or double-click) it, change it, press Enter. Esc cancels; clearing the text removes it. |
+| Remove an item | Hover it and click **✕** (**Undo** appears for a few seconds). |
+| Start over | **Uncheck all** |
+| Tidy up | **Clear ✓** removes the checked items (with **Undo**). |
+
+Adding an item that's already on the list adds to its count and unchecks it, so pasting two recipes' materials
+gives you the totals.
 
 ---
 

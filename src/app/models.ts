@@ -107,13 +107,30 @@ export interface BuffSet {
   buffs: { name: string; durationMs: number; warnMs: number }[];
 }
 
-/** A free-text note panel. */
+/** One line of a checklist note, e.g. "18× Copper Ore". */
+export interface CheckItem {
+  id: string;
+  text: string;
+  /** How many you need, if the line had a count. */
+  qty: number | null;
+  done: boolean;
+  /** Where it comes from (the wiki table's "From" column), shown as a tooltip. */
+  from?: string;
+}
+
+/** A note panel: free text, or a checklist (shopping list). */
 export interface NoteItem extends GridPos {
   id: string;
   name: string;
+  type: 'text' | 'checklist';
   text: string;
+  /** Checklist lines (type 'checklist'). */
+  items: CheckItem[];
   /** Text size in px. */
   fontSize: number;
+  /** Size in grid cells (notes can be resized). */
+  w: number;
+  h: number;
   /** Put away: kept (with its text) but not shown on the board. Reopen it from the Notes menu. */
   closed: boolean;
 }

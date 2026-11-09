@@ -44,6 +44,7 @@
         ▾
       </button>
     </span>
+    <button class="primary" (click)="store.addNote('checklist')" title="New checklist (shopping list): check items off; paste a list or a wiki materials table">Checklist</button>
   </div>
 
   <div #notesMenu id="notes-menu" class="menu notes-menu" popover>
@@ -52,7 +53,7 @@
       <div class="saved-note">
         <button class="open" (click)="openNote(n.id, notesMenu)" title="Put this note back on the board">
           <span class="nm">{{ n.name }}</span>
-          <span class="preview">{{ notePreview(n.text) }}</span>
+          <span class="preview">{{ notePreview(n) }}</span>
         </button>
         <button class="del" (click)="deleteNote(n, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
       </div>
@@ -61,6 +62,7 @@
     }
     <hr />
     <button (click)="store.addNote(); notesMenu.hidePopover()">＋ New note</button>
+    <button (click)="store.addNote('checklist'); notesMenu.hidePopover()">＋ New checklist</button>
   </div>
 
   <div class="group lists">
@@ -107,7 +109,7 @@
     [class.dragging]="drag()"
     [style.height.px]="boardHeight()"
   >
-    @if (preview(); as g) {
+    @if (ghost(); as g) {
       <div
         class="ghost"
         [class.hidden]="linkDrop()"
@@ -127,8 +129,9 @@
         [class.linking]="drag()?.id === p.id && !!linkDrop()"
         [style.left.px]="left(p)"
         [style.top.px]="top(p)"
-        [style.width.px]="(p.w - 1) * GRID"
-        [style.height.px]="(p.h - 1) * GRID"
+        [class.resizing]="resize()?.id === p.id"
+        [style.width.px]="width(p)"
+        [style.height.px]="height(p)"
         (pointerdown)="onPointerDown($event, p)"
         (pointermove)="onPointerMove($event)"
         (pointerup)="onPointerUp()"
@@ -146,6 +149,14 @@
           }
           @case ('note') {
             <app-note-card [note]="p.item" />
+            <div
+              class="resize-grip"
+              title="Drag to resize"
+              (pointerdown)="startResize($event, p)"
+              (pointermove)="moveResize($event)"
+              (pointerup)="endResize($event)"
+              (pointercancel)="resize.set(null)"
+            ></div>
           }
           @case ('players') {
             <app-player-list-card [panel]="p.item" />

@@ -14,6 +14,7 @@ import {
   LootItem,
   NamedPhCounter,
   NoteItem,
+  CheckItem,
   PlayerEntry,
   PlayerListKind,
   PlayerListPanel,
@@ -211,8 +212,52 @@ function makeBuffPanel(): BuffPanel {
   return { id: newId(), name: 'Buff Tracker', buffs: [], ...UNPLACED };
 }
 
-function makeNote(): NoteItem {
-  return { id: newId(), name: 'Note', text: '', fontSize: NOTE_FONT.default, closed: false, ...UNPLACED };
+function makeNote(type: NoteItem['type'] = 'text'): NoteItem {
+  const size = type === 'checklist' ? PANEL_SIZE.checklist : PANEL_SIZE.note;
+  return {
+    id: newId(),
+    name: type === 'checklist' ? 'Checklist' : 'Note',
+    type,
+    text: '',
+    items: [],
+    fontSize: NOTE_FONT.default,
+    ...size,
+    closed: false,
+    ...UNPLACED,
+  };
+}
+
+/** Smallest a note can be resized to, in grid cells. */
+export const NOTE_MIN = { w: 12, h: 6 };
+
+function normalizeCheckItems(raw: unknown): CheckItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((i) => i && typeof i.text === 'string' && i.text.trim())
+    .map((i) => ({
+      id: typeof i.id === 'string' ? i.id : newId(),
+      text: i.text.trim(),
+      qty: Number(i.qty) > 0 ? Math.floor(Number(i.qty)) : null,
+      done: i.done === true,
+      ...(typeof i.from === 'string' && i.from ? { from: i.from } : {}),
+    }));
+}
+
+function normalizeNote(n: any): NoteItem {
+  const base = makeNote(n.type === 'checklist' ? 'checklist' : 'text');
+  return {
+    ...base,
+    ...n,
+    type: base.type,
+    text: typeof n.text === 'string' ? n.text : '',
+    items: normalizeCheckItems(n.items),
+    fontSize: clampFont(Number(n.fontSize) || NOTE_FONT.default),
+    w: Math.max(NOTE_MIN.w, Math.floor(Number(n.w)) || base.w),
+    h: Math.max(NOTE_MIN.h, Math.floor(Number(n.h)) || base.h),
+    closed: n.closed === true,
+    x: n.x ?? -1,
+    y: n.y ?? -1,
+  };
 }
 
 function clampFont(px: number): number {
@@ -284,15 +329,7 @@ function normalizeState(parsed: any): AppState | null {
     buffSets: normalizeBuffSets(parsed.buffSets),
     players: normalizePlayers(parsed.players),
     listPanels: normalizeListPanels(parsed.listPanels),
-    notes: (Array.isArray(parsed.notes) ? parsed.notes : []).map((n: any) => ({
-      ...makeNote(),
-      ...n,
-      text: typeof n.text === 'string' ? n.text : '',
-      fontSize: clampFont(Number(n.fontSize) || NOTE_FONT.default),
-      closed: n.closed === true,
-      x: n.x ?? -1,
-      y: n.y ?? -1,
-    })),
+    notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
     buffPanels: (parsed.buffPanels ?? []).map((p: any) => ({
@@ -343,7 +380,7 @@ export class TrackerStore {
     ...this.buffPanels().map((b) => ({ id: b.id, kind: 'buffs' as const, item: b, x: b.x, y: b.y, ...PANEL_SIZE.buffs })),
     ...this.notes()
       .filter((n) => !n.closed)
-      .map((n) => ({ id: n.id, kind: 'note' as const, item: n, x: n.x, y: n.y, ...PANEL_SIZE.note })),
+      .map((n) => ({ id: n.id, kind: 'note' as const, item: n, x: n.x, y: n.y, w: n.w, h: n.h })),
     ...PLAYER_LISTS.map((k) => this.listPanels()[k])
       .filter((p) => p.shown)
       .map((p) => ({ id: listPanelId(p.kind), kind: 'players' as const, item: p, x: p.x, y: p.y, ...PANEL_SIZE.players })),
@@ -454,7 +491,7 @@ export class TrackerStore {
     this.timers.update((list) => list.map((t) => place(t, PANEL_SIZE.timer)));
     this.counters.update((list) => list.map((c) => place(c, PANEL_SIZE[c.kind])));
     this.buffPanels.update((list) => list.map((b) => place(b, PANEL_SIZE.buffs)));
-    this.notes.update((list) => list.map((n) => (n.closed ? n : place(n, PANEL_SIZE.note))));
+    this.notes.update((list) => list.map((n) => (n.closed ? n : place(n, n))));
     this.listPanels.update((lp) => {
       const next = { ...lp };
       for (const k of PLAYER_LISTS) if (lp[k].shown) next[k] = place(lp[k], PANEL_SIZE.players);
@@ -955,9 +992,79 @@ export class TrackerStore {
 
   // ---------- notes ----------
 
-  addNote(): void {
-    this.notes.update((list) => [...list, makeNote()]);
+  addNote(type: NoteItem['type'] = 'text'): void {
+    this.notes.update((list) => [...list, makeNote(type)]);
     this.placeUnplaced();
+  }
+
+  /** Resizes a note (grid cells) if the new footprint is free. */
+  resizeNote(id: string, w: number, h: number): boolean {
+    const n = this.notes().find((x) => x.id === id);
+    if (!n || w < NOTE_MIN.w || h < NOTE_MIN.h || !this.canPlace(id, { x: n.x, y: n.y, w, h })) return false;
+    if (n.x + w - 1 > this.cols()) return false;
+    this.updateNote(id, { w, h });
+    return true;
+  }
+
+  // ---------- checklists ----------
+
+  private updateItems(id: string, fn: (items: CheckItem[]) => CheckItem[]): void {
+    this.notes.update((list) => list.map((n) => (n.id === id ? { ...n, items: fn(n.items) } : n)));
+  }
+
+  /**
+   * Adds lines to a checklist. A line whose name is already on the list adds to that line's count
+   * (and unchecks it) instead of making a duplicate. Returns how many lines were added or updated.
+   */
+  addCheckItems(id: string, parsed: { text: string; qty: number | null; from?: string }[]): number {
+    if (!parsed.length) return 0;
+    this.updateItems(id, (items) => {
+      const next = [...items];
+      for (const p of parsed) {
+        const i = next.findIndex((x) => x.text.toLowerCase() === p.text.toLowerCase());
+        if (i >= 0) {
+          const cur = next[i];
+          const qty = cur.qty || p.qty ? (cur.qty ?? 1) + (p.qty ?? 1) : null;
+          next[i] = { ...cur, qty, done: false, ...(p.from && !cur.from ? { from: p.from } : {}) };
+        } else {
+          next.push({ id: newId(), text: p.text, qty: p.qty, done: false, ...(p.from ? { from: p.from } : {}) });
+        }
+      }
+      return next;
+    });
+    return parsed.length;
+  }
+
+  toggleCheckItem(id: string, itemId: string): void {
+    this.updateItems(id, (items) => items.map((i) => (i.id === itemId ? { ...i, done: !i.done } : i)));
+  }
+
+  updateCheckItem(id: string, itemId: string, patch: Partial<CheckItem>): void {
+    this.updateItems(id, (items) => items.map((i) => (i.id === itemId ? { ...i, ...patch } : i)));
+  }
+
+  /** Removes a line; returns it (and its position) so it can be put back. */
+  removeCheckItem(id: string, itemId: string): { item: CheckItem; index: number } | null {
+    const n = this.notes().find((x) => x.id === id);
+    const index = n?.items.findIndex((i) => i.id === itemId) ?? -1;
+    if (!n || index < 0) return null;
+    const item = n.items[index];
+    this.updateItems(id, (items) => items.filter((i) => i.id !== itemId));
+    return { item, index };
+  }
+
+  restoreCheckItems(id: string, items: CheckItem[]): void {
+    this.updateItems(id, () => items);
+  }
+
+  /** Removes every checked line. */
+  clearCheckedItems(id: string): void {
+    this.updateItems(id, (items) => items.filter((i) => !i.done));
+  }
+
+  /** Unchecks every line (start the list over). */
+  uncheckAllItems(id: string): void {
+    this.updateItems(id, (items) => items.map((i) => (i.done ? { ...i, done: false } : i)));
   }
 
   /** Takes a note off the board, keeping its text. */
@@ -969,7 +1076,7 @@ export class TrackerStore {
   openNote(id: string): void {
     const n = this.notes().find((x) => x.id === id);
     if (!n || !n.closed) return;
-    const fits = n.x >= 0 && n.y >= 0 && this.canPlace(id, { x: n.x, y: n.y, ...PANEL_SIZE.note });
+    const fits = n.x >= 0 && n.y >= 0 && this.canPlace(id, { x: n.x, y: n.y, w: n.w, h: n.h });
     this.updateNote(id, { closed: false, ...(fits ? {} : UNPLACED) });
     this.placeUnplaced();
   }

@@ -341,6 +341,11 @@ h1 {
     left 0.15s ease,
     top 0.15s ease;
 
+  &.resizing {
+    z-index: 10;
+    transition: none;
+  }
+
   &.lifted {
     z-index: 10;
     transition: none;

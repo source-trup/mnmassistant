@@ -13,7 +13,22 @@ import { PlayerListCard } from './player-list/player-list-card';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
-import { PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
+import { NOTE_MIN, PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
+
+/** A note being resized by its bottom-right corner. */
+interface ResizeState {
+  id: string;
+  x: number;
+  y: number;
+  /** Live drawn size in px (follows the pointer). */
+  pw: number;
+  ph: number;
+  /** Pointer position when the resize started, and the drawn size then. */
+  startX: number;
+  startY: number;
+  startW: number;
+  startH: number;
+}
 
 interface DragState {
   id: string;
@@ -85,10 +100,26 @@ export class App {
     return { targetId: target.id, counter: counter.item, timer: timer.item };
   });
 
+  protected readonly resize = signal<ResizeState | null>(null);
+
+  /** The snapped size a note being resized would get. */
+  protected readonly resizePreview = computed(() => {
+    const r = this.resize();
+    if (!r) return null;
+    const maxW = this.store.cols() - r.x + 1;
+    const w = Math.min(maxW, Math.max(NOTE_MIN.w, Math.round(r.pw / GRID) + 1));
+    const h = Math.max(NOTE_MIN.h, Math.round(r.ph / GRID) + 1);
+    const rect = { x: r.x, y: r.y, w, h };
+    return { ...rect, valid: this.store.canPlace(r.id, rect) };
+  });
+
+  /** Ghost outline: where a dragged panel would land, or the size a resized note would get. */
+  protected readonly ghost = computed(() => this.preview() ?? this.resizePreview());
+
   protected readonly boardHeight = computed(() => {
     let rows = 0;
     for (const p of this.store.panels()) rows = Math.max(rows, p.y + p.h);
-    const prev = this.preview();
+    const prev = this.ghost();
     if (prev) rows = Math.max(rows, prev.y + prev.h);
     return (rows + 6) * GRID;
   });
@@ -139,9 +170,15 @@ export class App {
     menu.hidePopover();
   }
 
-  /** First line of a note, for the saved-notes list. */
-  protected notePreview(text: string): string {
-    const line = text.split('\n').find((l) => l.trim()) ?? '';
+  /** First line of a note (or a checklist's progress), for the saved-notes list. */
+  protected notePreview(n: NoteItem): string {
+    if (n.type === 'checklist') {
+      if (!n.items.length) return '☑ (empty)';
+      const done = n.items.filter((i) => i.done).length;
+      const next = n.items.find((i) => !i.done);
+      return `☑ ${done}/${n.items.length}${next ? ' · next: ' + next.text : ' · all done'}`;
+    }
+    const line = n.text.split('\n').find((l) => l.trim()) ?? '';
     return line.trim() || '(empty)';
   }
 
@@ -283,6 +320,49 @@ export class App {
 
   protected onPointerCancel(): void {
     this.drag.set(null);
+  }
+
+  // ---------- resizing notes ----------
+
+  protected width(p: Panel): number {
+    const r = this.resize();
+    return r && r.id === p.id ? r.pw : (p.w - 1) * GRID;
+  }
+
+  protected height(p: Panel): number {
+    const r = this.resize();
+    return r && r.id === p.id ? r.ph : (p.h - 1) * GRID;
+  }
+
+  protected startResize(e: PointerEvent, p: Panel): void {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const w = (p.w - 1) * GRID;
+    const h = (p.h - 1) * GRID;
+    this.resize.set({ id: p.id, x: p.x, y: p.y, pw: w, ph: h, startX: e.clientX, startY: e.clientY, startW: w, startH: h });
+  }
+
+  protected moveResize(e: PointerEvent): void {
+    const r = this.resize();
+    if (!r) return;
+    e.stopPropagation();
+    const minW = (NOTE_MIN.w - 1) * GRID;
+    const minH = (NOTE_MIN.h - 1) * GRID;
+    this.resize.set({
+      ...r,
+      pw: Math.max(minW, r.startW + e.clientX - r.startX),
+      ph: Math.max(minH, r.startH + e.clientY - r.startY),
+    });
+  }
+
+  protected endResize(e: PointerEvent): void {
+    e.stopPropagation();
+    const r = this.resize();
+    const prev = this.resizePreview();
+    this.resize.set(null);
+    if (r && prev?.valid) this.store.resizeNote(r.id, prev.w, prev.h);
   }
 
   private pointerInBoard(e: PointerEvent): { x: number; y: number } {

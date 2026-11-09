@@ -1,31 +1,96 @@
-<div class="card">
+<div class="card" [class.list]="isList()">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
     <app-panel-title [name]="note().name" (renamed)="store.updateNote(note().id, { name: $event })" (dblclick)="openEdit()" />
     <button class="icon font" (click)="font(-1)" [disabled]="note().fontSize <= FONT.min" title="Smaller text">A−</button>
     <button class="icon font" (click)="font(1)" [disabled]="note().fontSize >= FONT.max" title="Larger text">A+</button>
     <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
-    <button class="icon" (click)="store.closeNote(note().id)" title="Put away — the note is saved; bring it back with ▾ next to “Note” in the toolbar">—</button>
-    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+    <button class="icon" (click)="store.closeNote(note().id)" title="Put away — it's saved; bring it back with ▾ next to “Note” in the toolbar">—</button>
+    <button class="icon" (click)="removeNote($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>
 
-  <textarea
-    [value]="note().text"
-    (input)="onText($event)"
-    [style.font-size.px]="note().fontSize"
-    placeholder="Write anything… camp notes, quest steps, who to group with."
-    spellcheck="true"
-  ></textarea>
+  @if (isList()) {
+    <ul class="items" [style.font-size.px]="note().fontSize">
+      @for (i of note().items; track i.id) {
+        <li
+          [class.done]="i.done"
+          (click)="toggle(i)"
+          (contextmenu)="edit(i, $event)"
+          (dblclick)="edit(i, $event)"
+          [title]="(i.from ? i.from + ' · ' : '') + 'Click to check off · right-click to edit'"
+        >
+          <span class="box" role="checkbox" [attr.aria-checked]="i.done">{{ i.done ? '✓' : '' }}</span>
+          @if (editing() === i.id) {
+            <input
+              #ed
+              class="line-edit"
+              [value]="editText(i)"
+              (click)="$event.stopPropagation()"
+              (keydown.enter)="commitEdit(i, ed.value)"
+              (keydown.escape)="cancelEdit()"
+              (blur)="commitEdit(i, ed.value)"
+            />
+          } @else {
+            @if (i.qty) {
+              <span class="qty">{{ i.qty }}×</span>
+            }
+            <span class="txt">{{ i.text }}</span>
+            <button class="del" (click)="remove(i); $event.stopPropagation()" title="Remove">✕</button>
+          }
+        </li>
+      } @empty {
+        <li class="empty">Add items below, one at a time or paste a whole list (e.g. “18x Copper Ore” lines, or the materials table from a wiki tradeskill page).</li>
+      }
+    </ul>
+
+    <input
+      #addBox
+      class="add"
+      placeholder="Add item… or paste a list"
+      title="Enter adds it. “18x Copper Ore”, “Copper Ore x18” or just a name. Pasting several lines adds them all."
+      (keydown.enter)="add(addBox)"
+      (paste)="onPaste($event, addBox)"
+    />
+
+    <div class="foot">
+      @if (flash(); as f) {
+        <span class="flash">{{ f.text }}</span>
+        @if (f.undo) {
+          <button class="small" (click)="undo()">Undo</button>
+        }
+      } @else {
+        <span class="progress" [class.all]="note().items.length && done() === note().items.length">
+          {{ done() }} / {{ note().items.length }} done
+        </span>
+      }
+      <span class="spacer"></span>
+      @if (!flash()?.undo) {
+        <button class="small" (click)="uncheckAll()" [disabled]="!done()" title="Uncheck every item">Uncheck all</button>
+        <button class="small" (click)="clearChecked()" [disabled]="!done()" title="Remove checked items">Clear ✓</button>
+      }
+    </div>
+  } @else {
+    <textarea
+      [value]="note().text"
+      (input)="onText($event)"
+      [style.font-size.px]="note().fontSize"
+      placeholder="Write anything… camp notes, quest steps, who to group with."
+      spellcheck="true"
+    ></textarea>
+  }
 </div>
 
 <dialog #dlg>
-  <h3>Note settings</h3>
+  <h3>{{ isList() ? 'Checklist' : 'Note' }} settings</h3>
   <div class="edit">
     <label>Title <input [value]="note().name" (change)="rename($event)" (keydown.enter)="closeEdit()" /></label>
-    <p class="hint">Text size: {{ note().fontSize }}px — use A− / A+ on the note to change it.</p>
+    <p class="hint">
+      Text size: {{ note().fontSize }}px — use A− / A+ on the {{ isList() ? 'checklist' : 'note' }} to change it. Drag the
+      bottom-right corner to resize it.
+    </p>
   </div>
   <div class="dialog-actions">
-    <button class="danger" (click)="remove($event)">Delete</button>
+    <button class="danger" (click)="removeNote($event)">Delete</button>
     <span class="spacer"></span>
     <button (click)="closeEdit(); store.closeNote(note().id)" title="Save it off the board; reopen with ▾ next to “Note”">Put away</button>
     <button class="primary" (click)="closeEdit()">Done</button>

@@ -254,3 +254,23 @@ dialog {
     color: var(--muted);
   }
 }
+
+/* Bottom-right resize handle on note panels (placed by the app shell). */
+.resize-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 3;
+  opacity: 0.45;
+  border-bottom-right-radius: 8px;
+  background: linear-gradient(135deg, transparent 50%, var(--muted) 50% 58%, transparent 58% 70%, var(--muted) 70% 78%, transparent 78%);
+
+  &:hover,
+  .resizing > & {
+    opacity: 1;
+  }
+}
