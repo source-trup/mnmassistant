@@ -109,6 +109,13 @@ export class CommunityWikiService {
     return hits;
   }
 
+  /** The source of a wiki page as plain text (e.g. a gadget's script), or null if it doesn't exist. */
+  async source(title: string): Promise<string | null> {
+    const data = await this.api({ action: 'query', titles: title, prop: 'revisions', rvprop: 'content', rvslots: 'main' });
+    const page = data?.query?.pages?.[0];
+    return page && !page.missing ? (page.revisions?.[0]?.slots?.main?.content ?? null) : null;
+  }
+
   /** A rendered page, or null if it doesn't exist. */
   async page(title: string): Promise<WikiPage | null> {
     if (this.pages.has(title)) return this.pages.get(title)!;

@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+export { coin } from './coin';
 
 /** MnMdb (https://mnm-db.com): a community economy database. Its data files are public JSON served with CORS. */
 export const MNMDB_URL = 'https://mnm-db.com/';
@@ -58,24 +59,23 @@ export interface PriceItem {
   soldBy: { name: string; zone: string }[];
 }
 
-const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-
-/** "1p 4g 5s 20c" from copper (100c = 1s, 100s = 1g, 100g = 1p). */
-export function coin(copper: number | null | undefined): string {
-  if (copper == null || !Number.isFinite(copper)) return '–';
-  let c = Math.round(copper);
-  if (c === 0) return '0c';
-  const parts: string[] = [];
-  for (const [unit, size] of [['p', 1_000_000], ['g', 10_000], ['s', 100]] as const) {
-    if (c >= size) {
-      parts.push(`${Math.floor(c / size)}${unit}`);
-      c %= size;
-    }
-  }
-  if (c) parts.push(`${c}c`);
-  // Big prices: the two largest units are plenty ("2g 35s", not "2g 35s 12c").
-  return parts.slice(0, 2).join(' ');
+/** "PRIMARY SECONDARY" -> "Primary / Secondary". */
+export function slotName(slot: string): string {
+  return slot
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0] + w.slice(1).toLowerCase())
+    .join(' / ');
 }
+
+export function median(xs: number[]): number | null {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+}
+
+const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
 /**
  * Loads MnMdb's market data straight from mnm-db.com when the Prices panel opens (nothing is copied into this app):
@@ -116,6 +116,17 @@ export class PriceService {
 
   find(name: string): PriceItem | undefined {
     return this.items().get(name.trim().toLowerCase());
+  }
+
+  /** Sell listings (or buy offers) seen in the last `days` days, counted back from MnMdb's last update. */
+  recent(it: PriceItem, intent: 'sell' | 'buy', days = 30): Listing[] {
+    const cutoff = (this.updatedAt() ?? Date.now()) - days * 86_400_000;
+    return it.listings.filter((l) => l.intent === intent && l.seen >= cutoff);
+  }
+
+  /** The typical (median) asking price per item over the last `days` days, or null if nobody listed it. */
+  typicalAsk(it: PriceItem, days = 30): number | null {
+    return median(this.recent(it, 'sell', days).map((l) => l.unit));
   }
 
   private build(auctions: any, ea: any, vendors: any): Map<string, PriceItem> {

@@ -1,0 +1,113 @@
+<button class="clock-btn" popovertarget="clock-pop" [title]="'Game time · ' + date() + ' · click for more'">
+  <span class="t">
+    🕰️ {{ time() }}
+    @if (anyOpen().length) {
+      <i class="dot" [title]="anyOpen().length + ' of your windows open'"></i>
+    }
+  </span>
+  <span class="next">
+    @for (d of dusk(); track d.label; let last = $last) {
+      {{ d.label }} in {{ short(d.ms) }}@if (!last) { · }
+    }
+  </span>
+</button>
+
+<div id="clock-pop" class="pop" popover>
+  <div class="now">
+    <span class="big">{{ time() }}</span>
+    <span class="sub">Day {{ now().dayOf }} of {{ now().daysPerRealDay }} · {{ date() }}</span>
+    <div class="bar" [title]="'Game day ' + dayPct().toFixed(0) + '% through'">
+      <div class="fill" [style.width.%]="dayPct()"></div>
+    </div>
+    <span class="rate">1 game hour = {{ realPerHour() }} real min@if (offsetText()) { · adjusted {{ offsetText() }}}</span>
+  </div>
+
+  <h4>Coming up</h4>
+  <ul class="marks">
+    @for (u of upcoming(); track u.label) {
+      <li>
+        <span class="gm">{{ u.label }}</span>
+        <span class="cd">in {{ countdown(u.ms) }}</span>
+        <span class="rt">{{ realClock(u.at) }}</span>
+      </li>
+    }
+  </ul>
+
+  <h4>
+    Your windows
+    <button class="small add" (click)="adding.set(!adding())" [title]="adding() ? 'Cancel' : 'Watch a span of game hours, e.g. a night spawn'">
+      {{ adding() ? 'Cancel' : '＋ Add' }}
+    </button>
+  </h4>
+  @if (adding()) {
+    <div class="form">
+      <input #wname placeholder="Name (e.g. Night Terror)" aria-label="Window name" (keydown.enter)="addWindow(wname.value, wfrom.value, wto.value)" />
+      <label>
+        from
+        <select #wfrom aria-label="From game hour">
+          @for (h of hours; track h) {
+            <option [value]="h" [selected]="h === 22">{{ hourName(h) }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        to
+        <select #wto aria-label="To game hour">
+          @for (h of hours; track h) {
+            <option [value]="h" [selected]="h === 4">{{ hourName(h) }}</option>
+          }
+        </select>
+      </label>
+      <button class="small primary" (click)="addWindow(wname.value, wfrom.value, wto.value)">Add</button>
+    </div>
+  }
+  <ul class="windows">
+    @for (w of windows(); track w.id) {
+      <li [class.open]="w.open">
+        <span class="wn">{{ w.name }}</span>
+        <span class="wr">{{ hourName(w.from) }}–{{ hourName(w.to) }}</span>
+        <span class="ws">
+          @if (w.open) {
+            <b>open</b> · ends in {{ countdown(w.ms) }}
+          } @else {
+            opens in {{ countdown(w.ms) }} <small>({{ realClock(w.at) }})</small>
+          }
+        </span>
+        <button class="x" (click)="store.removeGameWindow(w.id)" [title]="'Remove ' + w.name">✕</button>
+      </li>
+    } @empty {
+      @if (!adding()) {
+        <li class="empty">Add the game hours a named spawns in (e.g. 10 PM–4 AM) to see when they open.</li>
+      }
+    }
+  </ul>
+
+  <div class="adjust">
+    <span>Off from your game?</span>
+    <button class="small" (click)="nudge(-5)" title="5 game minutes earlier">−5</button>
+    <button class="small" (click)="nudge(5)" title="5 game minutes later">+5</button>
+    @if (offsetText()) {
+      <button class="small" (click)="store.setGameClockOffset(0)" title="Back to the wiki's time">Reset</button>
+    }
+  </div>
+
+  <p class="credit">
+    @switch (check()) {
+      @case ('match') {
+        ✓ Matches the <a [href]="gadgetUrl" target="_blank" rel="noopener">wiki's clock</a>.
+      }
+      @case ('changed') {
+        Updated to the <a [href]="gadgetUrl" target="_blank" rel="noopener">wiki's clock</a> (its speed changed to ×{{ gameSpeed() }}).
+      }
+      @case ('unreadable') {
+        The <a [href]="gadgetUrl" target="_blank" rel="noopener">wiki's clock</a> changed in a way the app doesn't recognise; using the usual formula.
+      }
+      @case ('offline') {
+        Couldn't reach the wiki to check; using the usual formula (same as the wiki's clock).
+      }
+      @default {
+        Checking against the wiki's clock…
+      }
+    }
+  </p>
+</div>

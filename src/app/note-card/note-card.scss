@@ -152,8 +152,9 @@ textarea {
 
 .foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
   margin-right: 10px; /* keep clear of the resize corner */
   white-space: nowrap;
   min-height: 22px;
@@ -178,4 +179,41 @@ textarea {
     opacity: 0.4;
     cursor: default;
   }
+}
+
+/* ---- Checklist prices ---- */
+.head .icon.on {
+  background: var(--spirit-soft);
+  border-color: var(--spirit-line);
+}
+
+.items .pr {
+  flex: none;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  font-size: 0.78em;
+  font-weight: 700;
+  color: var(--named);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  .ea {
+    font-weight: 400;
+    color: var(--muted);
+  }
+  &.none {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  &:hover {
+    text-decoration: underline;
+    filter: none;
+  }
+}
+
+.foot .cost {
+  font-weight: 700;
+  color: var(--named);
+  white-space: nowrap;
 }

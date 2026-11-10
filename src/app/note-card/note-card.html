@@ -4,8 +4,17 @@
     <app-panel-title [name]="note().name" (renamed)="store.updateNote(note().id, { name: $event })" (dblclick)="openEdit()" />
     <button class="icon font" (click)="font(-1)" [disabled]="note().fontSize <= FONT.min" title="Smaller text">A−</button>
     <button class="icon font" (click)="font(1)" [disabled]="note().fontSize >= FONT.max" title="Larger text">A+</button>
+    @if (isList()) {
+      <button
+        class="icon"
+        [class.on]="priced()"
+        (click)="togglePriced()"
+        [attr.aria-pressed]="priced()"
+        [title]="priced() ? 'Hide prices' : 'Show Trem market prices for these items'"
+      >💰</button>
+    }
     <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
-    <button class="icon" (click)="store.closeNote(note().id)" title="Put away — it's saved; bring it back with ▾ next to “Note” in the toolbar">—</button>
+    <button class="icon" (click)="store.closeNote(note().id)" title="Put away — it's saved; bring it back from ＋ Add in the toolbar">—</button>
     <button class="icon" (click)="removeNote($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>
 
@@ -35,6 +44,22 @@
               <span class="qty">{{ i.qty }}×</span>
             }
             <span class="txt">{{ i.text }}</span>
+            @if (priced()) {
+              @if (itemPrices().get(i.id); as p) {
+                <button
+                  class="pr"
+                  (click)="checkPrice(i.text, $event)"
+                  [title]="'Typical Trem ask: ' + coin(p.each) + ' each. Click for details.'"
+                >
+                  @if (i.qty && i.qty > 1) {
+                    <span class="ea">{{ coin(p.each) }} ea ·</span>
+                  }
+                  {{ coin(p.total) }}
+                </button>
+              } @else if (priceStatus() === 'ready') {
+                <span class="pr none" title="No Trem listings for this name">–</span>
+              }
+            }
             <button class="del" (click)="remove(i); $event.stopPropagation()" title="Remove">✕</button>
           }
         </li>
@@ -62,6 +87,16 @@
         <span class="progress" [class.all]="note().items.length && done() === note().items.length">
           {{ done() }} / {{ note().items.length }} done
         </span>
+        @if (priced()) {
+          @if (priceStatus() === 'ready') {
+            <span
+              class="cost"
+              [title]="toBuy().priced + ' of ' + toBuy().open + ' unchecked items have a Trem price; the rest aren\'t counted'"
+            >· to buy ~{{ coin(toBuy().total) }}</span>
+          } @else if (priceStatus() === 'loading') {
+            <span class="cost">· pricing…</span>
+          }
+        }
       }
       <span class="spacer"></span>
       @if (!flash()?.undo) {
@@ -92,7 +127,7 @@
   <div class="dialog-actions">
     <button class="danger" (click)="removeNote($event)">Delete</button>
     <span class="spacer"></span>
-    <button (click)="closeEdit(); store.closeNote(note().id)" title="Save it off the board; reopen with ▾ next to “Note”">Put away</button>
+    <button (click)="closeEdit(); store.closeNote(note().id)" title="Save it off the board; bring it back from ＋ Add in the toolbar">Put away</button>
     <button class="primary" (click)="closeEdit()">Done</button>
   </div>
 </dialog>

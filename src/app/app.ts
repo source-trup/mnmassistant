@@ -18,6 +18,7 @@ import { ClassesCard } from './classes/classes-card';
 import { PricesCard } from './prices/prices-card';
 import { WikiCard } from './community-wiki/wiki-card';
 import { QuickGuide } from './quick-guide/quick-guide';
+import { HeaderClock } from './game-clock/header-clock';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
@@ -55,7 +56,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, QuickGuide, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, QuickGuide, HeaderClock, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

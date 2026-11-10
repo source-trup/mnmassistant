@@ -48,3 +48,8 @@ Thumbs.db
 
 # Downloaded source pages (tools/build-classes.mjs --fetch)
 data/.cache/
+
+# Playwright test output
+/test-results/
+/playwright-report/
+/blob-report/

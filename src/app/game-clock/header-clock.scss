@@ -1,0 +1,247 @@
+:host {
+  display: flex;
+  align-items: center;
+}
+
+/* The toolbar clock: time on top, 6 PM / 6 AM countdowns underneath. */
+.clock-btn {
+  anchor-name: --clock-btn;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  padding: 1px 8px;
+  line-height: 1.15;
+  background: none;
+  border-color: transparent;
+
+  &:hover {
+    border-color: var(--border);
+    filter: none;
+  }
+  .t {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 800;
+    color: var(--spirit);
+    font-variant-numeric: tabular-nums;
+  }
+  .next {
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--named);
+    box-shadow: 0 0 6px var(--named);
+  }
+}
+
+.pop {
+  position: fixed;
+  inset: auto;
+  top: 56px;
+  right: 16px;
+  margin: 0;
+  width: 300px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--dialog-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 20px var(--card-glow);
+  font-size: 0.84rem;
+
+  @supports (position-anchor: --a) {
+    position-anchor: --clock-btn;
+    top: calc(anchor(bottom) + 6px);
+    right: anchor(right);
+  }
+}
+
+.now {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  .big {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--spirit);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 12px var(--spirit-line);
+  }
+  .sub {
+    font-size: 0.78rem;
+    text-align: center;
+    color: var(--bone);
+  }
+  .rate {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+}
+
+.bar {
+  width: 100%;
+  height: 4px;
+  margin: 4px 0 2px;
+  border-radius: 2px;
+  overflow: hidden;
+  /* Dark at both ends of the day, light in the middle. */
+  background: linear-gradient(90deg, #1b2240, #2e4a6b 25%, #6f8f5a 50%, #2e4a6b 75%, #1b2240);
+}
+
+.fill {
+  height: 100%;
+  background: color-mix(in srgb, var(--spirit) 70%, transparent);
+}
+
+h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0 4px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+
+  .add {
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.marks li {
+  display: flex;
+  gap: 8px;
+  padding: 1px 2px;
+
+  .gm {
+    width: 4.2em;
+    font-weight: 700;
+    color: var(--bone);
+  }
+  .cd {
+    flex: 1;
+  }
+  .rt {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-bottom: 6px;
+
+  input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+}
+
+.windows li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0 6px;
+  padding: 3px 6px;
+  margin-bottom: 3px;
+  border-left: 2px solid var(--border);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--input-bg) 50%, transparent);
+
+  &.open {
+    border-left-color: var(--spirit);
+    background: var(--spirit-soft);
+  }
+  &.empty {
+    display: block;
+    border: none;
+    background: none;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .wn {
+    font-weight: 700;
+    color: var(--bone);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wr {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .x {
+    grid-row: span 2;
+    padding: 0 4px;
+    border-color: transparent;
+    background: none;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .ws {
+    grid-column: 1 / 3;
+    font-size: 0.76rem;
+
+    b {
+      color: var(--spirit);
+    }
+    small {
+      color: var(--muted);
+    }
+  }
+}
+
+.adjust {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 0.74rem;
+  color: var(--muted);
+
+  span {
+    margin-right: auto;
+  }
+}
+
+.credit {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  color: var(--muted);
+
+  a {
+    color: inherit;
+  }
+}

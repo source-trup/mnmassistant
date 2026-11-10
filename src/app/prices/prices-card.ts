@@ -3,16 +3,8 @@ import { atlasMapForZone } from '../map/atlas-maps';
 import { PricePanel } from '../models';
 import { formatAgo } from '../time';
 import { TrackerStore } from '../tracker.store';
-import { Listing, MARKET_SERVER, MNMDB_URL, PriceItem, PriceService, coin } from './price.service';
+import { Listing, MARKET_SERVER, MNMDB_URL, PriceItem, PriceService, coin, median, slotName } from './price.service';
 
-const DAY = 86_400_000;
-
-function median(xs: number[]): number | null {
-  if (!xs.length) return null;
-  const s = [...xs].sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
-}
 
 /** Price checker: Trem auction asks and bids, NPC vendor value, and where an item comes from (data from MnMdb). */
 @Component({
@@ -100,12 +92,10 @@ export class PricesCard {
   private readonly inWindow = computed(() => {
     const it = this.item();
     if (!it) return { asks: [] as Listing[], bids: [] as Listing[] };
-    const ref = this.data.updatedAt() ?? Date.now();
-    const cutoff = ref - this.panel().days * DAY;
-    const recent = it.listings.filter((l) => l.seen >= cutoff);
+    const days = this.panel().days;
     return {
-      asks: recent.filter((l) => l.intent === 'sell').sort((a, b) => a.unit - b.unit),
-      bids: recent.filter((l) => l.intent === 'buy').sort((a, b) => b.unit - a.unit),
+      asks: this.data.recent(it, 'sell', days).sort((a, b) => a.unit - b.unit),
+      bids: this.data.recent(it, 'buy', days).sort((a, b) => b.unit - a.unit),
     };
   });
 
@@ -154,7 +144,7 @@ export class PricesCard {
     const i = this.item()?.info;
     if (!i) return [];
     const out: string[] = [];
-    if (i.slot) out.push(i.slot[0] + i.slot.slice(1).toLowerCase());
+    if (i.slot) out.push(slotName(i.slot));
     if (i.ac) out.push(`AC ${i.ac}`);
     if (i.dmg && i.delay) out.push(`${i.dmg}/${i.delay} dmg/delay`);
     for (const [k, v] of Object.entries(i.stats)) out.push(`${k} ${v > 0 ? '+' : ''}${v}`);

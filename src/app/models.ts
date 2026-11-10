@@ -140,6 +140,8 @@ export interface NoteItem extends GridPos {
   /** Size in grid cells (notes can be resized). */
   w: number;
   h: number;
+  /** Checklist: show Trem market prices next to the items. */
+  priced?: boolean;
   /** Put away: kept (with its text) but not shown on the board. Reopen it from the Notes menu. */
   closed: boolean;
 }
@@ -239,6 +241,22 @@ export interface WikiPanel extends GridPos {
   page: string | null;
 }
 
+/** A span of game hours to watch, e.g. a named that only spawns at night (22 → 4). */
+export interface GameWindow {
+  id: string;
+  name: string;
+  /** Game hours 0–23; the window wraps past midnight when from > to. */
+  from: number;
+  to: number;
+}
+
+/** The game clock in the toolbar: your windows and any correction. */
+export interface GameClockSettings {
+  windows: GameWindow[];
+  /** Game minutes to shift the clock by, if your game disagrees with the wiki's clock. */
+  offset: number;
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -262,6 +280,7 @@ export interface AppState {
   classPanel: ClassPanel;
   pricePanel: PricePanel;
   wikiPanel: WikiPanel;
+  gameClock: GameClockSettings;
   soundOn: boolean;
   theme: Theme;
 }

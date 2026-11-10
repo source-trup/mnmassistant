@@ -22,6 +22,7 @@ Monsters and Memories Wiki.
 - [Classes](#classes)
 - [Prices](#prices)
 - [Wiki](#wiki)
+- [Game time](#game-time)
 - [Level range](#level-range)
 - [Spells](#spells)
 - [Leveling](#leveling)
@@ -85,7 +86,7 @@ side are always evenly spaced. Sizes are saved with the layout, and a hidden too
 | **⏱ Timers** | `5m` `6m` `8m` `10m` (common placeholder respawns) add a timer in one click. For any other length, type it in the box (`7:30`, `90s`, `1h30m`) and press Enter. |
 | **＋ Add ▾** | Adds a panel: Count (standard counter), Named / PH (camp counter), Buff Tracker, Note or Checklist. Below them are your [saved notes](#notes); the number on the button is how many are put away. |
 | **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Prices](#prices), [Wiki](#wiki), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
-| Right side | **?** opens the quick guide, 🔔 / 🔕 mutes all alerts, ☰ menu |
+| Right side | The [game clock](#game-time) (🕰️ time, with how long until 6 PM and 6 AM; click it for more), **?** opens the quick guide, 🔔 / 🔕 mutes all alerts, ☰ menu |
 
 **Quick guide:** **?** in the toolbar (or **☰ → Quick guide**) opens a short "How to use" guide covering the
 toolbar, panels, timers, camps, buffs and notes, the tools, and saving. It opens by itself the first time someone
@@ -284,6 +285,7 @@ for a tradeskill run. It has the same title, text size, put away and resize cont
 | Remove an item | Hover it and click **✕** (**Undo** appears for a few seconds). |
 | Start over | **Uncheck all** |
 | Tidy up | **Clear ✓** removes the checked items (with **Undo**). |
+| Prices | **💰** in the header shows each item's typical Trem asking price ([Prices](#prices) data): per item and for the count, e.g. `12c ea · 2s 16c`, with **to buy ~…** in the footer for everything still unchecked. An item nobody on Trem has listed shows `–` and isn't counted. Click a price to open it in the Prices panel. |
 
 Adding an item that's already on the list adds to its count and unchecks it, so pasting two recipes' materials
 gives you the totals.
@@ -387,6 +389,27 @@ which removes scripts and styles.
 
 *Wiki content: the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) contributors,
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).*
+
+---
+
+## Game time
+
+The in-game clock is always in the toolbar (top right): **🕰️ 10:00 PM**, with **6 AM in 24m · 6 PM in 1h 0m**
+underneath (soonest first). A gold dot appears next to the time while one of your windows is open. Click the clock for
+the rest:
+
+- **The time**, **Day N of 20** and the **Eth-ur date** (e.g. *Sorophden, the 10th of Dyingember*), worked out the same
+  way as the clock in the [community wiki](https://monstersandmemories.miraheze.org/)'s sidebar: game time runs 20×
+  faster than real time from midnight UTC (one game hour is 3 real minutes, one game day 72), and the date is today's
+  UTC weekday and month with their Eth-ur names. A bar shows how far through the game day it is.
+- **Coming up**: how long until the next 12 AM, 6 AM, 12 PM and 6 PM game time, and the real clock time each happens.
+- **Your windows**: **＋ Add** a span of game hours to watch, such as a named that only spawns at night (10 PM–4 AM).
+  Each shows whether it's **open** and when it ends, or how long until it opens (and at what real time).
+- **Off from your game?** **−5 / +5** shift the clock by game minutes; **Reset** goes back to the wiki's time.
+
+When the app starts it reads the wiki clock's script (`MediaWiki:Gadget-mnmGameTimeSidebar.js`, one request a
+session) and checks the formula: the popover says **✓ Matches the wiki's clock**. If the wiki's maintainers change the
+speed, the app follows it and says so; if the wiki can't be reached, it uses the same formula and says that instead.
 
 ---
 
@@ -548,9 +571,17 @@ animation stops if your system's *reduce motion* setting is on.
 
 ---
 
-## Wiki item search (optional)
+## Item suggestions when recording loot
 
-Loot entry can autocomplete item names from the [Monsters and Memories Wiki](https://monstersandmemories.wiki/) using
+While you type a drop's name, suggestions come from (in this order) what this NPC has dropped before, items you've
+entered before, and [MnMdb](https://mnm-db.com/)'s list of about 2,000 items, each with its slot (gear) or its
+typical Trem price (everything else). The MnMdb list works everywhere, including the hosted site, with no key; it
+loads the first time you type an item name and is shared with the [Prices](#prices) panel. An item picked from it
+links to its MnMdb page in the history.
+
+### Wiki item search (optional, local only)
+
+Loot entry can also suggest items from the [Monsters and Memories Wiki](https://monstersandmemories.wiki/) using
 its partner API. This needs an API key (`mnmp_…`), which only a **wiki Site Admin** can issue.
 
 1. Put the key in a file named **`wiki-api-key.txt`** in the project folder (git-ignored), **or** set the
@@ -561,7 +592,7 @@ How it works: the app calls `/api/partner/v1/...` on its own address, and the de
 forwards those calls to the wiki with your key attached. The key never reaches the browser. Items picked from the
 wiki link to their wiki page in the history.
 
-Without a key everything else works, and suggestions come from your own past entries.
+Without a key everything else works, and suggestions come from your past entries and MnMdb.
 
 *Data from the Monsters and Memories Wiki — https://monstersandmemories.wiki/*
 
@@ -638,16 +669,38 @@ proxy.conf.mjs              Dev-server proxy that adds the wiki API key
 ```bash
 npm start          # dev server with wiki proxy at http://localhost:4200
 npx ng build       # production build to dist/mnm-assistant/browser
+npm test           # every test (logic, then the app in a browser)
+npm run test:unit  # just the logic tests (seconds)
+npm run test:app   # just the browser tests
+npm run test:report  # open the last HTML report
 ```
+
+**Tests** (Playwright, in `e2e/`)
+
+- `e2e/unit/`: plain logic, no browser: duration parsing, the level-range chart, checklist parsing (including the
+  wiki materials table), coin formatting, grid layout, and the game clock (checked against a copy of the wiki
+  gadget's own calculation across a whole day).
+- `e2e/app/`: the app in a browser, one file per area: board and toolbar, timers, camps and sessions, buffs, player
+  lists, notes and checklists (with prices), every tool panel, the quick guide.
+- The browser tests start `ng serve` on port 4300 (or reuse one already running there). They never touch the real
+  outside sites: `e2e/support/fixtures.ts` answers MnMdb, the wiki API and MnM Atlas with the small sample data in
+  `e2e/support/sample-data.ts`, so runs are quick, repeatable and offline.
+- Each test starts with an empty board in a fresh browser. Use the `freshVisit` fixture for a first visit, and the
+  helpers in `fixtures.ts` (`openTool`, `addPanel`, `savedState`, `loadState`, `dragBy`) to keep tests short.
+- Locally the tests use the installed Microsoft Edge. In CI they use Playwright's Chromium (`npx playwright install
+  chromium` installs it locally too; set `CI=1` to run the way CI does).
 
 **Deployment (GitHub Pages)**
 
-`.github/workflows/deploy.yml` builds the app and publishes `dist/mnm-assistant/browser` to GitHub Pages on every push
-to `main`. You can also run it by hand from the Actions tab. One-time repo setup:
+`.github/workflows/deploy.yml` runs the tests, then builds the app and publishes `dist/mnm-assistant/browser` to GitHub
+Pages, on every push to `main`. **A failing test stops the deploy**; the HTML report is attached to the failed run. You can also run it by hand from the Actions tab. One-time repo setup:
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
 2. The repo must be **public** (it is). Pages on private repos needs a paid GitHub plan.
 
 This is a project site served from `/mnmassistant/`, so the workflow builds with `--base-href /mnmassistant/`.
-If the repo is renamed, update that path in the workflow. On the hosted site, wiki search is switched off with a
-short note, because the proxy that adds the API key only exists in the local dev server.
+If the repo is renamed, update that path in the workflow. On the hosted site the wiki partner API item search is off
+(the proxy that adds its key only exists in the local dev server); loot suggestions come from MnMdb instead.
+
+The tool panels (Classes, Prices, Wiki, Map, Spells, Leveling, Level range, player lists) are loaded with
+`@defer` when first shown, which keeps the app's first download small.

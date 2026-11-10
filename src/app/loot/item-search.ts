@@ -1,13 +1,15 @@
 import { Component, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { LootItem } from '../models';
 import { TrackerStore } from '../tracker.store';
+import { MNMDB_URL, PriceService, coin, slotName } from '../prices/price.service';
 import { WIKI_HOME, WikiService } from '../wiki.service';
 
 interface Suggestion {
   item: LootItem;
-  source: 'drop' | 'recent' | 'wiki';
+  source: 'drop' | 'recent' | 'wiki' | 'mnmdb';
   detail: string;
 }
+
 
 /** An item this NPC has dropped before, and how many times. */
 export interface KnownDrop {
@@ -15,7 +17,10 @@ export interface KnownDrop {
   count: number;
 }
 
-/** Text box with autocomplete from previously entered items and the M&M wiki. */
+/**
+ * Text box with autocomplete: this NPC's past drops, items entered before, MnMdb's item list (works everywhere, no key)
+ * and, when running locally with a key, the M&M wiki's partner API.
+ */
 @Component({
   selector: 'app-item-search',
   template: `
@@ -43,10 +48,10 @@ export interface KnownDrop {
       }
       @if (hasWikiResults()) {
         <a class="attrib" [href]="wikiHome" target="_blank" rel="noopener">Data from the Monsters and Memories Wiki</a>
-      } @else if (wiki.status() === 'no-key' && query().length >= 2) {
-        <span class="attrib">Wiki search is off (no API key) — showing your past items.</span>
-      } @else if (wiki.status() === 'local-only' && query().length >= 2) {
-        <span class="attrib">Wiki search works when running locally (npm start) — showing your past items.</span>
+      } @else if (hasMnmdbResults()) {
+        <a class="attrib" [href]="mnmdbHome" target="_blank" rel="noopener">Item names from MnMdb</a>
+      } @else if (prices.status() === 'loading' && query().length >= 2) {
+        <span class="attrib">Loading the item list…</span>
       } @else if (wiki.status() === 'rate-limited') {
         <span class="attrib">Wiki search is resting (rate limit) — try again shortly.</span>
       }
@@ -88,7 +93,9 @@ export class ItemSearch {
 
   protected readonly store = inject(TrackerStore);
   protected readonly wiki = inject(WikiService);
+  protected readonly prices = inject(PriceService);
   protected readonly wikiHome = WIKI_HOME;
+  protected readonly mnmdbHome = MNMDB_URL;
   private readonly box = viewChild.required<ElementRef<HTMLInputElement>>('box');
 
   protected readonly query = signal('');
@@ -122,10 +129,28 @@ export class ItemSearch {
       source: 'wiki',
       detail: this.wikiSlots.get(item.name) || 'wiki',
     }));
-    return [...drops, ...recent, ...fromWiki];
+    // MnMdb's item list: names starting with the text first, then names containing it.
+    const taken = new Set([...dropNames, ...wikiNames, ...recent.map((r) => r.item.name.toLowerCase())]);
+    const names = this.prices.names().filter((n) => !taken.has(n.toLowerCase()));
+    const starts = names.filter((n) => n.toLowerCase().startsWith(q));
+    const contains = names.filter((n) => !n.toLowerCase().startsWith(q) && n.toLowerCase().includes(q));
+    const fromMnmdb: Suggestion[] = [...starts, ...contains]
+      .slice(0, Math.max(0, 8 - fromWiki.length))
+      .map((name) => this.mnmdbSuggestion(name));
+    return [...drops, ...recent, ...fromWiki, ...fromMnmdb];
   });
 
   protected readonly hasWikiResults = computed(() => this.wikiResults().length > 0);
+  protected readonly hasMnmdbResults = computed(() => this.suggestions().some((s) => s.source === 'mnmdb'));
+
+  /** An MnMdb item: its slot for gear, otherwise its typical Trem price. */
+  private mnmdbSuggestion(name: string): Suggestion {
+    const it = this.prices.find(name)!;
+    const slot = it.info?.slot ? slotName(it.info.slot) : '';
+    const typical = this.prices.typicalAsk(it);
+    const detail = slot || (typical !== null ? `~${coin(typical)}` : 'item');
+    return { item: { name: it.name, url: `${MNMDB_URL}#/item/${encodeURIComponent(it.id)}` }, source: 'mnmdb', detail };
+  }
 
   constructor() {
     afterNextRender(() => this.box().nativeElement.focus({ preventScroll: true }));
@@ -140,6 +165,8 @@ export class ItemSearch {
       this.wikiResults.set([]);
       return;
     }
+    // The item list loads once (shared with the Prices panel) the first time you type an item name.
+    void this.prices.load();
     this.debounce = setTimeout(() => this.searchWiki(value), 250);
   }
 

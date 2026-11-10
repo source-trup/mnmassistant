@@ -26,6 +26,8 @@ import {
   ClassPanel,
   PricePanel,
   WikiPanel,
+  GameClockSettings,
+  GameWindow,
   StandardCounter,
   Theme,
   TimerItem,
@@ -239,6 +241,17 @@ function normalizeWikiPanel(raw: any): WikiPanel {
     page: typeof raw.page === 'string' && raw.page.trim() ? raw.page.trim().slice(0, 200) : null,
     x: raw.x ?? -1,
     y: raw.y ?? -1,
+  };
+}
+
+function normalizeGameClock(raw: any): GameClockSettings {
+  if (!raw || typeof raw !== 'object') return { windows: [], offset: 0 };
+  const hour = (v: unknown) => Math.min(23, Math.max(0, Math.floor(Number(v)) || 0));
+  return {
+    windows: (Array.isArray(raw.windows) ? raw.windows : [])
+      .filter((w: any) => w && typeof w.name === 'string')
+      .map((w: any) => ({ id: typeof w.id === 'string' ? w.id : newId(), name: w.name.slice(0, 60), from: hour(w.from), to: hour(w.to) })),
+    offset: Math.max(-720, Math.min(720, Math.round(Number(raw.offset)) || 0)),
   };
 }
 
@@ -473,6 +486,7 @@ function defaultState(): AppState {
     classPanel: defaultClassPanel(),
     pricePanel: defaultPricePanel(),
     wikiPanel: defaultWikiPanel(),
+    gameClock: { windows: [], offset: 0 },
   };
 }
 
@@ -528,6 +542,7 @@ function normalizeState(parsed: any): AppState | null {
     classPanel: normalizeClassPanel(parsed.classPanel),
     pricePanel: normalizePricePanel(parsed.pricePanel),
     wikiPanel: normalizeWikiPanel(parsed.wikiPanel),
+    gameClock: normalizeGameClock(parsed.gameClock),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
@@ -570,6 +585,8 @@ export class TrackerStore {
   readonly classPanel = signal<ClassPanel>(defaultClassPanel());
   readonly pricePanel = signal<PricePanel>(defaultPricePanel());
   readonly wikiPanel = signal<WikiPanel>(defaultWikiPanel());
+  /** The toolbar game clock: your spawn windows and any adjustment. */
+  readonly gameClock = signal<GameClockSettings>({ windows: [], offset: 0 });
   /** A lookup another panel asked the Wiki panel to do (not saved). The counter makes repeat lookups fire again. */
   readonly wikiLookup = signal<{ term: string; n: number } | null>(null);
   /** Saved buff lists, sorted by name when shown. */
@@ -1454,6 +1471,22 @@ export class TrackerStore {
     return { item: name, recent };
   }
 
+  // ---------- game time ----------
+
+  addGameWindow(name: string, from: number, to: number): void {
+    const w: GameWindow = { id: newId(), name: name.trim().slice(0, 60) || 'Window', from, to };
+    this.gameClock.update((c) => ({ ...c, windows: [...c.windows, w] }));
+  }
+
+  removeGameWindow(id: string): void {
+    this.gameClock.update((c) => ({ ...c, windows: c.windows.filter((w) => w.id !== id) }));
+  }
+
+  /** Shift the game clock by game minutes (−720…720), e.g. if your game disagrees with the wiki's clock. */
+  setGameClockOffset(minutes: number): void {
+    this.gameClock.update((c) => ({ ...c, offset: Math.max(-720, Math.min(720, Math.round(minutes))) }));
+  }
+
   // ---------- community wiki ----------
 
   updateWikiPanel(patch: Partial<WikiPanel>): void {
@@ -1735,6 +1768,7 @@ export class TrackerStore {
     this.classPanel.set(state.classPanel);
     this.pricePanel.set(state.pricePanel);
     this.wikiPanel.set(state.wikiPanel);
+    this.gameClock.set(state.gameClock);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1831,6 +1865,7 @@ export class TrackerStore {
       classPanel: this.classPanel(),
       pricePanel: this.pricePanel(),
       wikiPanel: this.wikiPanel(),
+      gameClock: this.gameClock(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -1863,6 +1898,7 @@ export class TrackerStore {
     this.classPanel.set(state.classPanel);
     this.pricePanel.set(state.pricePanel);
     this.wikiPanel.set(state.wikiPanel);
+    this.gameClock.set(state.gameClock);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);

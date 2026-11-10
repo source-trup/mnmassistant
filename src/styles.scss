@@ -274,3 +274,11 @@ dialog {
     opacity: 1;
   }
 }
+
+/* Shown for a moment while a tool panel's code loads (they load on demand). */
+.panel-loading {
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}

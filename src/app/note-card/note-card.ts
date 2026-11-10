@@ -1,7 +1,8 @@
-import { Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { ConfirmService } from '../confirm.service';
 import { CheckItem, NoteItem } from '../models';
 import { PanelTitle } from '../panel-title';
+import { PriceService, coin } from '../prices/price.service';
 import { NOTE_FONT, TrackerStore } from '../tracker.store';
 import { formatItem, parseChecklist, parseLine } from './checklist-parse';
 
@@ -22,6 +23,49 @@ export class NoteCard {
   protected readonly FONT = NOTE_FONT;
   protected readonly isList = computed(() => this.note().type === 'checklist');
   protected readonly done = computed(() => this.note().items.filter((i) => i.done).length);
+
+  // ---------- prices (checklists) ----------
+
+  private readonly prices = inject(PriceService);
+  protected readonly coin = coin;
+  protected readonly priced = computed(() => this.isList() && !!this.note().priced);
+  protected readonly priceStatus = this.prices.status;
+
+  /** Each item's typical Trem asking price (per item, and for the quantity), when pricing is on. */
+  protected readonly itemPrices = computed(() => {
+    const out = new Map<string, { each: number; total: number } | null>();
+    if (!this.priced() || this.prices.status() !== 'ready') return out;
+    for (const i of this.note().items) {
+      const it = this.prices.find(i.text);
+      const each = it ? this.prices.typicalAsk(it) : null;
+      out.set(i.id, each === null ? null : { each, total: each * (i.qty ?? 1) });
+    }
+    return out;
+  });
+
+  /** Cost of what's still unchecked, and how many of those items have a price. */
+  protected readonly toBuy = computed(() => {
+    const prices = this.itemPrices();
+    const open = this.note().items.filter((i) => !i.done);
+    const priced = open.filter((i) => prices.get(i.id));
+    return { total: priced.reduce((n, i) => n + prices.get(i.id)!.total, 0), priced: priced.length, open: open.length };
+  });
+
+  protected togglePriced(): void {
+    this.store.updateNote(this.note().id, { priced: !this.note().priced });
+  }
+
+  protected checkPrice(text: string, e: Event): void {
+    e.stopPropagation();
+    this.store.showPrice(text);
+  }
+
+  constructor() {
+    // Price data loads the first time a checklist turns pricing on (it's shared with the Prices panel).
+    effect(() => {
+      if (this.priced()) void this.prices.load();
+    });
+  }
 
   protected onText(e: Event): void {
     this.store.updateNote(this.note().id, { text: (e.target as HTMLTextAreaElement).value });

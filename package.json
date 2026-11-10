@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "playwright test",
+    "test:unit": "playwright test --project=unit",
+    "test:app": "playwright test --project=app",
+    "test:report": "playwright show-report",
     "spells": "node tools/build-spells.mjs",
     "leveling": "node tools/build-leveling.mjs",
     "classes": "node tools/build-classes.mjs"
@@ -27,6 +30,7 @@
     "@angular/build": "^22.2.5",
     "@angular/cli": "^22.2.5",
     "@angular/compiler-cli": "^22.2.0",
+    "@playwright/test": "1.64.1",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2"
   }

@@ -1,4 +1,5 @@
-# Builds the Angular app and publishes it to GitHub Pages on every push to main.
+# Tests the app, then builds it and publishes it to GitHub Pages, on every push to main. A failing test stops
+# the deploy.
 #
 # One-time setup in the repo: Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Deploy to GitHub Pages
@@ -19,7 +20,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      NG_CLI_ANALYTICS: 'false'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      # Logic checks, then the app in a browser (started by playwright.config.ts with ng serve).
+      - run: npx playwright test
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

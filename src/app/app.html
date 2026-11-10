@@ -91,6 +91,8 @@
 
   <span class="spacer"></span>
 
+  <app-header-clock />
+
   <div class="group">
     <button class="help" (click)="guide.open()" title="Quick guide: how to use MnM Assistant">?</button>
     <button (click)="store.toggleSound()" [title]="store.soundOn() ? 'Mute alerts' : 'Unmute alerts'">
@@ -165,28 +167,60 @@
             <app-note-card [note]="p.item" />
           }
           @case ('players') {
-            <app-player-list-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-player-list-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('levels') {
-            <app-level-range-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-level-range-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('spells') {
-            <app-spells-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-spells-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('leveling') {
-            <app-leveling-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-leveling-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('map') {
-            <app-map-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-map-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('classes') {
-            <app-classes-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-classes-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('prices') {
-            <app-prices-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-prices-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
           @case ('wiki') {
-            <app-wiki-card [panel]="p.item" />
+            @defer (on immediate) {
+              <app-wiki-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
           }
         }
         <div
