@@ -11,14 +11,18 @@ import { NoteItem } from './models';
 import { NoteCard } from './note-card/note-card';
 import { LevelRangeCard } from './level-range/level-range-card';
 import { PlayerListCard } from './player-list/player-list-card';
+import { SpellsCard } from './spells/spells-card';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
-import { NOTE_MIN, PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
+import { PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
 
-/** A note being resized by its bottom-right corner. */
+/** A panel (note or Spells) being resized by its bottom-right corner. */
 interface ResizeState {
   id: string;
+  /** Smallest allowed size, in grid cells. */
+  minW: number;
+  minH: number;
   x: number;
   y: number;
   /** Live drawn size in px (follows the pointer). */
@@ -45,7 +49,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -108,8 +112,8 @@ export class App {
     const r = this.resize();
     if (!r) return null;
     const maxW = this.store.cols() - r.x + 1;
-    const w = Math.min(maxW, Math.max(NOTE_MIN.w, Math.round(r.pw / GRID) + 1));
-    const h = Math.max(NOTE_MIN.h, Math.round(r.ph / GRID) + 1);
+    const w = Math.min(maxW, Math.max(r.minW, Math.round(r.pw / GRID) + 1));
+    const h = Math.max(r.minH, Math.round(r.ph / GRID) + 1);
     const rect = { x: r.x, y: r.y, w, h };
     return { ...rect, valid: this.store.canPlace(r.id, rect) };
   });
@@ -336,21 +340,22 @@ export class App {
   }
 
   protected startResize(e: PointerEvent, p: Panel): void {
-    if (e.button !== 0) return;
+    const min = this.store.minSize(p);
+    if (e.button !== 0 || !min) return;
     e.preventDefault();
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const w = (p.w - 1) * GRID;
     const h = (p.h - 1) * GRID;
-    this.resize.set({ id: p.id, x: p.x, y: p.y, pw: w, ph: h, startX: e.clientX, startY: e.clientY, startW: w, startH: h });
+    this.resize.set({ id: p.id, minW: min.w, minH: min.h, x: p.x, y: p.y, pw: w, ph: h, startX: e.clientX, startY: e.clientY, startW: w, startH: h });
   }
 
   protected moveResize(e: PointerEvent): void {
     const r = this.resize();
     if (!r) return;
     e.stopPropagation();
-    const minW = (NOTE_MIN.w - 1) * GRID;
-    const minH = (NOTE_MIN.h - 1) * GRID;
+    const minW = (r.minW - 1) * GRID;
+    const minH = (r.minH - 1) * GRID;
     this.resize.set({
       ...r,
       pw: Math.max(minW, r.startW + e.clientX - r.startX),
@@ -363,7 +368,7 @@ export class App {
     const r = this.resize();
     const prev = this.resizePreview();
     this.resize.set(null);
-    if (r && prev?.valid) this.store.resizeNote(r.id, prev.w, prev.h);
+    if (r && prev?.valid) this.store.resizePanel(r.id, prev.w, prev.h);
   }
 
   private pointerInBoard(e: PointerEvent): { x: number; y: number } {

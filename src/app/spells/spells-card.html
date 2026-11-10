@@ -1,0 +1,152 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">📖 Spells</span>
+    <button class="icon" (click)="store.toggleSpells()" title="Hide (show it again from the toolbar)">✕</button>
+  </div>
+
+  <div class="filters">
+    <select #clsSel class="cls" (change)="setClass(clsSel.value)" title="Class" aria-label="Class">
+      <option value="" [selected]="!cls()">All classes</option>
+      @for (c of data.classes(); track c) {
+        <option [value]="c" [selected]="c === cls()">{{ c }}</option>
+      }
+    </select>
+    <span class="lvl">
+      <button class="small" (click)="stepLevel(-1)" [disabled]="!canStep(-1)" title="Previous level with spells">‹</button>
+      <select #lvlSel (change)="setLevel(lvlSel.value)" title="Level" aria-label="Level">
+        <option value="" [selected]="level() === null">All levels</option>
+        @for (l of levels(); track l) {
+          <option [value]="l" [selected]="l === level()">Level {{ l }}</option>
+        }
+        @if (level() !== null && !levels().includes(level()!)) {
+          <option [value]="level()" selected>Level {{ level() }}</option>
+        }
+      </select>
+      <button class="small" (click)="stepLevel(1)" [disabled]="!canStep(1)" title="Next level with spells">›</button>
+    </span>
+  </div>
+
+  <div class="search">
+    <input
+      #box
+      [value]="query()"
+      (input)="onSearch(box.value)"
+      (keydown.escape)="onSearch('')"
+      placeholder="Search spells… name or effect"
+      aria-label="Search spells"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    @if (searching()) {
+      <button class="small" (click)="onSearch(''); box.focus()" title="Clear search">✕</button>
+    }
+  </div>
+
+  @switch (data.status()) {
+    @case ('ready') {
+      <div class="summary" aria-live="polite">
+        @if (searching()) {
+          <span>
+            <b>{{ results().length }}</b> match{{ results().length === 1 ? '' : 'es' }}
+            in {{ cls() ?? 'all classes' }}, any level
+          </span>
+          @if (elsewhere() > 0) {
+            <button class="small" (click)="setClass('')" title="Search every class">+{{ elsewhere() }} in other classes</button>
+          }
+        } @else {
+          <span class="cost">
+            <span class="k">{{ level() === null ? 'All levels' : 'Level ' + level() }} · {{ summary().count }} spell{{ summary().count === 1 ? '' : 's' }}</span>
+            <span class="v" title="Total vendor price of the spells listed">{{ summary().total }}</span>
+          </span>
+          @if (summary().upTo; as u) {
+            <span class="cost sub" [title]="u.count + ' spells from level 1 to ' + level()">
+              <span class="k">Levels 1–{{ level() }}</span>
+              <span class="v">{{ u.total }}</span>
+            </span>
+          }
+          @if (summary().unpriced) {
+            <span class="note" title="Spells with no price listed aren't counted in the total">{{ summary().unpriced }} without a price</span>
+          }
+        }
+      </div>
+
+      <div class="list">
+        @for (g of groups(); track g.level) {
+          @if (g.level >= 0 && level() === null) {
+            <div class="group">
+              <button class="glvl" (click)="setLevel(g.level)" [title]="'Show only level ' + g.level">Level {{ g.level }}</button>
+              <span class="gtotal">{{ coin(g.total) }}</span>
+            </div>
+          }
+          @for (s of g.spells; track s.id) {
+            <div class="spell" [class.open]="openId() === s.id">
+              <button class="row" (click)="toggle(s)" [attr.aria-expanded]="openId() === s.id">
+                @if (g.level < 0) {
+                  <span class="rl" title="Level">{{ s.level }}</span>
+                }
+                <span class="rn">
+                  {{ s.name }}
+                  @if (!cls()) {
+                    <span class="rc">{{ s.classes.join(', ') }}</span>
+                  }
+                </span>
+                <span class="dots" aria-hidden="true">
+                  @for (k of s.kinds; track k) {
+                    <i [attr.data-kind]="k" [title]="k"></i>
+                  }
+                </span>
+                <span class="rp">{{ coin(s.price) }}</span>
+              </button>
+              @if (openId() === s.id) {
+                <div class="detail">
+                  @if (s.kinds.length) {
+                    <div class="kinds">
+                      @for (k of s.kinds; track k) {
+                        <span class="kind" [attr.data-kind]="k">{{ k }}</span>
+                      }
+                    </div>
+                  }
+                  <dl>
+                    <div><dt>Level</dt><dd>{{ s.level }}</dd></div>
+                    <div><dt>School</dt><dd>{{ s.school ?? '–' }}</dd></div>
+                    <div><dt>Mana</dt><dd>{{ mana(s.mana) }}</dd></div>
+                    <div><dt>Price</dt><dd>{{ coin(s.price) }}</dd></div>
+                  </dl>
+                  <p class="classes"><span class="lbl">{{ s.classes.length === 1 ? 'Class' : 'Classes' }}</span> {{ s.classes.join(', ') }}</p>
+                  <p class="effect">{{ s.effect || 'No description yet.' }}</p>
+                </div>
+              }
+            </div>
+          }
+        } @empty {
+          <p class="hint">
+            @if (searching()) {
+              No {{ cls() ?? '' }} spells match “{{ query().trim() }}”.
+            } @else if (level() !== null) {
+              {{ cls() ? cls() + ' gets no spells' : 'There are no spells' }} at level {{ level() }}.
+              @for (l of nearby(); track l) {
+                <button class="small" (click)="setLevel(l)">Level {{ l }}</button>
+              }
+            } @else {
+              No spells.
+            }
+          </p>
+        }
+        @if (hidden() > 0) {
+          <button class="more" (click)="showAll.set(true)">Show {{ hidden() }} more</button>
+        }
+      </div>
+    }
+    @case ('error') {
+      <p class="hint">Couldn't load the spell list. <button class="small" (click)="data.load()">Try again</button></p>
+    }
+    @default {
+      <p class="hint">Loading spells…</p>
+    }
+  }
+
+  <p class="credit">
+    Spell data from the <a href="https://monstersandmemories.wiki/spells" target="_blank" rel="noopener">Monsters and Memories Wiki</a>
+  </p>
+</div>

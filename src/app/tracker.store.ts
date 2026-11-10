@@ -20,6 +20,7 @@ import {
   PlayerListKind,
   PlayerListPanel,
   LevelPanel,
+  SpellPanel,
   StandardCounter,
   Theme,
   TimerItem,
@@ -44,7 +45,12 @@ export type Panel =
   | ({ id: string; kind: 'buffs'; item: BuffPanel } & Rect)
   | ({ id: string; kind: 'note'; item: NoteItem } & Rect)
   | ({ id: string; kind: 'players'; item: PlayerListPanel } & Rect)
-  | ({ id: string; kind: 'levels'; item: LevelPanel } & Rect);
+  | ({ id: string; kind: 'levels'; item: LevelPanel } & Rect)
+  | ({ id: string; kind: 'spells'; item: SpellPanel } & Rect);
+
+/** Panel id of the single Spells panel, and the smallest it can be resized to (grid cells). */
+export const SPELL_PANEL_ID = 'spells';
+export const SPELLS_MIN = { w: 15, h: 12 };
 
 /** Panel id of the single Level range panel. */
 export const LEVEL_PANEL_ID = 'levels';
@@ -84,6 +90,25 @@ function normalizePlayers(raw: any): Record<PlayerListKind, PlayerEntry[]> {
 
 function defaultLevelPanel(): LevelPanel {
   return { shown: false, level: null, ...UNPLACED };
+}
+
+function defaultSpellPanel(): SpellPanel {
+  return { shown: false, ...PANEL_SIZE.spells, cls: 'Shaman', level: null, ...UNPLACED };
+}
+
+function normalizeSpellPanel(raw: any): SpellPanel {
+  const base = defaultSpellPanel();
+  if (!raw || typeof raw !== 'object') return base;
+  const level = Math.floor(Number(raw.level));
+  return {
+    shown: raw.shown === true,
+    w: Math.max(SPELLS_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(SPELLS_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    cls: typeof raw.cls === 'string' && raw.cls ? raw.cls : raw.cls === null ? null : base.cls,
+    level: level >= 1 && level <= LEVEL_CAP ? level : null,
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
 }
 
 function normalizeLevelPanel(raw: any): LevelPanel {
@@ -303,6 +328,7 @@ function defaultState(): AppState {
     players: { naughty: [], nice: [] },
     listPanels: defaultListPanels(),
     levelPanel: defaultLevelPanel(),
+    spellPanel: defaultSpellPanel(),
   };
 }
 
@@ -352,6 +378,7 @@ function normalizeState(parsed: any): AppState | null {
     players: normalizePlayers(parsed.players),
     listPanels: normalizeListPanels(parsed.listPanels),
     levelPanel: normalizeLevelPanel(parsed.levelPanel),
+    spellPanel: normalizeSpellPanel(parsed.spellPanel),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
@@ -388,6 +415,7 @@ export class TrackerStore {
   readonly players = signal<Record<PlayerListKind, PlayerEntry[]>>({ naughty: [], nice: [] });
   readonly listPanels = signal<Record<PlayerListKind, PlayerListPanel>>(defaultListPanels());
   readonly levelPanel = signal<LevelPanel>(defaultLevelPanel());
+  readonly spellPanel = signal<SpellPanel>(defaultSpellPanel());
   /** Saved buff lists, sorted by name when shown. */
   readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
@@ -411,6 +439,9 @@ export class TrackerStore {
     ...[this.levelPanel()]
       .filter((p) => p.shown)
       .map((p) => ({ id: LEVEL_PANEL_ID, kind: 'levels' as const, item: p, x: p.x, y: p.y, ...PANEL_SIZE.levels })),
+    ...[this.spellPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: SPELL_PANEL_ID, kind: 'spells' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
   ]);
 
   /** Notes that have been put away, in the order they were created. */
@@ -477,6 +508,7 @@ export class TrackerStore {
     else if (this.buffPanels().some((b) => b.id === id)) this.updateBuffPanel(id, { x, y });
     else if (id.startsWith('list:')) this.updateListPanel(id.slice(5) as PlayerListKind, { x, y });
     else if (id === LEVEL_PANEL_ID) this.updateLevelPanel({ x, y });
+    else if (id === SPELL_PANEL_ID) this.updateSpellPanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -500,6 +532,8 @@ export class TrackerStore {
     }
     const levelSpot = pos.get(LEVEL_PANEL_ID);
     if (levelSpot) this.updateLevelPanel(levelSpot);
+    const spellSpot = pos.get(SPELL_PANEL_ID);
+    if (spellSpot) this.updateSpellPanel(spellSpot);
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -528,6 +562,7 @@ export class TrackerStore {
       return next;
     });
     this.levelPanel.update((p) => (p.shown ? place(p, PANEL_SIZE.levels) : p));
+    this.spellPanel.update((p) => (p.shown ? place(p, p) : p));
   }
 
   // ---------- timers ----------
@@ -1028,15 +1063,6 @@ export class TrackerStore {
     this.placeUnplaced();
   }
 
-  /** Resizes a note (grid cells) if the new footprint is free. */
-  resizeNote(id: string, w: number, h: number): boolean {
-    const n = this.notes().find((x) => x.id === id);
-    if (!n || w < NOTE_MIN.w || h < NOTE_MIN.h || !this.canPlace(id, { x: n.x, y: n.y, w, h })) return false;
-    if (n.x + w - 1 > this.cols()) return false;
-    this.updateNote(id, { w, h });
-    return true;
-  }
-
   // ---------- checklists ----------
 
   private updateItems(id: string, fn: (items: CheckItem[]) => CheckItem[]): void {
@@ -1124,6 +1150,40 @@ export class TrackerStore {
   stepNoteFont(id: string, dir: -1 | 1): void {
     const n = this.notes().find((x) => x.id === id);
     if (n) this.updateNote(id, { fontSize: clampFont(n.fontSize + dir * NOTE_FONT.step) });
+  }
+
+  // ---------- spells ----------
+
+  updateSpellPanel(patch: Partial<SpellPanel>): void {
+    this.spellPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Spells panel (it comes back in its old spot if that's still free). */
+  toggleSpells(): void {
+    const p = this.spellPanel();
+    if (p.shown) {
+      this.updateSpellPanel({ shown: false });
+      return;
+    }
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(SPELL_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
+    this.updateSpellPanel({ shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** Smallest size a panel can be resized to, or null if it can't be resized. */
+  minSize(p: Panel): { w: number; h: number } | null {
+    return p.kind === 'note' ? NOTE_MIN : p.kind === 'spells' ? SPELLS_MIN : null;
+  }
+
+  /** Resizes a note or the Spells panel (grid cells) if the new footprint is free. */
+  resizePanel(id: string, w: number, h: number): boolean {
+    const p = this.panels().find((x) => x.id === id);
+    const min = p && this.minSize(p);
+    if (!p || !min || w < min.w || h < min.h || p.x + w - 1 > this.cols()) return false;
+    if (!this.canPlace(id, { x: p.x, y: p.y, w, h })) return false;
+    if (p.kind === 'spells') this.updateSpellPanel({ w, h });
+    else this.updateNote(id, { w, h });
+    return true;
   }
 
   // ---------- level range ----------
@@ -1285,6 +1345,7 @@ export class TrackerStore {
     });
     this.listPanels.set(state.listPanels);
     this.levelPanel.set(state.levelPanel);
+    this.spellPanel.set(state.spellPanel);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1375,6 +1436,7 @@ export class TrackerStore {
       players: this.players(),
       listPanels: this.listPanels(),
       levelPanel: this.levelPanel(),
+      spellPanel: this.spellPanel(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -1397,6 +1459,7 @@ export class TrackerStore {
     this.players.set(state.players);
     this.listPanels.set(state.listPanels);
     this.levelPanel.set(state.levelPanel);
+    this.spellPanel.set(state.spellPanel);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);

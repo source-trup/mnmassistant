@@ -20,6 +20,7 @@ Monsters and Memories Wiki.
 - [Notes](#notes)
 - [Naughty and Nice lists](#naughty-and-nice-lists)
 - [Level range](#level-range)
+- [Spells](#spells)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -296,7 +297,7 @@ toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in 
 The lists are saved with everything else and included in layout files. Loading a layout file adds its names to
 yours rather than replacing them.
 
-On screens narrower than about 1700px the **Lists** toggles show just their icons (😈 😇 📊) so the toolbar stays on
+On screens narrower than about 1700px the **Lists** toggles show just their icons (😈 😇 📊 📖) so the toolbar stays on
 one row. Hover one to see its name.
 
 ---
@@ -314,6 +315,31 @@ comes back in the same spot).
 - The entered level's row and its lowest partner's row are highlighted, and the rows between them are tinted. Click
   any row to look up that level.
 - The last level you entered is remembered.
+
+---
+
+## Spells
+
+Every class spell and ability with its kind, level, school, mana, vendor price, classes and effect.
+**Lists → 📖 Spells** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and
+size). Drag its bottom-right corner to resize it.
+
+| Action | How |
+| --- | --- |
+| Pick a class | The class box (starts on Shaman). **All classes** shows everything, with each spell's classes beside its name. |
+| Pick a level | The level box lists the levels at which that class gets something. **‹ ›** step to the previous / next such level. **All levels** groups the list by level, each with its cost; click a level heading to jump to it. |
+| What a level costs | The line under the search box: the number of spells and their **total vendor price** at the chosen level, plus the running total for **levels 1 to that level**. Spells with no price listed are counted separately and left out of the total. |
+| Search | Type part of a name. Searches of 3+ letters also look in the effect text (try `underwater`). Search covers every level of the chosen class and offers the matches in other classes. Esc clears it. |
+| Spell details | Click a spell: kind(s), level, school, mana, price, classes and the full effect text. Click again to close. |
+
+The colored dots on each row are the spell's kinds (damage, heal, buff, debuff, crowd control, defense, pet, cure,
+threat, utility); hover one to see which. Prices use 100c = 1s and 100s = 1g. The class and level you picked are
+remembered.
+
+The list is only downloaded the first time you open the panel. It lives in `data/spells.txt`; after editing that
+file run `npm run spells` to rebuild `public/spells.json`.
+
+*Spell data from the Monsters and Memories Wiki — https://monstersandmemories.wiki/spells*
 
 ---
 

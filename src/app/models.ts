@@ -159,6 +159,17 @@ export interface LevelPanel extends GridPos {
   level: number | null;
 }
 
+/** The single Spells panel: position, size, visibility and the last class / level picked. */
+export interface SpellPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  /** Class filter; null = all classes. */
+  cls: string | null;
+  /** Level filter; null = all levels. */
+  level: number | null;
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -176,6 +187,7 @@ export interface AppState {
   players: Record<PlayerListKind, PlayerEntry[]>;
   listPanels: Record<PlayerListKind, PlayerListPanel>;
   levelPanel: LevelPanel;
+  spellPanel: SpellPanel;
   soundOn: boolean;
   theme: Theme;
 }

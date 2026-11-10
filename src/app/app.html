@@ -89,6 +89,16 @@
     >
       📊<span class="t"> Levels</span>
     </button>
+    <button
+      class="toggle"
+      [class.on]="store.spellPanel().shown"
+      [attr.aria-pressed]="store.spellPanel().shown"
+      (click)="store.toggleSpells()"
+      aria-label="Spells"
+      [title]="(store.spellPanel().shown ? 'Hide' : 'Show') + ' the spell list: filter by class and level, see what a level costs, search'"
+    >
+      📖<span class="t"> Spells</span>
+    </button>
   </div>
 
   <span class="spacer"></span>
@@ -160,14 +170,6 @@
           }
           @case ('note') {
             <app-note-card [note]="p.item" />
-            <div
-              class="resize-grip"
-              title="Drag to resize"
-              (pointerdown)="startResize($event, p)"
-              (pointermove)="moveResize($event)"
-              (pointerup)="endResize($event)"
-              (pointercancel)="resize.set(null)"
-            ></div>
           }
           @case ('players') {
             <app-player-list-card [panel]="p.item" />
@@ -175,6 +177,19 @@
           @case ('levels') {
             <app-level-range-card [panel]="p.item" />
           }
+          @case ('spells') {
+            <app-spells-card [panel]="p.item" />
+          }
+        }
+        @if (store.minSize(p)) {
+          <div
+            class="resize-grip"
+            title="Drag to resize"
+            (pointerdown)="startResize($event, p)"
+            (pointermove)="moveResize($event)"
+            (pointerup)="endResize($event)"
+            (pointercancel)="resize.set(null)"
+          ></div>
         }
       </div>
     } @empty {
