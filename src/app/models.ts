@@ -153,6 +153,12 @@ export interface PlayerListPanel extends GridPos {
   shown: boolean;
 }
 
+/** The single Level range panel: where it is, whether it's shown, and the last level typed in. */
+export interface LevelPanel extends GridPos {
+  shown: boolean;
+  level: number | null;
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -169,6 +175,7 @@ export interface AppState {
   /** Naughty / Nice player lists. */
   players: Record<PlayerListKind, PlayerEntry[]>;
   listPanels: Record<PlayerListKind, PlayerListPanel>;
+  levelPanel: LevelPanel;
   soundOn: boolean;
   theme: Theme;
 }

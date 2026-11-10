@@ -73,11 +73,22 @@
         [class.on]="store.listPanels()[k].shown"
         [attr.aria-pressed]="store.listPanels()[k].shown"
         (click)="store.toggleList(k)"
+        [attr.aria-label]="(k === 'naughty' ? 'Naughty' : 'Nice') + ' list'"
         [title]="(store.listPanels()[k].shown ? 'Hide' : 'Show') + ' your ' + (k === 'naughty' ? 'Naughty' : 'Nice') + ' list (' + store.players()[k].length + ')'"
       >
-        {{ k === 'naughty' ? '😈 Naughty' : '😇 Nice' }}
+        {{ k === 'naughty' ? '😈' : '😇' }}<span class="t"> {{ k === 'naughty' ? 'Naughty' : 'Nice' }}</span>
       </button>
     }
+    <button
+      class="toggle"
+      [class.on]="store.levelPanel().shown"
+      [attr.aria-pressed]="store.levelPanel().shown"
+      (click)="store.toggleLevels()"
+      aria-label="Levels"
+      [title]="(store.levelPanel().shown ? 'Hide' : 'Show') + ' the group level range chart'"
+    >
+      📊<span class="t"> Levels</span>
+    </button>
   </div>
 
   <span class="spacer"></span>
@@ -160,6 +171,9 @@
           }
           @case ('players') {
             <app-player-list-card [panel]="p.item" />
+          }
+          @case ('levels') {
+            <app-level-range-card [panel]="p.item" />
           }
         }
       </div>

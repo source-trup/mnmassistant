@@ -9,6 +9,7 @@ import { CounterCard } from './counter-card/counter-card';
 import { GRID, maxX } from './layout';
 import { NoteItem } from './models';
 import { NoteCard } from './note-card/note-card';
+import { LevelRangeCard } from './level-range/level-range-card';
 import { PlayerListCard } from './player-list/player-list-card';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
@@ -44,7 +45,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

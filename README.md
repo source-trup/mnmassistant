@@ -19,6 +19,7 @@ Monsters and Memories Wiki.
 - [Buff Tracker](#buff-tracker)
 - [Notes](#notes)
 - [Naughty and Nice lists](#naughty-and-nice-lists)
+- [Level range](#level-range)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -294,6 +295,25 @@ toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in 
 
 The lists are saved with everything else and included in layout files. Loading a layout file adds its names to
 yours rather than replacing them.
+
+On screens narrower than about 1700px the **Lists** toggles show just their icons (😈 😇 📊) so the toolbar stays on
+one row. Hover one to see its name.
+
+---
+
+## Level range
+
+Who can group with whom. **Lists → 📊 Levels** in the toolbar shows or hides the panel (there's only one, and it
+comes back in the same spot).
+
+- Type a level (or use **−** / **+**) and the panel immediately shows the **lowest** and **highest** levels it can
+  group with, e.g. level 18 → 13 to 26.
+- The chart below lists, for each lowest level in a group, how many levels above it the group can reach and the
+  highest level that can join. Levels 1–13 reach 5 levels up; from 14 on it's half the level minus one, up to the
+  level cap of 60.
+- The entered level's row and its lowest partner's row are highlighted, and the rows between them are tinted. Click
+  any row to look up that level.
+- The last level you entered is remembered.
 
 ---
 

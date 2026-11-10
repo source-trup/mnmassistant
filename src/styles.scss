@@ -274,3 +274,22 @@ dialog {
     opacity: 1;
   }
 }
+
+/* Show/hide toggles for the Naughty / Nice lists and the Level range chart. */
+header .toggle {
+  opacity: 0.75;
+
+  /* Icon only on narrower screens, so the toolbar fits one row. */
+  @media (max-width: 1700px) {
+    .t {
+      display: none;
+    }
+  }
+
+  &.on {
+    opacity: 1;
+    background: var(--spirit-soft);
+    border-color: var(--spirit-line);
+    box-shadow: inset 0 0 0 1px var(--spirit-line);
+  }
+}

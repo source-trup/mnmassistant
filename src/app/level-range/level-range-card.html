@@ -1,0 +1,63 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">📊 Level range</span>
+    <button class="icon" (click)="store.toggleLevels()" title="Hide (show it again from the toolbar)">✕</button>
+  </div>
+
+  <div class="entry">
+    <label for="lvl-input">Level</label>
+    <button class="small" (click)="step(-1)" [disabled]="level() === 1" title="One level lower">−</button>
+    <input
+      id="lvl-input"
+      #box
+      type="number"
+      min="1"
+      [max]="CAP"
+      inputmode="numeric"
+      [value]="level() ?? ''"
+      (input)="onInput(box)"
+      (focus)="box.select()"
+      placeholder="1–{{ CAP }}"
+    />
+    <button class="small" (click)="step(1)" [disabled]="level() === CAP" title="One level higher">+</button>
+  </div>
+
+  @if (range(); as r) {
+    <div class="result" aria-live="polite">
+      <div class="end">
+        <span class="k">Lowest</span>
+        <span class="v">{{ r.low }}</span>
+      </div>
+      <span class="dash">–</span>
+      <div class="end">
+        <span class="k">Highest</span>
+        <span class="v">{{ r.high }}</span>
+      </div>
+    </div>
+    <p class="say">Level {{ level() }} can group with levels {{ r.low }} to {{ r.high }}.</p>
+  } @else {
+    <p class="say hint">Type a level to see the lowest and highest levels it can group with.</p>
+  }
+
+  <div class="chart" #chart>
+    <table>
+      <thead>
+        <tr>
+          <th title="Lowest level in the group">Min level</th>
+          <th title="How many levels above the lowest member the group can reach">Level diff</th>
+          <th title="Highest level that can join">Max level</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows; track row.min) {
+          <tr [attr.data-min]="row.min" [attr.data-state]="rowState(row)" (click)="pick(row)" [title]="'Show level ' + row.min">
+            <td>{{ pad(row.min) }}</td>
+            <td>{{ pad(row.diff) }}</td>
+            <td>{{ pad(row.max) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

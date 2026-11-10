@@ -1,3 +1,4 @@
+import { LEVEL_CAP } from './level-range/level-range';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AlertsService } from './alerts.service';
 import { PANEL_SIZE, Rect, findFreeSpot, overlaps } from './layout';
@@ -18,6 +19,7 @@ import {
   PlayerEntry,
   PlayerListKind,
   PlayerListPanel,
+  LevelPanel,
   StandardCounter,
   Theme,
   TimerItem,
@@ -41,7 +43,11 @@ export type Panel =
   | ({ id: string; kind: 'counter'; item: CounterItem } & Rect)
   | ({ id: string; kind: 'buffs'; item: BuffPanel } & Rect)
   | ({ id: string; kind: 'note'; item: NoteItem } & Rect)
-  | ({ id: string; kind: 'players'; item: PlayerListPanel } & Rect);
+  | ({ id: string; kind: 'players'; item: PlayerListPanel } & Rect)
+  | ({ id: string; kind: 'levels'; item: LevelPanel } & Rect);
+
+/** Panel id of the single Level range panel. */
+export const LEVEL_PANEL_ID = 'levels';
 
 export const PLAYER_LISTS: PlayerListKind[] = ['naughty', 'nice'];
 
@@ -74,6 +80,21 @@ function normalizePlayers(raw: any): Record<PlayerListKind, PlayerEntry[]> {
     }
   }
   return out;
+}
+
+function defaultLevelPanel(): LevelPanel {
+  return { shown: false, level: null, ...UNPLACED };
+}
+
+function normalizeLevelPanel(raw: any): LevelPanel {
+  if (!raw || typeof raw !== 'object') return defaultLevelPanel();
+  const level = Math.floor(Number(raw.level));
+  return {
+    shown: raw.shown === true,
+    level: level >= 1 && level <= LEVEL_CAP ? level : null,
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
 }
 
 function normalizeListPanels(raw: any): Record<PlayerListKind, PlayerListPanel> {
@@ -281,6 +302,7 @@ function defaultState(): AppState {
     notes: [],
     players: { naughty: [], nice: [] },
     listPanels: defaultListPanels(),
+    levelPanel: defaultLevelPanel(),
   };
 }
 
@@ -329,6 +351,7 @@ function normalizeState(parsed: any): AppState | null {
     buffSets: normalizeBuffSets(parsed.buffSets),
     players: normalizePlayers(parsed.players),
     listPanels: normalizeListPanels(parsed.listPanels),
+    levelPanel: normalizeLevelPanel(parsed.levelPanel),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
@@ -364,6 +387,7 @@ export class TrackerStore {
   /** Naughty / Nice player lists, and their single panels. */
   readonly players = signal<Record<PlayerListKind, PlayerEntry[]>>({ naughty: [], nice: [] });
   readonly listPanels = signal<Record<PlayerListKind, PlayerListPanel>>(defaultListPanels());
+  readonly levelPanel = signal<LevelPanel>(defaultLevelPanel());
   /** Saved buff lists, sorted by name when shown. */
   readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
@@ -384,6 +408,9 @@ export class TrackerStore {
     ...PLAYER_LISTS.map((k) => this.listPanels()[k])
       .filter((p) => p.shown)
       .map((p) => ({ id: listPanelId(p.kind), kind: 'players' as const, item: p, x: p.x, y: p.y, ...PANEL_SIZE.players })),
+    ...[this.levelPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: LEVEL_PANEL_ID, kind: 'levels' as const, item: p, x: p.x, y: p.y, ...PANEL_SIZE.levels })),
   ]);
 
   /** Notes that have been put away, in the order they were created. */
@@ -449,6 +476,7 @@ export class TrackerStore {
     else if (this.counters().some((c) => c.id === id)) this.updateCounter(id, { x, y });
     else if (this.buffPanels().some((b) => b.id === id)) this.updateBuffPanel(id, { x, y });
     else if (id.startsWith('list:')) this.updateListPanel(id.slice(5) as PlayerListKind, { x, y });
+    else if (id === LEVEL_PANEL_ID) this.updateLevelPanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -470,6 +498,8 @@ export class TrackerStore {
       const spot = pos.get(listPanelId(k)); // hidden lists aren't in `pos`
       if (spot) this.updateListPanel(k, spot);
     }
+    const levelSpot = pos.get(LEVEL_PANEL_ID);
+    if (levelSpot) this.updateLevelPanel(levelSpot);
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -497,6 +527,7 @@ export class TrackerStore {
       for (const k of PLAYER_LISTS) if (lp[k].shown) next[k] = place(lp[k], PANEL_SIZE.players);
       return next;
     });
+    this.levelPanel.update((p) => (p.shown ? place(p, PANEL_SIZE.levels) : p));
   }
 
   // ---------- timers ----------
@@ -1095,6 +1126,29 @@ export class TrackerStore {
     if (n) this.updateNote(id, { fontSize: clampFont(n.fontSize + dir * NOTE_FONT.step) });
   }
 
+  // ---------- level range ----------
+
+  private updateLevelPanel(patch: Partial<LevelPanel>): void {
+    this.levelPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Level range panel (it comes back in its old spot if that's still free). */
+  toggleLevels(): void {
+    const p = this.levelPanel();
+    if (p.shown) {
+      this.updateLevelPanel({ shown: false });
+      return;
+    }
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(LEVEL_PANEL_ID, { x: p.x, y: p.y, ...PANEL_SIZE.levels });
+    this.updateLevelPanel({ shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** Remembers the level typed into the Level range panel (null clears it). */
+  setLevel(level: number | null): void {
+    this.updateLevelPanel({ level: level !== null && level >= 1 && level <= LEVEL_CAP ? Math.floor(level) : null });
+  }
+
   // ---------- naughty / nice lists ----------
 
   private updateListPanel(kind: PlayerListKind, patch: Partial<PlayerListPanel>): void {
@@ -1230,6 +1284,7 @@ export class TrackerStore {
       return next;
     });
     this.listPanels.set(state.listPanels);
+    this.levelPanel.set(state.levelPanel);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1319,6 +1374,7 @@ export class TrackerStore {
       notes: this.notes(),
       players: this.players(),
       listPanels: this.listPanels(),
+      levelPanel: this.levelPanel(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -1340,6 +1396,7 @@ export class TrackerStore {
     this.notes.set(state.notes);
     this.players.set(state.players);
     this.listPanels.set(state.listPanels);
+    this.levelPanel.set(state.levelPanel);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);
