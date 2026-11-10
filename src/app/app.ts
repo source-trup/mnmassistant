@@ -16,6 +16,8 @@ import { LevelingCard } from './leveling/leveling-card';
 import { MapCard } from './map/map-card';
 import { ClassesCard } from './classes/classes-card';
 import { PricesCard } from './prices/prices-card';
+import { WikiCard } from './community-wiki/wiki-card';
+import { QuickGuide } from './quick-guide/quick-guide';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
@@ -53,7 +55,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, QuickGuide, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -95,6 +97,7 @@ export class App {
         tools: [
           tool('🛡️', 'Classes', 'How to play each class', s.classPanel().shown, () => s.toggleClasses()),
           tool('💰', 'Prices', 'Trem market and vendor prices (MnMdb)', s.pricePanel().shown, () => s.togglePrices()),
+          tool('📖', 'Wiki', 'Search the community wiki', s.wikiPanel().shown, () => s.toggleWiki()),
           tool('📊', 'Level range', 'Who a level can group with', s.levelPanel().shown, () => s.toggleLevels()),
           tool('📖', 'Spells', 'By class and level, with costs', s.spellPanel().shown, () => s.toggleSpells()),
           tool('🗺️', 'Leveling', 'Where to hunt for a level', s.levelingPanel().shown, () => s.toggleLeveling()),
@@ -313,8 +316,8 @@ export class App {
   protected onPointerDown(e: PointerEvent, p: Panel): void {
     if (e.button !== 0) return;
     const target = e.target as Element;
-    // Only the panel header starts a drag, and never its buttons.
-    if (!target.closest('.drag-handle') || target.closest('button, input, select, textarea')) return;
+    // Only the panel header starts a drag, and never its buttons or links (capturing the pointer would swallow the click).
+    if (!target.closest('.drag-handle') || target.closest('button, a, input, select, textarea')) return;
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const { x, y } = this.pointerInBoard(e);

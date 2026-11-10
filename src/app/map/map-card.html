@@ -2,6 +2,7 @@
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
     <span class="name">🧭 Map</span>
+    <button class="icon" (click)="store.showWiki(panel().find ?? current().name)" [title]="'Look up ' + (panel().find ?? current().name) + ' on the wiki'">📖</button>
     <a class="icon open" [href]="fullUrl()" target="_blank" rel="noopener" title="Open this in MnM Atlas (new tab)">↗</a>
     <button class="icon" (click)="store.toggleMap()" title="Hide (show it again from Tools)">✕</button>
   </div>

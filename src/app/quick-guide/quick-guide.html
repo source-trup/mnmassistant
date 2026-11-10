@@ -1,0 +1,89 @@
+<dialog #dlg class="guide" aria-labelledby="guide-title">
+  <h3 id="guide-title">How to use MnM Assistant</h3>
+  <p class="lead">
+    A second-monitor board for Monsters &amp; Memories: spawn timers, camp counters, buffs, notes and reference tools.
+    Everything saves automatically in this browser.
+  </p>
+
+  <details open>
+    <summary>The toolbar</summary>
+    <ul>
+      <li><b>⏱ 5m 6m 8m 10m</b> add a timer in one click. For another length, type it in the box (<code>7:30</code>, <code>90s</code>, <code>1h30m</code>) and press Enter.</li>
+      <li><b>＋ Add</b>: a Count, Named / PH camp counter, Buff Tracker, Note or Checklist, and notes you've put away.</li>
+      <li><b>Tools</b>: show or hide the reference panels (below). The number shows how many are open.</li>
+      <li><b>🔔</b> mutes all alerts. <b>☰</b> has Tidy panels, save / load layout, reset all, theme, test sound and this guide.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Moving and arranging panels</summary>
+    <ul>
+      <li><b>Move</b>: drag a panel by its title bar. It snaps to the grid; a red outline means it would overlap.</li>
+      <li><b>Resize</b>: drag the bottom-right corner. Timer clocks and counter numbers grow with the panel.</li>
+      <li><b>Rename</b>: right-click a panel's title. <b>⚙</b> opens its settings.</li>
+      <li><b>Delete</b>: <b>✕</b> (Shift + click skips the question). <b>☰ → Tidy panels</b> packs everything neatly.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Timers</summary>
+    <ul>
+      <li><b>Click the clock</b> to start it, and again to restart it when the mob is killed.</li>
+      <li><b>Right-click the time</b> to set how much is actually left. <b>−1m / +1m</b> nudge it; Pause holds it.</li>
+      <li>When it ends you hear a chime, or the timer's name read aloud if you've named it.</li>
+      <li>Name a timer after the NPC: its kill history and loot are remembered under that name, and earlier NPC names are suggested.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Named / PH camps</summary>
+    <ul>
+      <li><b>+ PH</b> and <b>+ Named</b> log each kill (and restart the linked timer). A named kill asks what dropped; that's optional.</li>
+      <li>Link a counter to a timer by <b>dragging one onto the other</b> (you're asked first).</li>
+      <li><b>📜</b> shows the camp's history: named odds, typical respawn, loot drop rates and the kill log. <b>New session</b> starts the counts over; a kill more than an hour after the last one starts a new session on its own.</li>
+      <li>In the loot list, <b>💰</b> checks what a drop sells for and <b>📖</b> looks it up on the wiki.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Buffs, notes and checklists</summary>
+    <ul>
+      <li><b>Buff Tracker</b>: add buffs with their durations, click one when you cast it, and get a warning before it fades. Click its time to correct it. Save groups of buffs as sets (⚙).</li>
+      <li><b>Notes</b>: free text with A− / A+. <b>—</b> puts a note away; bring it back from <b>＋ Add</b>.</li>
+      <li><b>Checklists</b>: type <code>18x Copper Ore</code>, or paste a whole list or a wiki materials table, then click items to check them off.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Tools</summary>
+    <ul>
+      <li><b>😈 / 😇 Naughty and Nice lists</b>: check a player's name before you group, and add or move people with a note.</li>
+      <li><b>🛡️ Classes</b>: a snapshot of each class, how to play it, race and trait picks, key abilities, leveling path and gear.</li>
+      <li><b>💰 Prices</b>: what an item sells for on Trem, what buyers offer and what a vendor pays.</li>
+      <li><b>📖 Wiki</b>: search the community wiki and read pages here. 📖 buttons around the app look things up for you.</li>
+      <li><b>📊 Level range</b>: the lowest and highest levels a level can group with.</li>
+      <li><b>📖 Spells</b>: every spell by class and level, with the cost of a level's spells.</li>
+      <li><b>🗺️ Leveling</b>: camps and hunting spots for a level or level range, by zone.</li>
+      <li><b>🧭 Map</b>: zone maps from MnM Atlas; scroll over the map to zoom, or find an NPC on any map.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>Saving, backups and themes</summary>
+    <ul>
+      <li>Everything is saved in this browser as you go. Kill histories, loot, players and notes stay even when you delete a panel.</li>
+      <li><b>☰ → Save layout to file</b> makes a backup, or lets you move your board to another computer; <b>Load layout</b> brings it back (histories and lists are merged, not replaced).</li>
+      <li><b>☰ → Theme</b>: pick a look for your class.</li>
+    </ul>
+  </details>
+
+  <p class="more">
+    Everything in detail: <a [href]="README" target="_blank" rel="noopener">the full guide (README) ↗</a>. Open this guide again
+    any time with <b>?</b> in the toolbar.
+  </p>
+
+  <div class="dialog-actions">
+    <span class="spacer"></span>
+    <button class="primary" (click)="close()">Got it</button>
+  </div>
+</dialog>

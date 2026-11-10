@@ -28,6 +28,7 @@
           <section class="snap">
             <div class="title">
               <h3>{{ c.name }}</h3>
+              <button class="icon wk" (click)="store.showWiki(c.name)" [title]="'The ' + c.name + ' page on the wiki'">📖</button>
               <span class="badge" [attr.data-role]="c.category">{{ ROLE_LABEL[c.category] }}</span>
             </div>
             <p class="one">{{ c.oneLiner }}</p>

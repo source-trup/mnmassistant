@@ -25,6 +25,7 @@ import {
   MapPanel,
   ClassPanel,
   PricePanel,
+  WikiPanel,
   StandardCounter,
   Theme,
   TimerItem,
@@ -54,7 +55,8 @@ export type Panel =
   | ({ id: string; kind: 'leveling'; item: LevelingPanel } & Rect)
   | ({ id: string; kind: 'map'; item: MapPanel } & Rect)
   | ({ id: string; kind: 'classes'; item: ClassPanel } & Rect)
-  | ({ id: string; kind: 'prices'; item: PricePanel } & Rect);
+  | ({ id: string; kind: 'prices'; item: PricePanel } & Rect)
+  | ({ id: string; kind: 'wiki'; item: WikiPanel } & Rect);
 
 /** Panel id of the single Spells panel, and the smallest it can be resized to (grid cells). */
 export const SPELL_PANEL_ID = 'spells';
@@ -74,6 +76,10 @@ export const CLASS_MIN = { w: 17, h: 16 };
 /** Panel id of the single Prices panel, and the smallest it can be resized to. */
 export const PRICE_PANEL_ID = 'prices';
 export const PRICE_MIN = { w: 16, h: 14 };
+
+/** Panel id of the single Wiki panel, and the smallest it can be resized to. */
+export const WIKI_PANEL_ID = 'wiki';
+export const WIKI_MIN = { w: 16, h: 14 };
 
 const CLASS_TABS: ClassPanel['tab'][] = ['overview', 'build', 'abilities', 'leveling', 'gear', 'more'];
 
@@ -214,6 +220,23 @@ function normalizePricePanel(raw: any): PricePanel {
     item: name(raw.item),
     days: raw.days === 7 ? 7 : 30,
     recent: Array.isArray(raw.recent) ? raw.recent.map(name).filter(Boolean).slice(0, 8) : [],
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
+}
+
+function defaultWikiPanel(): WikiPanel {
+  return { shown: false, ...PANEL_SIZE.wiki, page: null, ...UNPLACED };
+}
+
+function normalizeWikiPanel(raw: any): WikiPanel {
+  const base = defaultWikiPanel();
+  if (!raw || typeof raw !== 'object') return base;
+  return {
+    shown: raw.shown === true,
+    w: Math.max(WIKI_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(WIKI_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    page: typeof raw.page === 'string' && raw.page.trim() ? raw.page.trim().slice(0, 200) : null,
     x: raw.x ?? -1,
     y: raw.y ?? -1,
   };
@@ -449,6 +472,7 @@ function defaultState(): AppState {
     mapPanel: defaultMapPanel(),
     classPanel: defaultClassPanel(),
     pricePanel: defaultPricePanel(),
+    wikiPanel: defaultWikiPanel(),
   };
 }
 
@@ -503,6 +527,7 @@ function normalizeState(parsed: any): AppState | null {
     mapPanel: normalizeMapPanel(parsed.mapPanel),
     classPanel: normalizeClassPanel(parsed.classPanel),
     pricePanel: normalizePricePanel(parsed.pricePanel),
+    wikiPanel: normalizeWikiPanel(parsed.wikiPanel),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
@@ -544,6 +569,9 @@ export class TrackerStore {
   readonly mapPanel = signal<MapPanel>(defaultMapPanel());
   readonly classPanel = signal<ClassPanel>(defaultClassPanel());
   readonly pricePanel = signal<PricePanel>(defaultPricePanel());
+  readonly wikiPanel = signal<WikiPanel>(defaultWikiPanel());
+  /** A lookup another panel asked the Wiki panel to do (not saved). The counter makes repeat lookups fire again. */
+  readonly wikiLookup = signal<{ term: string; n: number } | null>(null);
   /** Saved buff lists, sorted by name when shown. */
   readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
@@ -582,6 +610,9 @@ export class TrackerStore {
     ...[this.pricePanel()]
       .filter((p) => p.shown)
       .map((p) => ({ id: PRICE_PANEL_ID, kind: 'prices' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
+    ...[this.wikiPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: WIKI_PANEL_ID, kind: 'wiki' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
   ]);
 
   /** Notes that have been put away, in the order they were created. */
@@ -653,6 +684,7 @@ export class TrackerStore {
     else if (id === MAP_PANEL_ID) this.updateMapPanel({ x, y });
     else if (id === CLASS_PANEL_ID) this.updateClassPanel({ x, y });
     else if (id === PRICE_PANEL_ID) this.updatePricePanel({ x, y });
+    else if (id === WIKI_PANEL_ID) this.updateWikiPanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -686,6 +718,8 @@ export class TrackerStore {
     if (classSpot) this.updateClassPanel(classSpot);
     const priceSpot = pos.get(PRICE_PANEL_ID);
     if (priceSpot) this.updatePricePanel(priceSpot);
+    const wikiSpot = pos.get(WIKI_PANEL_ID);
+    if (wikiSpot) this.updateWikiPanel(wikiSpot);
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -719,6 +753,7 @@ export class TrackerStore {
     this.mapPanel.update((p) => (p.shown ? place(p, p) : p));
     this.classPanel.update((p) => (p.shown ? place(p, p) : p));
     this.pricePanel.update((p) => (p.shown ? place(p, p) : p));
+    this.wikiPanel.update((p) => (p.shown ? place(p, p) : p));
   }
 
   // ---------- timers ----------
@@ -1419,6 +1454,38 @@ export class TrackerStore {
     return { item: name, recent };
   }
 
+  // ---------- community wiki ----------
+
+  updateWikiPanel(patch: Partial<WikiPanel>): void {
+    this.wikiPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Wiki panel (it comes back in its old spot and size). */
+  toggleWiki(): void {
+    const p = this.wikiPanel();
+    if (p.shown) {
+      this.updateWikiPanel({ shown: false });
+      return;
+    }
+    this.openWikiPanel();
+  }
+
+  /** Looks a name up in the Wiki panel (opening it if hidden): its page if there is one, otherwise search results. */
+  showWiki(term: string): void {
+    const t = term.trim();
+    if (!t) return;
+    this.openWikiPanel();
+    this.wikiLookup.set({ term: t, n: (this.wikiLookup()?.n ?? 0) + 1 });
+  }
+
+  private openWikiPanel(): void {
+    const p = this.wikiPanel();
+    if (p.shown) return;
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(WIKI_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
+    this.updateWikiPanel({ shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
   /** Shows the Spells panel (if hidden) filtered to a class, e.g. from the Classes panel. */
   showSpellsFor(cls: string): void {
     this.updateSpellPanel({ cls, level: null });
@@ -1446,6 +1513,8 @@ export class TrackerStore {
         return CLASS_MIN;
       case 'prices':
         return PRICE_MIN;
+      case 'wiki':
+        return WIKI_MIN;
       case 'counter':
         return PANEL_MIN[p.item.kind];
       default:
@@ -1493,6 +1562,9 @@ export class TrackerStore {
         break;
       case 'prices':
         this.updatePricePanel(size);
+        break;
+      case 'wiki':
+        this.updateWikiPanel(size);
         break;
     }
     return true;
@@ -1662,6 +1734,7 @@ export class TrackerStore {
     this.mapPanel.set(state.mapPanel);
     this.classPanel.set(state.classPanel);
     this.pricePanel.set(state.pricePanel);
+    this.wikiPanel.set(state.wikiPanel);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1757,15 +1830,20 @@ export class TrackerStore {
       mapPanel: this.mapPanel(),
       classPanel: this.classPanel(),
       pricePanel: this.pricePanel(),
+      wikiPanel: this.wikiPanel(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
   }
 
+  /** True when this browser had no saved board yet (a first visit), e.g. to show the quick guide once. */
+  firstVisit = false;
+
   private load(): void {
     let state: AppState = defaultState();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
+      this.firstVisit = !raw;
       if (raw) state = normalizeState(JSON.parse(raw)) ?? state;
     } catch {
       // Corrupt or unavailable storage: fall back to defaults.
@@ -1784,6 +1862,7 @@ export class TrackerStore {
     this.mapPanel.set(state.mapPanel);
     this.classPanel.set(state.classPanel);
     this.pricePanel.set(state.pricePanel);
+    this.wikiPanel.set(state.wikiPanel);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);

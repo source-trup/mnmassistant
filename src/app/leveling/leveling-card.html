@@ -91,6 +91,7 @@
             <span class="za">{{ m.zone.abbr }}</span>
           }
           <span class="zr">{{ m.zone.region }}</span>
+          <button class="icon map" (click)="store.showWiki(m.zone.name)" [title]="'Look up ' + m.zone.name + ' on the wiki'">📖</button>
           @if (atlasId(m.zone); as id) {
             <button class="icon map" (click)="store.showMap({ map: id, level: null, find: null })" [title]="'Show ' + m.zone.name + ' on the Map panel'">🧭</button>
           }
@@ -100,6 +101,7 @@
           @for (c of m.camps; track c.name) {
             <li [class.raid]="c.raid">
               <span class="cn">{{ c.name }}</span>
+              <button class="icon wk" (click)="store.showWiki(c.name)" [title]="'Look up ' + c.name + ' on the wiki'">📖</button>
               @if (c.raid) {
                 <span class="badge" title="Raid encounter">Raid</span>
               }

@@ -1,6 +1,9 @@
 <div class="top">
   <h3>
     {{ npc() ?? counter().name }} — history
+    @if (npc(); as name) {
+      <button class="wiki-btn" (click)="lookUp(name)" [title]="'Look up ' + name + ' on the wiki'">📖</button>
+    }
     <span class="owner">
       @if (npc()) {
         Saved to {{ npc() }}: kept even if this counter is deleted, and shown by any camp linked to a timer named
@@ -47,6 +50,7 @@
         <span class="cnt">×{{ l.count }}</span>
         <span class="pct" title="Share of named kills that dropped it">{{ l.pct }}%</span>
         <button class="price" (click)="checkPrice(l.name)" [title]="'What ' + l.name + ' sells for (Prices panel)'">💰</button>
+        <button class="price" (click)="lookUp(l.name)" [title]="'Look up ' + l.name + ' on the wiki'">📖</button>
       </li>
     }
   </ul>

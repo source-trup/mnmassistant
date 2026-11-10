@@ -92,6 +92,7 @@
   <span class="spacer"></span>
 
   <div class="group">
+    <button class="help" (click)="guide.open()" title="Quick guide: how to use MnM Assistant">?</button>
     <button (click)="store.toggleSound()" [title]="store.soundOn() ? 'Mute alerts' : 'Unmute alerts'">
       {{ store.soundOn() ? '🔔' : '🔕' }}
     </button>
@@ -109,6 +110,8 @@
     <hr />
     <button (click)="openThemes()">🎨 Theme: {{ currentTheme().label }}…</button>
     <button (click)="store.testSound()">Test sound &amp; voice</button>
+    <hr />
+    <button (click)="guide.open()">❔ Quick guide</button>
   </div>
   <input #fileInput type="file" accept=".json,application/json" hidden (change)="loadLayout(fileInput)" />
 </header>
@@ -182,6 +185,9 @@
           @case ('prices') {
             <app-prices-card [panel]="p.item" />
           }
+          @case ('wiki') {
+            <app-wiki-card [panel]="p.item" />
+          }
         }
         <div
           class="resize-grip"
@@ -231,3 +237,4 @@
 
 <app-loot-prompt />
 <app-confirm-dialog />
+<app-quick-guide #guide />

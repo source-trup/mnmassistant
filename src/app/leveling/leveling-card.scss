@@ -243,3 +243,16 @@ li.spot {
     color: inherit;
   }
 }
+
+/* Wiki lookup on a camp row: shows on hover. */
+li .wk {
+  flex: none;
+  padding: 0 3px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  visibility: hidden;
+}
+li:hover .wk,
+li .wk:focus-visible {
+  visibility: visible;
+}

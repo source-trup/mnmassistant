@@ -101,6 +101,12 @@ export class CampHistory {
     this.editing.update((id) => (id === e.id ? null : e.id));
   }
 
+  /** Opens the Wiki panel on an NPC or item (the history dialog closes so the board is visible). */
+  protected lookUp(name: string): void {
+    this.store.showWiki(name);
+    this.closed.emit();
+  }
+
   /** Opens the Prices panel on a drop (the history dialog closes so the board is visible). */
   protected checkPrice(name: string): void {
     this.store.showPrice(name);

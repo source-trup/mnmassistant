@@ -21,6 +21,7 @@ Monsters and Memories Wiki.
 - [Naughty and Nice lists](#naughty-and-nice-lists)
 - [Classes](#classes)
 - [Prices](#prices)
+- [Wiki](#wiki)
 - [Level range](#level-range)
 - [Spells](#spells)
 - [Leveling](#leveling)
@@ -83,11 +84,15 @@ side are always evenly spaced. Sizes are saved with the layout, and a hidden too
 | --- | --- |
 | **⏱ Timers** | `5m` `6m` `8m` `10m` (common placeholder respawns) add a timer in one click. For any other length, type it in the box (`7:30`, `90s`, `1h30m`) and press Enter. |
 | **＋ Add ▾** | Adds a panel: Count (standard counter), Named / PH (camp counter), Buff Tracker, Note or Checklist. Below them are your [saved notes](#notes); the number on the button is how many are put away. |
-| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Prices](#prices), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
-| Right side | 🔔 / 🔕 mute all alerts, ☰ menu |
+| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Prices](#prices), [Wiki](#wiki), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
+| Right side | **?** opens the quick guide, 🔔 / 🔕 mutes all alerts, ☰ menu |
+
+**Quick guide:** **?** in the toolbar (or **☰ → Quick guide**) opens a short "How to use" guide covering the
+toolbar, panels, timers, camps, buffs and notes, the tools, and saving. It opens by itself the first time someone
+uses the app.
 
 **☰ menu:** Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters,
-[Theme](#themes) picker, Test sound & voice.
+[Theme](#themes) picker, Test sound & voice, Quick guide.
 
 ---
 
@@ -356,6 +361,32 @@ vendor sale prices and drops players have logged, and merchant lists from the wi
 so it needs an internet connection and shows whatever MnMdb has now (it updates through the day).
 
 *Prices: [MnMdb](https://mnm-db.com/) ([source](https://github.com/Boisteroux/mnm-tools), MIT).*
+
+---
+
+## Wiki
+
+The community [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) inside the app.
+**Tools → Wiki** shows or hides the panel (there's only one; it comes back in the same spot and size, on the page
+you last read).
+
+| Action | How |
+| --- | --- |
+| Search | Type an NPC, item, quest, zone… and press Enter. A page with exactly that name comes first, then pages that mention it. |
+| Read | Click a result to read the page here, restyled to match the app. Links to other wiki pages open in the panel; **←** goes back. Images, categories and other sites open in a new tab. |
+| On the wiki | **↗** in the header opens the page (or search) on the wiki itself. |
+
+**📖 buttons** around the app look things up here: the NPC in a Named / PH camp's [history](#history-view-) (for a
+camp linked to a timer named after the NPC) and each loot item there; the item in [Prices](#prices); an open spell in
+[Spells](#spells); the class in [Classes](#classes); each zone in [Leveling](#leveling) (and each camp, on hover); the
+zone in [Map](#map). If the wiki has no page with that name, you get the pages that mention it instead.
+
+It reads the wiki live through its public API, one request at a time when you search or open a page (results are
+remembered until you reload), so it needs an internet connection. Pages are shown through Angular's HTML sanitizer,
+which removes scripts and styles.
+
+*Wiki content: the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) contributors,
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).*
 
 ---
 

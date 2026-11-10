@@ -115,6 +115,7 @@
                   </dl>
                   <p class="classes"><span class="lbl">{{ s.classes.length === 1 ? 'Class' : 'Classes' }}</span> {{ s.classes.join(', ') }}</p>
                   <p class="effect">{{ s.effect || 'No description yet.' }}</p>
+                  <button class="small" (click)="store.showWiki(s.name)" [title]="'Look up ' + s.name + ' on the wiki'">📖 Wiki</button>
                 </div>
               }
             </div>

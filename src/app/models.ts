@@ -230,6 +230,15 @@ export interface PricePanel extends GridPos {
   recent: string[];
 }
 
+/** The single Wiki panel (community wiki on Miraheze): position, size, visibility and the page last open. */
+export interface WikiPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  /** Page title last shown, or null for the search view. */
+  page: string | null;
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -252,6 +261,7 @@ export interface AppState {
   mapPanel: MapPanel;
   classPanel: ClassPanel;
   pricePanel: PricePanel;
+  wikiPanel: WikiPanel;
   soundOn: boolean;
   theme: Theme;
 }

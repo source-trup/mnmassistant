@@ -1,0 +1,88 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">📖 Wiki</span>
+    <a class="icon ext" [href]="currentUrl()" target="_blank" rel="noopener" title="Open this on the wiki (new tab)">↗</a>
+    <button class="icon" (click)="store.toggleWiki()" title="Hide (show it again from Tools)">✕</button>
+  </div>
+
+  <div class="bar">
+    <button class="small" (click)="back()" [disabled]="!canBack()" title="Back">←</button>
+    <input
+      #box
+      [value]="query()"
+      (keydown.enter)="search(box.value)"
+      placeholder="Search the wiki: an NPC, item, quest, zone…"
+      aria-label="Search the wiki"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button class="small" (click)="search(box.value)">Search</button>
+  </div>
+
+  <div class="body" #body>
+    @switch (view().kind) {
+      @case ('home') {
+        <p class="hint">
+          Search the community {{ WIKI.name }} for NPCs, items, quests, zones and more, and read the page right here.
+          Links inside a page open here too; <b>←</b> goes back.
+        </p>
+        <p class="hint">
+          Elsewhere in the app, <b>📖</b> buttons look things up here: an NPC from a camp's history, an item in Prices or
+          your loot, a spell, a class, a zone in Leveling or the Map.
+        </p>
+      }
+      @case ('loading') {
+        @if (view(); as v) {
+          @if (v.kind === 'loading') {
+            <p class="hint">Looking up “{{ v.what }}”…</p>
+          }
+        }
+      }
+      @case ('error') {
+        @if (view(); as v) {
+          @if (v.kind === 'error') {
+            <p class="hint">Couldn't reach the wiki. <button class="small" (click)="v.retry()">Try again</button></p>
+          }
+        }
+      }
+      @case ('results') {
+        @if (view(); as v) {
+          @if (v.kind === 'results') {
+            @if (v.noPage) {
+              <p class="hint">The wiki has no page called “{{ v.term }}”.@if (v.hits.length) { Pages that mention it:}</p>
+            }
+            <ul class="hits">
+              @for (h of v.hits; track h.title) {
+                <li>
+                  <button class="hit" (click)="open(h.title)">
+                    <span class="ht">{{ h.title }}</span>
+                    @if (h.snippet) {
+                      <span class="hs">{{ h.snippet }}</span>
+                    }
+                  </button>
+                </li>
+              } @empty {
+                <li class="hint">Nothing found for “{{ v.term }}”.</li>
+              }
+            </ul>
+          }
+        }
+      }
+      @case ('page') {
+        @if (view(); as v) {
+          @if (v.kind === 'page') {
+            <h3 class="ptitle">{{ v.page.title }}</h3>
+            <!-- The wiki's HTML goes through Angular's sanitizer: scripts, styles and event handlers are removed. -->
+            <div class="wiki" [innerHTML]="v.page.html" (click)="onPageClick($event)"></div>
+          }
+        }
+      }
+    }
+  </div>
+
+  <p class="credit">
+    From the <a [href]="WIKI.url" target="_blank" rel="noopener">{{ WIKI.name }}</a> (Miraheze), by its contributors,
+    <a [href]="WIKI.licenseUrl" target="_blank" rel="noopener">{{ WIKI.license }}</a>.
+  </p>
+</div>
