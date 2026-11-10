@@ -45,3 +45,6 @@ wiki-api-key.txt
 # System files
 .DS_Store
 Thumbs.db
+
+# Downloaded source pages (tools/build-classes.mjs --fetch)
+data/.cache/

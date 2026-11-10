@@ -1,0 +1,72 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-2);
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.head .open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--muted);
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+.pick,
+.find {
+  display: flex;
+  gap: 6px;
+
+  select,
+  input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* While a search is showing, the map pickers are just a way back. */
+.dim {
+  opacity: 0.6;
+}
+
+.frame {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+
+  iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+.credit {
+  margin: 0 12px 0 0; /* keep clear of the resize corner */
+  font-size: 0.68rem;
+  color: var(--muted);
+
+  a {
+    color: inherit;
+  }
+}

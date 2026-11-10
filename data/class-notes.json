@@ -1,0 +1,182 @@
+{
+  "archer": {
+    "oneLiner": "Mobile bow specialist: heavy single-target damage from range, no magic.",
+    "howToPlay": "Keep your distance and keep moving. Lead with instant shots, keep shooting on the run, and use nets, snares and traps to stop anything that tries to close in. Pick the stance that fits the fight, and stock crafted arrows and traps before you head out.",
+    "tips": [
+      "Let the tank build threat before your big shots.",
+      "Stay at range; you're weakest when something reaches you.",
+      "Carry plenty of arrows and check your stance before each pull.",
+      "Save healing-reduction shots for targets that heal."
+    ]
+  },
+  "bard": {
+    "oneLiner": "Song-weaving support: haste, speed, resists, slows and crowd control for the whole group.",
+    "howToPlay": "Set your Measure with the beneficial songs the group needs and let them run, then spend your attention on the fight: weave in slows, mezzes, shouts and melee, and hold Crescendo for the moment it matters. Your speed makes you a natural scout and puller.",
+    "tips": [
+      "Choose your Measure songs for the group you're in, not by habit.",
+      "Always have the right instrument equipped; it boosts songs a lot.",
+      "Don't treat charm as a reliable plan.",
+      "Keep moving; pull small and carefully."
+    ]
+  },
+  "beastmaster": {
+    "oneLiner": "Melee brawler with a bonded animal companion that tanks or deals damage.",
+    "howToPlay": "Fight as a pair. Bring a Tank pet when you're alone and a DPS pet in a group, hit the same target as your companion, and keep it healed, fed and alive. Each pet family brings its own ability, so pick the animal for the job.",
+    "tips": [
+      "Heal the pet early with heal-over-time, not at the last second.",
+      "In a group, let the tank engage before sending your pet.",
+      "Turn off the solo tanking buff (Guardian Spirit) in groups.",
+      "Match your weapon to your build: two-hander or claws."
+    ]
+  },
+  "cleric": {
+    "oneLiner": "The premier healer: plate armor, big heals, resurrection and power over the undead.",
+    "howToPlay": "Healing is triage: keep the tank up, choose between fast, delayed and absorb heals, and put shields up before the pull. Keep your core self-buff running, become a real damage dealer against undead, and manage mana between fights so the group never waits on you.",
+    "tips": [
+      "Don't heal at the first scratch; let the tank build threat.",
+      "Don't let the group pull while you're low on mana.",
+      "Carry and use cures for poison and disease.",
+      "Bind your group near the camp, and use your emergency immunity when it's needed."
+    ]
+  },
+  "druid": {
+    "oneLiner": "Nature caster who can heal or deal damage, with roots, beast charm and teleports.",
+    "howToPlay": "Pick a role for the group and commit to it with Seasons: Summer for healing, Winter for damage. Alone, root or snare a mob, stack damage over time and kite it. Between fights, teleports and run speed make you the group's ride.",
+    "tips": [
+      "Stay out of melee range.",
+      "Commit to healing or damage instead of doing half of each.",
+      "Rooted mobs break free when hit; plan your damage around it.",
+      "Keep spell reagents stocked, and use your teleports."
+    ]
+  },
+  "elementalist": {
+    "oneLiner": "Pet caster who summons an elemental of water, earth, fire or air to fight beside them.",
+    "howToPlay": "Choose the companion for the situation: one that tanks, one that restores the group's mana, or one that hits hard. Then support it with your own elemental spells and slows. Your signature strike spells do more than plain nukes, and your pet does much of the work if it's on the right target.",
+    "tips": [
+      "Send the pet in after the tank, never before.",
+      "Keep the pet off mezzed mobs.",
+      "Don't bring a tanking pet to a group that has a tank.",
+      "Resummon after leveling so the pet keeps up with you."
+    ]
+  },
+  "enchanter": {
+    "oneLiner": "Crowd-control caster: mez, charm and stuns, plus haste and mana for the group.",
+    "howToPlay": "You win fights by deciding which enemies get to fight. Buff haste and mana before the pull; when it lands, mez the extras, call the kill target and watch for breaks. Charm can borrow a mob for a while, and magic-resist debuffs help your casters land spells.",
+    "tips": [
+      "Watch mez timers and refresh before they break.",
+      "Keep area damage away from mezzed mobs.",
+      "Plan for a charm breaking before you cast it.",
+      "Keep haste up on the melee, and stay off the front line."
+    ]
+  },
+  "fighter": {
+    "oneLiner": "The dedicated tank: every armor and weapon, three stances, and threat on everything.",
+    "howToPlay": "Open the pull, grab threat on every mob and keep it while you position them for the group. Switch stances as the fight changes, spend Vengeance from the hits you take on your big abilities, and keep Shield Bash for interrupting casters.",
+    "tips": [
+      "Tank in the defensive stance, not the offensive one.",
+      "Pull only what the group can handle.",
+      "Pick up adds quickly before they reach the healer.",
+      "Save Shield Bash for interrupts; avoid fear shouts in dungeons."
+    ]
+  },
+  "inquisitor": {
+    "oneLiner": "Anti-magic tank: silences, interrupts and burns or steals enemy casters' mana.",
+    "howToPlay": "Hold threat with taunts and strikes, then turn on the casters: interrupt, silence, slow their casting and strip their buffs. Drain a caster's mana and pass it to your group. Wards cost mana, so watch it on long physical fights.",
+    "tips": [
+      "Interrupt enemy healers first.",
+      "Don't hit a mob you've incapacitated until you mean to.",
+      "Save mana-costly wards for fights that need them.",
+      "Use your mana drain often; it feeds the group."
+    ]
+  },
+  "monk": {
+    "oneLiner": "Martial artist and master puller: fast, evasive melee with Feign Death.",
+    "howToPlay": "In combat, pick a Style and mix kicks, strikes and burst cooldowns. As puller, scout the camp, bring back a single mob and use Feign Death to shed the rest. Feign Death isn't perfect, so look before you stand up.",
+    "tips": [
+      "Split pulls; don't hit a mob before you've separated it.",
+      "Check the area before standing up from Feign Death.",
+      "Switch Style to suit the fight.",
+      "Don't take threat off the tank."
+    ]
+  },
+  "necromancer": {
+    "oneLiner": "Pet caster who drains life and stacks poison, disease and corruption from range.",
+    "howToPlay": "Send your undead minion in, stack damage-over-time spells and drain life to stay healthy. Alone, snare and kite or let the pet tank; in a group, the pet adds damage and pacts turn its hits into healing. Convert health into mana between pulls.",
+    "tips": [
+      "Never put damage-over-time spells on mezzed mobs.",
+      "Don't fear mobs into other camps.",
+      "Keep reagents for your minion stocked.",
+      "Turn off mana pacts in combat, and keep the pet alive between fights."
+    ]
+  },
+  "paladin": {
+    "oneLiner": "Holy tank with heals, auras, consecrated ground and resurrection.",
+    "howToPlay": "Tank first: hold the mob with strikes, shield slams and taunts, fight on your consecrated ground and use Oaths to take damage for a groupmate in trouble. Your heals and Lay on Hands are the safety net when the healer falls behind, and you hit hard against undead.",
+    "tips": [
+      "Tank first; heal only to save the pull.",
+      "Fight on top of your Consecration.",
+      "Use your Oaths, and don't sit on Lay on Hands.",
+      "Keep Shield Slam for interrupts; avoid undead fear in dungeons."
+    ]
+  },
+  "ranger": {
+    "oneLiner": "Wilderness veteran: blades up close, a bow at range, and a group campfire.",
+    "howToPlay": "Combat runs in a rhythm: an opener (melee or bow), then one follow-up for a bleed, a slow or a big hit, and repeat. Stances shape how melee and bow work together; Longstrider is for travel. After the fight, set up a campfire and call Recuperate.",
+    "tips": [
+      "Use Longstrider for travel, not combat.",
+      "Pick the follow-up the fight needs, and keep your bleeds up.",
+      "You can hold a mob briefly, but don't try to main-tank.",
+      "Call Recuperate after the fight, never during."
+    ]
+  },
+  "rogue": {
+    "oneLiner": "Stealth and backstab specialist with dual blades and crafted poisons.",
+    "howToPlay": "Open from Stealth for a doubled Backstab, then stay behind the target while the tank holds it and weave in your attacks and poisons. When a pull goes wrong, Vial of Smoke drops your threat. Between fights, scout ahead in Stealth.",
+    "tips": [
+      "Wait for the tank to have aggro before you open.",
+      "Always fight from behind.",
+      "Keep poisons and Vials of Smoke stocked.",
+      "Don't trust Stealth around much higher-level mobs."
+    ]
+  },
+  "shadow-knight": {
+    "oneLiner": "Dark, self-healing tank who drains life and strength and commands a Soul Servant.",
+    "howToPlay": "Tank by feeding on the fight: pull, hold threat with taunts and strikes, keep your damage-over-time ticking, and heal yourself with lifetaps as you hit. Finishing blows near an enemy's death collect Soul Remnants for your Soul Servant.",
+    "tips": [
+      "Run the right aura for the fight.",
+      "Lifetap throughout the fight, not only when low.",
+      "Avoid fear in dungeons, and use interrupts.",
+      "Spend Soul Remnants wisely."
+    ]
+  },
+  "shaman": {
+    "oneLiner": "Spirit healer: slows, debuffs, heals over time and the best physical buffs in the game.",
+    "howToPlay": "Your work starts before the pull: buff the group, then slow and debuff the mob so the tank takes less damage. Heal ahead of trouble with heals over time rather than catching up after it, add damage-over-time spells, and use Consume to turn health into mana.",
+    "tips": [
+      "Slow first, then heal.",
+      "Keep the slow up for the whole fight.",
+      "Don't Consume in combat when your health is low.",
+      "Keep haste up, and bind your group near the camp."
+    ]
+  },
+  "spellblade": {
+    "oneLiner": "Magic swordsman who infuses their weapon and releases it as bursts of spell damage.",
+    "howToPlay": "There's no fixed rotation. Infuse your weapon with the damage type the fight needs, strike, then release it as a burst with Conduit at the right moment. Teleport behind your target, punish packs with area spells, and drop threat when you overdo it.",
+    "tips": [
+      "Time Conduit; don't fire it the moment it's ready.",
+      "Stay behind the mob and keep it in place.",
+      "Don't break your group's crowd control.",
+      "Keep your defensive ward up."
+    ]
+  },
+  "wizard": {
+    "oneLiner": "Pure damage caster with the hardest-hitting spells in the game, and group teleports.",
+    "howToPlay": "Let the tank build threat, then choose the element: ice to slow, lightning to interrupt, fire for raw damage. The Mark of Magic loop is the heart of the kit. Sit to recover mana between fights, and teleport the group across the world.",
+    "tips": [
+      "Wait for the tank to have aggro before nuking.",
+      "Keep area spells away from mezzed mobs.",
+      "Don't cast until empty; leave mana for emergencies.",
+      "Keep your shields up, and bind near where you're hunting."
+    ]
+  }
+}

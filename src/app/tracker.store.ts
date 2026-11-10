@@ -22,6 +22,8 @@ import {
   LevelPanel,
   SpellPanel,
   LevelingPanel,
+  MapPanel,
+  ClassPanel,
   StandardCounter,
   Theme,
   TimerItem,
@@ -48,7 +50,9 @@ export type Panel =
   | ({ id: string; kind: 'players'; item: PlayerListPanel } & Rect)
   | ({ id: string; kind: 'levels'; item: LevelPanel } & Rect)
   | ({ id: string; kind: 'spells'; item: SpellPanel } & Rect)
-  | ({ id: string; kind: 'leveling'; item: LevelingPanel } & Rect);
+  | ({ id: string; kind: 'leveling'; item: LevelingPanel } & Rect)
+  | ({ id: string; kind: 'map'; item: MapPanel } & Rect)
+  | ({ id: string; kind: 'classes'; item: ClassPanel } & Rect);
 
 /** Panel id of the single Spells panel, and the smallest it can be resized to (grid cells). */
 export const SPELL_PANEL_ID = 'spells';
@@ -57,6 +61,15 @@ export const SPELLS_MIN = { w: 15, h: 12 };
 /** Panel id of the single Leveling panel, and the smallest it can be resized to. */
 export const LEVELING_PANEL_ID = 'leveling';
 export const LEVELING_MIN = { w: 15, h: 12 };
+
+/** Panel id of the single Map panel, and the smallest it can be resized to. */
+export const MAP_PANEL_ID = 'map';
+export const MAP_MIN = { w: 15, h: 14 };
+
+/** Panel id of the single Classes panel, and the smallest it can be resized to. */
+export const CLASS_PANEL_ID = 'classes';
+export const CLASS_MIN = { w: 17, h: 16 };
+const CLASS_TABS: ClassPanel['tab'][] = ['overview', 'build', 'abilities', 'leveling', 'gear', 'more'];
 
 /** Panel id of the single Level range panel. */
 export const LEVEL_PANEL_ID = 'levels';
@@ -137,6 +150,44 @@ function normalizeLevelingPanel(raw: any): LevelingPanel {
     region: typeof raw.region === 'string' && raw.region ? raw.region : null,
     raids: raw.raids !== false,
     source: raw.source === 'sheet' || raw.source === 'guide' ? raw.source : 'both',
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
+}
+
+function defaultMapPanel(): MapPanel {
+  return { shown: false, ...PANEL_SIZE.map, map: 'night-harbor', level: null, find: null, ...UNPLACED };
+}
+
+function normalizeMapPanel(raw: any): MapPanel {
+  const base = defaultMapPanel();
+  if (!raw || typeof raw !== 'object') return base;
+  const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 100) : null);
+  return {
+    shown: raw.shown === true,
+    w: Math.max(MAP_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(MAP_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    map: text(raw.map) ?? base.map,
+    level: text(raw.level),
+    find: text(raw.find),
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
+}
+
+function defaultClassPanel(): ClassPanel {
+  return { shown: false, ...PANEL_SIZE.classes, cls: null, tab: 'overview', ...UNPLACED };
+}
+
+function normalizeClassPanel(raw: any): ClassPanel {
+  const base = defaultClassPanel();
+  if (!raw || typeof raw !== 'object') return base;
+  return {
+    shown: raw.shown === true,
+    w: Math.max(CLASS_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(CLASS_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    cls: typeof raw.cls === 'string' && /^[a-z-]{2,30}$/.test(raw.cls) ? raw.cls : null,
+    tab: CLASS_TABS.includes(raw.tab) ? raw.tab : 'overview',
     x: raw.x ?? -1,
     y: raw.y ?? -1,
   };
@@ -369,6 +420,8 @@ function defaultState(): AppState {
     levelPanel: defaultLevelPanel(),
     spellPanel: defaultSpellPanel(),
     levelingPanel: defaultLevelingPanel(),
+    mapPanel: defaultMapPanel(),
+    classPanel: defaultClassPanel(),
   };
 }
 
@@ -420,6 +473,8 @@ function normalizeState(parsed: any): AppState | null {
     levelPanel: normalizeLevelPanel(parsed.levelPanel),
     spellPanel: normalizeSpellPanel(parsed.spellPanel),
     levelingPanel: normalizeLevelingPanel(parsed.levelingPanel),
+    mapPanel: normalizeMapPanel(parsed.mapPanel),
+    classPanel: normalizeClassPanel(parsed.classPanel),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
@@ -458,6 +513,8 @@ export class TrackerStore {
   readonly levelPanel = signal<LevelPanel>(defaultLevelPanel());
   readonly spellPanel = signal<SpellPanel>(defaultSpellPanel());
   readonly levelingPanel = signal<LevelingPanel>(defaultLevelingPanel());
+  readonly mapPanel = signal<MapPanel>(defaultMapPanel());
+  readonly classPanel = signal<ClassPanel>(defaultClassPanel());
   /** Saved buff lists, sorted by name when shown. */
   readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
@@ -487,6 +544,12 @@ export class TrackerStore {
     ...[this.levelingPanel()]
       .filter((p) => p.shown)
       .map((p) => ({ id: LEVELING_PANEL_ID, kind: 'leveling' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
+    ...[this.mapPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: MAP_PANEL_ID, kind: 'map' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
+    ...[this.classPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: CLASS_PANEL_ID, kind: 'classes' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
   ]);
 
   /** Notes that have been put away, in the order they were created. */
@@ -555,6 +618,8 @@ export class TrackerStore {
     else if (id === LEVEL_PANEL_ID) this.updateLevelPanel({ x, y });
     else if (id === SPELL_PANEL_ID) this.updateSpellPanel({ x, y });
     else if (id === LEVELING_PANEL_ID) this.updateLevelingPanel({ x, y });
+    else if (id === MAP_PANEL_ID) this.updateMapPanel({ x, y });
+    else if (id === CLASS_PANEL_ID) this.updateClassPanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -582,6 +647,10 @@ export class TrackerStore {
     if (spellSpot) this.updateSpellPanel(spellSpot);
     const levelingSpot = pos.get(LEVELING_PANEL_ID);
     if (levelingSpot) this.updateLevelingPanel(levelingSpot);
+    const mapSpot = pos.get(MAP_PANEL_ID);
+    if (mapSpot) this.updateMapPanel(mapSpot);
+    const classSpot = pos.get(CLASS_PANEL_ID);
+    if (classSpot) this.updateClassPanel(classSpot);
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -612,6 +681,8 @@ export class TrackerStore {
     this.levelPanel.update((p) => (p.shown ? place(p, sizeOf(p, PANEL_SIZE.levels)) : p));
     this.spellPanel.update((p) => (p.shown ? place(p, p) : p));
     this.levelingPanel.update((p) => (p.shown ? place(p, p) : p));
+    this.mapPanel.update((p) => (p.shown ? place(p, p) : p));
+    this.classPanel.update((p) => (p.shown ? place(p, p) : p));
   }
 
   // ---------- timers ----------
@@ -1239,6 +1310,60 @@ export class TrackerStore {
     this.placeUnplaced();
   }
 
+  // ---------- map (MnM Atlas) ----------
+
+  updateMapPanel(patch: Partial<MapPanel>): void {
+    this.mapPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Map panel (it comes back in its old spot and size, on the map it last showed). */
+  toggleMap(): void {
+    const p = this.mapPanel();
+    if (p.shown) {
+      this.updateMapPanel({ shown: false });
+      return;
+    }
+    this.showMap({});
+  }
+
+  /** Shows the Map panel (if hidden) on a given map, e.g. from a zone in the Leveling panel. */
+  showMap(view: Partial<Pick<MapPanel, 'map' | 'level' | 'find'>>): void {
+    const p = this.mapPanel();
+    const fits = p.shown || (p.x >= 0 && p.y >= 0 && this.canPlace(MAP_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h }));
+    this.updateMapPanel({ ...view, shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  // ---------- classes ----------
+
+  updateClassPanel(patch: Partial<ClassPanel>): void {
+    this.classPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Classes panel (it comes back in its old spot and size). */
+  toggleClasses(): void {
+    const p = this.classPanel();
+    if (p.shown) {
+      this.updateClassPanel({ shown: false });
+      return;
+    }
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(CLASS_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
+    this.updateClassPanel({ shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** Shows the Spells panel (if hidden) filtered to a class, e.g. from the Classes panel. */
+  showSpellsFor(cls: string): void {
+    this.updateSpellPanel({ cls, level: null });
+    if (!this.spellPanel().shown) this.toggleSpells();
+  }
+
+  /** Shows the Leveling panel (if hidden) on a level range, e.g. from a class's leveling path. */
+  showLevelingFor(from: number, to: number | null): void {
+    this.updateLevelingPanel({ from, to: to !== null && to !== from ? to : null });
+    if (!this.levelingPanel().shown) this.toggleLeveling();
+  }
+
   /** Smallest size a panel can be resized to, or null if it can't be resized. */
   minSize(p: Panel): { w: number; h: number } {
     switch (p.kind) {
@@ -1248,6 +1373,10 @@ export class TrackerStore {
         return SPELLS_MIN;
       case 'leveling':
         return LEVELING_MIN;
+      case 'map':
+        return MAP_MIN;
+      case 'classes':
+        return CLASS_MIN;
       case 'counter':
         return PANEL_MIN[p.item.kind];
       default:
@@ -1286,6 +1415,12 @@ export class TrackerStore {
         break;
       case 'leveling':
         this.updateLevelingPanel(size);
+        break;
+      case 'map':
+        this.updateMapPanel(size);
+        break;
+      case 'classes':
+        this.updateClassPanel(size);
         break;
     }
     return true;
@@ -1452,6 +1587,8 @@ export class TrackerStore {
     this.levelPanel.set(state.levelPanel);
     this.spellPanel.set(state.spellPanel);
     this.levelingPanel.set(state.levelingPanel);
+    this.mapPanel.set(state.mapPanel);
+    this.classPanel.set(state.classPanel);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1544,6 +1681,8 @@ export class TrackerStore {
       levelPanel: this.levelPanel(),
       spellPanel: this.spellPanel(),
       levelingPanel: this.levelingPanel(),
+      mapPanel: this.mapPanel(),
+      classPanel: this.classPanel(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -1568,6 +1707,8 @@ export class TrackerStore {
     this.levelPanel.set(state.levelPanel);
     this.spellPanel.set(state.spellPanel);
     this.levelingPanel.set(state.levelingPanel);
+    this.mapPanel.set(state.mapPanel);
+    this.classPanel.set(state.classPanel);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);

@@ -91,6 +91,9 @@
             <span class="za">{{ m.zone.abbr }}</span>
           }
           <span class="zr">{{ m.zone.region }}</span>
+          @if (atlasId(m.zone); as id) {
+            <button class="icon map" (click)="store.showMap({ map: id, level: null, find: null })" [title]="'Show ' + m.zone.name + ' on the Map panel'">🧭</button>
+          }
         </div>
         @if (m.camps.length) {
         <ul>

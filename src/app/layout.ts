@@ -1,7 +1,7 @@
 /** Size of one grid cell in pixels. */
 export const GRID = 20;
 
-export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling';
+export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes';
 
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
@@ -19,6 +19,8 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   players: { w: 15, h: 15 }, // 280 x 280
   levels: { w: 15, h: 22 }, // 280 x 420
   leveling: { w: 22, h: 28 }, // 420 x 540 (resizable)
+  classes: { w: 25, h: 33 }, // 480 x 640 (resizable)
+  map: { w: 27, h: 30 }, // 520 x 580 (resizable)
   spells: { w: 22, h: 28 }, // 420 x 540 (resizable; this is the starting size)
 };
 

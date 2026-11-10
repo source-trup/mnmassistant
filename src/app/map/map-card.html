@@ -1,0 +1,62 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">🧭 Map</span>
+    <a class="icon open" [href]="fullUrl()" target="_blank" rel="noopener" title="Open this in MnM Atlas (new tab)">↗</a>
+    <button class="icon" (click)="store.toggleMap()" title="Hide (show it again from Tools)">✕</button>
+  </div>
+
+  <div class="pick">
+    <select #mapSel (change)="setMap(mapSel.value)" aria-label="Map" [class.dim]="!!panel().find">
+      @if (panel().find) {
+        <option value="" selected disabled>Showing search result: pick a map…</option>
+      }
+      @for (m of maps; track m.id) {
+        <option [value]="m.id" [selected]="!panel().find && m.id === current().id">{{ m.name }}</option>
+      }
+    </select>
+    @if (current().levels.length && !panel().find) {
+      <select #lvlSel (change)="setLevel(lvlSel.value)" aria-label="Level or floor" [class.dim]="!!panel().find">
+        <option value="" [selected]="!panel().level">Default view</option>
+        @for (l of current().levels; track l.id) {
+          <option [value]="l.id" [selected]="l.id === panel().level">{{ l.name }}</option>
+        }
+      </select>
+    }
+  </div>
+
+  <div class="find">
+    <input
+      #box
+      [value]="panel().find ?? ''"
+      (keydown.enter)="find(box)"
+      (keydown.escape)="clearFind(box)"
+      placeholder="Find an NPC or place on any map…"
+      aria-label="Find on the map"
+      title="An NPC, a place or e.g. “enchanter trainer”; Enter searches every map"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    @if (panel().find) {
+      <button class="small" (click)="clearFind(box)" title="Back to the chosen map">✕</button>
+    } @else {
+      <button class="small" (click)="find(box)">Find</button>
+    }
+  </div>
+
+  <div class="frame">
+    <iframe
+      [src]="src()"
+      [title]="title()"
+      loading="lazy"
+      allow="fullscreen; clipboard-write"
+      allowfullscreen
+      referrerpolicy="strict-origin-when-cross-origin"
+    ></iframe>
+  </div>
+
+  <p class="credit">
+    Maps: <a [href]="ATLAS" target="_blank" rel="noopener">MnM Atlas</a>, an unofficial fan atlas, and the community map
+    authors credited on each map. Scroll over the map to zoom.
+  </p>
+</div>

@@ -195,6 +195,28 @@ export interface LevelingPanel extends GridPos {
   source: 'both' | 'sheet' | 'guide';
 }
 
+/** The single Map panel (MnM Atlas embed): position, size, visibility and what it's showing. */
+export interface MapPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  /** Atlas map id (e.g. "night-harbor") and level / floor id, if the map has them. */
+  map: string;
+  level: string | null;
+  /** A place or NPC searched for across all maps; while set, it's shown instead of the chosen map. */
+  find: string | null;
+}
+
+/** The single Classes panel: position, size, visibility, the class shown and the open tab. */
+export interface ClassPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  /** Class id ("shaman", "shadow-knight"); null = follow the theme's class. */
+  cls: string | null;
+  tab: 'overview' | 'build' | 'abilities' | 'leveling' | 'gear' | 'more';
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -214,6 +236,8 @@ export interface AppState {
   levelPanel: LevelPanel;
   spellPanel: SpellPanel;
   levelingPanel: LevelingPanel;
+  mapPanel: MapPanel;
+  classPanel: ClassPanel;
   soundOn: boolean;
   theme: Theme;
 }

@@ -1,0 +1,293 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">🛡️ Classes</span>
+    <button class="icon" (click)="store.toggleClasses()" title="Hide (show it again from Tools)">✕</button>
+  </div>
+
+  <div class="picker">
+    <select #clsSel (change)="pick(clsSel.value)" aria-label="Class">
+      @for (c of pickable(); track c.id) {
+        <option [value]="c.id" [selected]="c.id === clsId()">{{ c.name }}</option>
+      }
+    </select>
+    <div class="roles" role="group" aria-label="Filter by role">
+      @for (r of roles; track r) {
+        <button class="small role" [attr.data-role]="r" [class.on]="role() === r" (click)="setRole(r)" [title]="'Only ' + ROLE_LABEL[r] + ' classes'">
+          {{ ROLE_LABEL[r] }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @switch (data.status()) {
+    @case ('ready') {
+      @if (cls(); as c) {
+        <div class="body">
+          <!-- Snapshot -->
+          <section class="snap">
+            <div class="title">
+              <h3>{{ c.name }}</h3>
+              <span class="badge" [attr.data-role]="c.category">{{ ROLE_LABEL[c.category] }}</span>
+            </div>
+            <p class="one">{{ c.oneLiner }}</p>
+            @if (c.facts['role']; as r) {
+              <p class="rolefact">{{ r.value }}</p>
+            }
+            <dl class="facts">
+              @for (f of facts(); track f.key) {
+                <div>
+                  <dt>{{ f.key }}</dt>
+                  <dd>{{ f.value }}</dd>
+                  @if (f.note) {
+                    <small>{{ f.note }}</small>
+                  }
+                </div>
+              }
+            </dl>
+            @if (c.attributes.length) {
+              <div class="attrs">
+                @for (a of c.attributes; track a.stat) {
+                  <span class="attr" [attr.data-rank]="a.rank" [title]="a.rank + ' attribute'">{{ a.stat }}</span>
+                }
+              </div>
+            }
+          </section>
+
+          <div class="tabs" role="tablist">
+            @for (t of tabs; track t.id) {
+              <button role="tab" [attr.aria-selected]="panel().tab === t.id" [class.on]="panel().tab === t.id" (click)="setTab(t.id)">
+                {{ t.label }}
+              </button>
+            }
+          </div>
+
+          <div class="tab">
+            @switch (panel().tab) {
+              @case ('overview') {
+                <h4>How to play</h4>
+                <p>{{ c.howToPlay }}</p>
+                <h4>Tips</h4>
+                <ul class="tips">
+                  @for (t of c.tips; track $index) {
+                    <li>{{ t }}</li>
+                  }
+                </ul>
+                <div class="sw">
+                  <div>
+                    <h4 class="good">Strengths</h4>
+                    <ul>
+                      @for (s of c.strengths; track $index) {
+                        <li>{{ s }}</li>
+                      }
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 class="bad">Weaknesses</h4>
+                    <ul>
+                      @for (s of c.weaknesses; track $index) {
+                        <li>{{ s }}</li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+                <h4>Read the full guide</h4>
+                <div class="links">
+                  @for (s of c.sections; track s.id) {
+                    <a [href]="sectionUrl(c, s.id)" target="_blank" rel="noopener">{{ s.title }} ↗</a>
+                  }
+                </div>
+              }
+
+              @case ('build') {
+                <h4>Races <small>starting stats before bonus points</small></h4>
+                @if (c.races.length) {
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Race</th>
+                        @for (s of c.statCols; track s) {
+                          <th class="num">{{ s }}</th>
+                        }
+                        <th>Starts in</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (r of c.races; track r.race) {
+                        <tr>
+                          <td class="strong">{{ r.race }}</td>
+                          @for (s of c.statCols; track s) {
+                            <td class="num" [class.best]="r.stats[s] === bestStat()[s]">{{ r.stats[s] }}</td>
+                          }
+                          <td class="muted">{{ r.startsIn }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="muted">Available: {{ c.racesAvailable.join(', ') }}</p>
+                }
+                <a class="more" [href]="sectionUrl(c, 'races')" target="_blank" rel="noopener">Why each race ↗</a>
+
+                <h4>Recommended traits</h4>
+                <table>
+                  <thead>
+                    <tr><th>Category</th><th>Best pick</th><th>Alternatives</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (t of c.traits; track t.category) {
+                      <tr>
+                        <td class="muted">{{ t.category }}</td>
+                        <td class="strong">{{ t.pick }}</td>
+                        <td>{{ t.alternatives }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <a class="more" [href]="sectionUrl(c, 'traits')" target="_blank" rel="noopener">Why these traits ↗</a>
+                @if (section(c, 'start'); as s) {
+                  <a class="more" [href]="sectionUrl(c, s.id)" target="_blank" rel="noopener">{{ s.title }} ↗</a>
+                }
+              }
+
+              @case ('abilities') {
+                <div class="row-actions">
+                  <button class="small" (click)="showSpells(c)" [title]="'Open the Spells panel on ' + c.name">📖 All {{ c.name }} spells &amp; abilities</button>
+                </div>
+                <h4>Key {{ c.keyLabel }} by level</h4>
+                <ul class="levels">
+                  @for (k of c.keyLevels; track k.level) {
+                    <li>
+                      <span class="lv">{{ k.level }}</span>
+                      <span>{{ k.names }}</span>
+                    </li>
+                  }
+                </ul>
+                <h4>Ability lines</h4>
+                <ul class="lines">
+                  @for (l of c.lines; track $index) {
+                    <li>
+                      <div class="lh">
+                        <span class="ln">{{ l.line }}</span>
+                        @if (l.starts) {
+                          <span class="ls">from {{ l.starts }}</span>
+                        }
+                      </div>
+                      @if (l.purpose) {
+                        <div class="lp">{{ l.purpose }}</div>
+                      }
+                      <div class="steps">
+                        @for (s of steps(l.progression); track $index; let last = $last) {
+                          <span>{{ s }}</span>
+                          @if (!last) {
+                            <i aria-hidden="true">→</i>
+                          }
+                        }
+                      </div>
+                    </li>
+                  }
+                </ul>
+                <a class="more" [href]="sectionUrl(c, 'toolkit')" target="_blank" rel="noopener">The toolkit in detail ↗</a>
+              }
+
+              @case ('leveling') {
+                <h4>Leveling path</h4>
+                <ul class="path">
+                  @for (p of c.path; track $index) {
+                    <li>
+                      <span class="lv">{{ p.levels }}</span>
+                      <span class="where">{{ p.where }}</span>
+                      @if (levelRange(p.levels)) {
+                        <button class="icon" (click)="showLeveling(p.levels)" [title]="'Camps for levels ' + p.levels + ' in the Leveling panel'">🗺️</button>
+                      }
+                      @if (mapFor(p.where); as m) {
+                        <button class="icon" (click)="showMap(m)" title="Show this zone on the Map panel">🧭</button>
+                      }
+                    </li>
+                  }
+                </ul>
+                <a class="more" [href]="sectionUrl(c, 'path')" target="_blank" rel="noopener">Why these spots ↗</a>
+                <div class="links">
+                  @if (section(c, 'group'); as s) {
+                    <a [href]="sectionUrl(c, s.id)" target="_blank" rel="noopener">{{ s.title }} ↗</a>
+                  }
+                  @if (section(c, 'solo'); as s) {
+                    <a [href]="sectionUrl(c, s.id)" target="_blank" rel="noopener">{{ s.title }} ↗</a>
+                  }
+                </div>
+              }
+
+              @case ('gear') {
+                @for (g of c.gear; track $index) {
+                  <h4>{{ g.title }}</h4>
+                  <table>
+                    <thead>
+                      <tr><th>Item</th><th>Slot</th><th>Stats</th><th>Where</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (r of g.rows; track $index) {
+                        <tr>
+                          <td class="strong">{{ r.item }}</td>
+                          <td class="muted">{{ r.slot }}</td>
+                          <td>{{ r.stats }}</td>
+                          <td class="muted">{{ r.where }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @empty {
+                  <p class="muted">No gear list for this class yet.</p>
+                }
+              }
+
+              @case ('more') {
+                @for (e of c.extras; track $index) {
+                  <h4>{{ e.title }}</h4>
+                  <table>
+                    <thead>
+                      <tr>
+                        @for (h of e.head; track $index) {
+                          <th>{{ h }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (r of e.rows; track $index) {
+                        <tr>
+                          @for (v of r; track $index; let first = $first) {
+                            <td [class.strong]="first">{{ v }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @empty {
+                  <p class="muted">Nothing extra for this class.</p>
+                }
+                @if (extraSections().length) {
+                  <h4>More in the guide</h4>
+                  <div class="links">
+                    @for (s of extraSections(); track s.id) {
+                      <a [href]="sectionUrl(c, s.id)" target="_blank" rel="noopener">{{ s.title }} ↗</a>
+                    }
+                  </div>
+                }
+              }
+            }
+          </div>
+        </div>
+        <p class="credit">
+          Class data from <a [href]="c.classUrl" target="_blank" rel="noopener">{{ SOURCE.name }}</a>
+          (<a [href]="c.guideUrl" target="_blank" rel="noopener">full {{ c.name }} guide</a>@if (c.patch) {, patch {{ c.patch }}}).
+          Summaries and tips are ours.
+        </p>
+      }
+    }
+    @case ('error') {
+      <p class="hint">Couldn't load the class guides. <button class="small" (click)="data.load()">Try again</button></p>
+    }
+    @default {
+      <p class="hint">Loading classes…</p>
+    }
+  }
+</div>

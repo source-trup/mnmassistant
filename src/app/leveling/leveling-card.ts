@@ -1,6 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { LEVEL_CAP } from '../level-range/level-range';
 import { LevelingPanel } from '../models';
+import { atlasMapForZone } from '../map/atlas-maps';
 import { TrackerStore } from '../tracker.store';
 import { HUNTING_GUIDE, HuntingSpot, LEVELING_COLUMNS, LEVELING_ZONES, LevelingCamp, LevelingZone } from './leveling-data';
 
@@ -116,6 +117,11 @@ export class LevelingCard {
 
   protected setRegion(value: string): void {
     this.store.updateLevelingPanel({ region: value || null });
+  }
+
+  /** The MnM Atlas map for a zone, if the atlas has one. */
+  protected atlasId(z: LevelingZone): string | null {
+    return atlasMapForZone(z.name)?.id ?? null;
   }
 
   protected bracket(c: LevelingCamp): string {

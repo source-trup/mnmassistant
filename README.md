@@ -19,9 +19,11 @@ Monsters and Memories Wiki.
 - [Buff Tracker](#buff-tracker)
 - [Notes](#notes)
 - [Naughty and Nice lists](#naughty-and-nice-lists)
+- [Classes](#classes)
 - [Level range](#level-range)
 - [Spells](#spells)
 - [Leveling](#leveling)
+- [Map](#map)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -80,7 +82,7 @@ side are always evenly spaced. Sizes are saved with the layout, and a hidden too
 | --- | --- |
 | **⏱ Timers** | `5m` `6m` `8m` `10m` (common placeholder respawns) add a timer in one click. For any other length, type it in the box (`7:30`, `90s`, `1h30m`) and press Enter. |
 | **＋ Add ▾** | Adds a panel: Count (standard counter), Named / PH (camp counter), Buff Tracker, Note or Checklist. Below them are your [saved notes](#notes); the number on the button is how many are put away. |
-| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Level range](#level-range), [Spells](#spells), [Leveling](#leveling). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
+| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
 | Right side | 🔔 / 🔕 mute all alerts, ☰ menu |
 
 **☰ menu:** Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters,
@@ -301,6 +303,35 @@ yours rather than replacing them.
 
 ---
 
+## Classes
+
+How to play each of the 18 classes. **Tools → Classes** shows or hides the panel (there's only one; it comes back in
+the same spot and size). It starts on your [theme](#themes)'s class (Shaman by default) and remembers the class and
+tab you last looked at.
+
+**Snapshot** (always at the top): the class's role, armor, key stats, how well it solos, how much groups want it,
+how hard it is, and its primary and secondary attributes. Pick a class from the box, or narrow the box with the
+**Tank / Healer / DPS / Support / Hybrid** buttons.
+
+| Tab | What's in it |
+| --- | --- |
+| **Overview** | How to play and four quick tips, strengths and weaknesses, and links to every section of the full guide. |
+| **Build** | Each race's starting stats (the best in each column highlighted) and where it starts, and the recommended traits with alternatives. |
+| **Abilities** | Key spells or abilities by level, and each ability line with when it starts and how it progresses. **📖 All … spells & abilities** opens the [Spells](#spells) panel on the class. |
+| **Leveling** | The class's leveling path. **🗺️** opens those levels in the [Leveling](#leveling) panel; **🧭** opens the zone in the [Map](#map) panel. |
+| **Gear** | Early gear and later upgrades: slot, stats and where to get it. |
+| **More** | Class-specific tables (pet families, seasons, glyphs, instruments, known skill caps) and links to the guide's class-specific sections. |
+
+The class facts, lists and tables come from [Stories of Monsters & Memories](https://storiesofmnm.com/classes/) and its
+class guides; each class links to its full guide, which explains the reasoning (why each race or trait, tactics,
+common mistakes, FAQ). The one-line summaries, "How to play" text and tips are written for this app, in
+`data/class-notes.json`. To refresh the data, run `npm run classes -- --fetch` (downloads the 36 pages, 2 seconds
+apart, into the git-ignored `data/.cache/`), or `npm run classes` to rebuild from the pages already downloaded.
+
+*Class data: [Stories of Monsters & Memories](https://storiesofmnm.com/), an unofficial fan site.*
+
+---
+
 ## Level range
 
 Who can group with whom. **Tools → Level range** in the toolbar shows or hides the panel (there's only one, and it
@@ -354,7 +385,8 @@ it comes back in the same spot and size). Drag its bottom-right corner to resize
 | Pick a bracket | The **1 5 10 … 60** buttons pick that column of the leveling sheet (e.g. **15** = levels 15–19). |
 | Filter | **Region** (Szuur / Calafrey), **Source** (sheet camps, hunting guide, or both), and **Raids** to include or hide raid encounters. |
 
-Results are grouped by zone, with each camp's level range on the right and raid encounters marked **Raid**. Hunting
+Results are grouped by zone, with each camp's level range on the right and raid encounters marked **Raid**. **🧭**
+on a zone heading opens that zone in the [Map](#map) panel (opening the panel if it's hidden). Hunting
 guide spots (marked **Guide**) show the area, the guide's own solo and group levels, the monsters there and any notes.
 
 The data comes from two places:
@@ -370,6 +402,27 @@ The data comes from two places:
   the same license.
 
 After editing either file, run `npm run leveling` to rebuild `src/app/leveling/leveling-data.ts`.
+
+---
+
+## Map
+
+The illustrated zone maps from [MnM Atlas](https://www.mnmatlas.com/), an unofficial fan atlas, shown with the atlas's
+own [embed](https://www.mnmatlas.com/embed/) (its compact mode, so the scroll wheel zooms as soon as you hover). **Tools → Map** shows or hides the panel (there's only one; it comes
+back in the same spot and size). Drag its bottom-right corner to resize it: maps are easiest to use big.
+
+| Action | How |
+| --- | --- |
+| Pick a map | The map box: the World map, then every zone A–Z. |
+| Pick a floor | Zones with levels or floors (the Tomb, Tel Ekir, Fallen Pass, Fallen Watch…) get a second box. **Default view** is how the atlas opens the map. |
+| Find something | Type an NPC, a place or e.g. `enchanter trainer` in the find box and press Enter. The atlas searches every map and opens the right one on that marker. **✕** (or Esc) goes back to the chosen map. |
+| Use the map | Drag, scroll to zoom (just hover; no click needed), switch floors and open marker popups inside it. The atlas's own bar at the top of the map also has a map picker, a search menu and sign-in for suggesting edits. While the mouse is over the map the wheel zooms it; move off the map to scroll the board. |
+| Full atlas | **↗** in the header opens what you're looking at in MnM Atlas in a new tab. |
+
+The map loads live from mnmatlas.com, so it needs an internet connection and always shows the atlas's latest
+version. The zone list lives in `src/app/map/atlas-maps.ts`; add new maps there when the atlas adds them.
+
+*Maps: [MnM Atlas](https://www.mnmatlas.com/) and the community map authors credited on each map.*
 
 ---
 
