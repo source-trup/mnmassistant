@@ -101,6 +101,12 @@ export class CampHistory {
     this.editing.update((id) => (id === e.id ? null : e.id));
   }
 
+  /** Opens the Prices panel on a drop (the history dialog closes so the board is visible). */
+  protected checkPrice(name: string): void {
+    this.store.showPrice(name);
+    this.closed.emit();
+  }
+
   protected addLoot(e: CampEvent, item: LootItem): void {
     this.store.addLoot(this.counter().id, e.id, item);
   }

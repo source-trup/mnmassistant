@@ -217,6 +217,19 @@ export interface ClassPanel extends GridPos {
   tab: 'overview' | 'build' | 'abilities' | 'leveling' | 'gear' | 'more';
 }
 
+/** The single Prices panel (MnMdb market data): position, size, visibility and what it's showing. */
+export interface PricePanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  /** Item being looked at. */
+  item: string | null;
+  /** How far back listings count: the last 7 or 30 days. */
+  days: 7 | 30;
+  /** Recently checked items, newest first. */
+  recent: string[];
+}
+
 /** One theme per class (see themes.ts); "shaman" is the default. */
 export type Theme = ThemeId;
 
@@ -238,6 +251,7 @@ export interface AppState {
   levelingPanel: LevelingPanel;
   mapPanel: MapPanel;
   classPanel: ClassPanel;
+  pricePanel: PricePanel;
   soundOn: boolean;
   theme: Theme;
 }

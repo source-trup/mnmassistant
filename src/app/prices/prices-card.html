@@ -1,0 +1,225 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">💰 Prices</span>
+    <span class="server" [title]="'Player prices are from the ' + SERVER + ' auction channel'">{{ SERVER }}</span>
+    <button class="icon" (click)="data.load(true)" [disabled]="data.status() === 'loading'" title="Reload prices from MnMdb">↻</button>
+    <button class="icon" (click)="store.togglePrices()" title="Hide (show it again from Tools)">✕</button>
+  </div>
+
+  <div class="search">
+    <input
+      #box
+      (input)="onInput(box.value)"
+      (keydown)="onKey($event, box)"
+      (focus)="open.set(true)"
+      (blur)="closeSoon()"
+      [placeholder]="data.status() === 'ready' ? 'Check a price… (e.g. iron ore)' : 'Loading prices…'"
+      [disabled]="data.status() !== 'ready'"
+      aria-label="Item to price check"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    @if (open() && suggestions().length) {
+      <ul class="suggest" role="listbox">
+        @for (s of suggestions(); track s.name; let i = $index) {
+          <li role="option" [class.active]="i === active()" [attr.aria-selected]="i === active()" (mousedown)="pick(s.name, box)">
+            <span>{{ s.name }}</span>
+            @if (s.asks) {
+              <small>{{ s.asks }} for sale</small>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  @if (panel().recent.length) {
+    <div class="recent">
+      @for (r of panel().recent; track r) {
+        <span class="chip" [class.on]="r === panel().item">
+          <button class="pickr" (click)="pick(r)">{{ r }}</button>
+          <button class="x" (click)="forgetRecent(r, $event)" title="Remove from recent">✕</button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="body">
+    @switch (data.status()) {
+      @case ('error') {
+        <p class="hint">Couldn't reach mnm-db.com. <button class="small" (click)="data.load(true)">Try again</button></p>
+      }
+      @case ('ready') {
+        @if (item(); as it) {
+          <div class="title">
+            @if (it.info?.icon) {
+              <img [src]="it.info!.icon" alt="" width="32" height="32" referrerpolicy="no-referrer" />
+            }
+            <div>
+              <h3>{{ it.name }}</h3>
+              @if (it.info?.flags?.length) {
+                <span class="flags">{{ it.info!.flags.join(' · ') }}</span>
+              }
+            </div>
+            <a class="ext" [href]="itemUrl(it)" target="_blank" rel="noopener" title="Open on MnMdb">MnMdb ↗</a>
+          </div>
+
+          <!-- Player market -->
+          <section class="market">
+            <div class="mhead">
+              <span class="lbl">{{ SERVER }} market</span>
+              <span class="seg">
+                <button [class.on]="panel().days === 7" (click)="setDays(7)">7 days</button>
+                <button [class.on]="panel().days === 30" (click)="setDays(30)">30 days</button>
+              </span>
+            </div>
+            @if (market().asks) {
+              <div class="big">
+                <div>
+                  <span class="k">Typical ask</span>
+                  <span class="v">{{ coin(market().typical) }}</span>
+                  <small>each</small>
+                </div>
+                <div>
+                  <span class="k">Cheapest</span>
+                  <span class="v2">{{ coin(market().low) }}</span>
+                </div>
+                <div>
+                  <span class="k">Highest</span>
+                  <span class="v2">{{ coin(market().high) }}</span>
+                </div>
+              </div>
+              <p class="note">
+                {{ market().asks }} seller{{ market().asks === 1 ? '' : 's' }}
+                @if (market().newest) {
+                  · newest {{ ago(market().newest) }}
+                }
+                @if (market().rough) {
+                  · <b>few listings: rough guide</b>
+                }
+              </p>
+            } @else {
+              <p class="note">Nobody listed it for sale in the last {{ panel().days }} days.</p>
+            }
+            @if (market().bids) {
+              <p class="bids">
+                Buyers offer <b>{{ coin(market().bidTypical) }}</b> typically, up to <b>{{ coin(market().bidHigh) }}</b>
+                ({{ market().bids }} buyer{{ market().bids === 1 ? '' : 's' }})
+              </p>
+            }
+          </section>
+
+          <!-- Vendor -->
+          <section class="vendor">
+            @if (vendor(); as v) {
+              <span class="lbl">Vendor pays</span>
+              <b>{{ coin(v.typical) }}</b>
+              @if (v.low !== v.high) {
+                <small>({{ coin(v.low) }}–{{ coin(v.high) }})</small>
+              }
+              @if (versus()) {
+                <span class="vs">· players ask {{ versus() }}</span>
+              }
+            } @else {
+              <span class="lbl">Vendor pays</span> <small>no sales recorded yet</small>
+            }
+          </section>
+
+          <!-- Listings -->
+          @if (market().asks || market().bids) {
+            <div class="ltabs">
+              <button [class.on]="listTab() === 'sell'" (click)="listTab.set('sell')">For sale ({{ market().asks }})</button>
+              <button [class.on]="listTab() === 'buy'" (click)="listTab.set('buy')">Wanted ({{ market().bids }})</button>
+            </div>
+            <table class="listings">
+              <thead>
+                <tr><th>Each</th><th>As listed</th><th>{{ listTab() === 'sell' ? 'Seller' : 'Buyer' }}</th><th>Seen</th></tr>
+              </thead>
+              <tbody>
+                @for (l of listings().slice(0, 40); track l.player + l.unit) {
+                  <tr>
+                    <td class="num">{{ coin(l.unit) }}</td>
+                    <td class="muted">{{ listed(l) || l.priceStr }}</td>
+                    <td>{{ l.player }}</td>
+                    <td class="muted" [title]="l.count + ' times seen'">{{ ago(l.seen) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="muted">None in the last {{ panel().days }} days.</td></tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          <!-- About the item -->
+          @if (statLines().length || it.info?.classes) {
+            <section class="about">
+              <span class="lbl">Item</span>
+              <div class="stats">
+                @for (s of statLines(); track s) {
+                  <span>{{ s }}</span>
+                }
+              </div>
+              @if (it.info?.classes) {
+                <p class="muted">Classes: {{ it.info!.classes }}@if (it.info?.races && it.info!.races !== 'ALL') { · Races: {{ it.info!.races }}}</p>
+              }
+            </section>
+          }
+          @if (sources().drops.length || sources().zones.length || it.harvested || it.soldBy.length || it.info?.tradeskills?.length) {
+            <section class="about">
+              <span class="lbl">Where it comes from</span>
+              @if (sources().drops.length) {
+                <p>
+                  Drops from:
+                  @for (d of sources().drops; track d.mob; let last = $last) {
+                    <span class="mob">{{ d.mob }}</span>@if (d.rate !== null) { <small>({{ (d.rate * 100).toFixed(0) }}%)</small>}@if (!last) {, }
+                  }
+                </p>
+              }
+              @if (it.harvested) {
+                <p>Gathered ({{ it.harvested }} harvests recorded)</p>
+              }
+              @if (it.info?.tradeskills?.length) {
+                <p>Tradeskills: {{ it.info!.tradeskills.join(', ') }}</p>
+              }
+              @if (it.soldBy.length) {
+                <p>
+                  Sold by:
+                  @for (m of it.soldBy.slice(0, 4); track m.name; let last = $last) {
+                    {{ m.name }}@if (m.zone) { <small>({{ m.zone }})</small>}@if (!last) {, }
+                  }
+                </p>
+              }
+              @if (sources().zones.length) {
+                <div class="zones">
+                  @for (z of sources().zones; track z) {
+                    @if (mapFor(z); as m) {
+                      <button class="small" (click)="showMap(m)" [title]="'Show ' + z + ' on the Map panel'">🧭 {{ z }}</button>
+                    } @else {
+                      <span class="small zone">{{ z }}</span>
+                    }
+                  }
+                </div>
+              }
+            </section>
+          }
+        } @else if (panel().item) {
+          <p class="hint">MnMdb has no price data for “{{ panel().item }}” yet.</p>
+        } @else {
+          <p class="hint">
+            Type an item name to see what it sells for on {{ SERVER }}, what buyers offer, and what an NPC vendor pays.
+            {{ data.names().length }} items tracked.
+          </p>
+        }
+      }
+      @default {
+        <p class="hint">Loading prices from MnMdb…</p>
+      }
+    }
+  </div>
+
+  <p class="credit">
+    Prices: <a [href]="MNMDB" target="_blank" rel="noopener">MnMdb</a>, from {{ SERVER }} auction listings (asking prices, not
+    sales) and players' vendor sales.@if (data.updatedAt()) { Updated {{ ago(data.updatedAt()) }}.}
+  </p>
+</div>

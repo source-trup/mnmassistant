@@ -20,6 +20,7 @@ Monsters and Memories Wiki.
 - [Notes](#notes)
 - [Naughty and Nice lists](#naughty-and-nice-lists)
 - [Classes](#classes)
+- [Prices](#prices)
 - [Level range](#level-range)
 - [Spells](#spells)
 - [Leveling](#leveling)
@@ -82,7 +83,7 @@ side are always evenly spaced. Sizes are saved with the layout, and a hidden too
 | --- | --- |
 | **⏱ Timers** | `5m` `6m` `8m` `10m` (common placeholder respawns) add a timer in one click. For any other length, type it in the box (`7:30`, `90s`, `1h30m`) and press Enter. |
 | **＋ Add ▾** | Adds a panel: Count (standard counter), Named / PH (camp counter), Buff Tracker, Note or Checklist. Below them are your [saved notes](#notes); the number on the button is how many are put away. |
-| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
+| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Prices](#prices), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
 | Right side | 🔔 / 🔕 mute all alerts, ☰ menu |
 
 **☰ menu:** Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters,
@@ -329,6 +330,32 @@ common mistakes, FAQ). The one-line summaries, "How to play" text and tips are w
 apart, into the git-ignored `data/.cache/`), or `npm run classes` to rebuild from the pages already downloaded.
 
 *Class data: [Stories of Monsters & Memories](https://storiesofmnm.com/), an unofficial fan site.*
+
+---
+
+## Prices
+
+A price checker for the **Trem** server. **Tools → Prices** shows or hides the panel (there's only one; it comes
+back in the same spot and size).
+
+| Action | How |
+| --- | --- |
+| Check an item | Start typing a name; pick from the list (↑ / ↓ and Enter, or click). Items most often for sale come first. Your last 8 checks stay as chips under the box; **✕** on a chip removes it. |
+| Trem market | **Typical ask** is the median price per item among sellers, with the cheapest and highest. Below it: how many sellers, how recent the newest listing is, and what buyers offer (WTB). Switch between the last **7 days** and **30 days**. Fewer than 3 sellers is flagged as a rough guide. |
+| Vendor | What an NPC merchant pays for it, and how the player price compares ("players ask 30× the vendor price"). |
+| Listings | **For sale** (cheapest first) and **Wanted** (highest offer first): price each, as listed (e.g. `3s / 20` for a stack), the player and when it was last seen. |
+| Item | Slot, AC, stats, classes, which mobs drop it (with drop rates where enough kills are logged), whether it's gathered, which tradeskills use it and which merchants sell it. **🧭** opens a zone in the [Map](#map) panel. **MnMdb ↗** opens the item on mnm-db.com. |
+| Refresh | **↻** in the header reloads the latest data. |
+
+**💰** next to an item in a Named / PH counter's loot summary ([history](#history-view-)) opens it here, so you can
+see what a drop is worth.
+
+The data comes live from [MnMdb](https://mnm-db.com/) (an open-source community economy database), the first time
+you open the panel: Trem auction-channel listings (asking prices, not completed sales; roughly the last 30 days),
+vendor sale prices and drops players have logged, and merchant lists from the wiki. Nothing is copied into this app,
+so it needs an internet connection and shows whatever MnMdb has now (it updates through the day).
+
+*Prices: [MnMdb](https://mnm-db.com/) ([source](https://github.com/Boisteroux/mnm-tools), MIT).*
 
 ---
 

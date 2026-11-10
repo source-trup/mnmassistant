@@ -179,6 +179,9 @@
           @case ('classes') {
             <app-classes-card [panel]="p.item" />
           }
+          @case ('prices') {
+            <app-prices-card [panel]="p.item" />
+          }
         }
         <div
           class="resize-grip"

@@ -46,6 +46,7 @@
         }
         <span class="cnt">×{{ l.count }}</span>
         <span class="pct" title="Share of named kills that dropped it">{{ l.pct }}%</span>
+        <button class="price" (click)="checkPrice(l.name)" [title]="'What ' + l.name + ' sells for (Prices panel)'">💰</button>
       </li>
     }
   </ul>

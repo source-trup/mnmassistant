@@ -24,6 +24,7 @@ import {
   LevelingPanel,
   MapPanel,
   ClassPanel,
+  PricePanel,
   StandardCounter,
   Theme,
   TimerItem,
@@ -52,7 +53,8 @@ export type Panel =
   | ({ id: string; kind: 'spells'; item: SpellPanel } & Rect)
   | ({ id: string; kind: 'leveling'; item: LevelingPanel } & Rect)
   | ({ id: string; kind: 'map'; item: MapPanel } & Rect)
-  | ({ id: string; kind: 'classes'; item: ClassPanel } & Rect);
+  | ({ id: string; kind: 'classes'; item: ClassPanel } & Rect)
+  | ({ id: string; kind: 'prices'; item: PricePanel } & Rect);
 
 /** Panel id of the single Spells panel, and the smallest it can be resized to (grid cells). */
 export const SPELL_PANEL_ID = 'spells';
@@ -69,6 +71,10 @@ export const MAP_MIN = { w: 15, h: 14 };
 /** Panel id of the single Classes panel, and the smallest it can be resized to. */
 export const CLASS_PANEL_ID = 'classes';
 export const CLASS_MIN = { w: 17, h: 16 };
+/** Panel id of the single Prices panel, and the smallest it can be resized to. */
+export const PRICE_PANEL_ID = 'prices';
+export const PRICE_MIN = { w: 16, h: 14 };
+
 const CLASS_TABS: ClassPanel['tab'][] = ['overview', 'build', 'abilities', 'leveling', 'gear', 'more'];
 
 /** Panel id of the single Level range panel. */
@@ -188,6 +194,26 @@ function normalizeClassPanel(raw: any): ClassPanel {
     h: Math.max(CLASS_MIN.h, Math.floor(Number(raw.h)) || base.h),
     cls: typeof raw.cls === 'string' && /^[a-z-]{2,30}$/.test(raw.cls) ? raw.cls : null,
     tab: CLASS_TABS.includes(raw.tab) ? raw.tab : 'overview',
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
+}
+
+function defaultPricePanel(): PricePanel {
+  return { shown: false, ...PANEL_SIZE.prices, item: null, days: 30, recent: [], ...UNPLACED };
+}
+
+function normalizePricePanel(raw: any): PricePanel {
+  const base = defaultPricePanel();
+  if (!raw || typeof raw !== 'object') return base;
+  const name = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 80) : null);
+  return {
+    shown: raw.shown === true,
+    w: Math.max(PRICE_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(PRICE_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    item: name(raw.item),
+    days: raw.days === 7 ? 7 : 30,
+    recent: Array.isArray(raw.recent) ? raw.recent.map(name).filter(Boolean).slice(0, 8) : [],
     x: raw.x ?? -1,
     y: raw.y ?? -1,
   };
@@ -422,6 +448,7 @@ function defaultState(): AppState {
     levelingPanel: defaultLevelingPanel(),
     mapPanel: defaultMapPanel(),
     classPanel: defaultClassPanel(),
+    pricePanel: defaultPricePanel(),
   };
 }
 
@@ -475,6 +502,7 @@ function normalizeState(parsed: any): AppState | null {
     levelingPanel: normalizeLevelingPanel(parsed.levelingPanel),
     mapPanel: normalizeMapPanel(parsed.mapPanel),
     classPanel: normalizeClassPanel(parsed.classPanel),
+    pricePanel: normalizePricePanel(parsed.pricePanel),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
     counters: parsed.counters.map(normalizeCounter),
@@ -515,6 +543,7 @@ export class TrackerStore {
   readonly levelingPanel = signal<LevelingPanel>(defaultLevelingPanel());
   readonly mapPanel = signal<MapPanel>(defaultMapPanel());
   readonly classPanel = signal<ClassPanel>(defaultClassPanel());
+  readonly pricePanel = signal<PricePanel>(defaultPricePanel());
   /** Saved buff lists, sorted by name when shown. */
   readonly buffSets = signal<BuffSet[]>([]);
   readonly soundOn = signal(true);
@@ -550,6 +579,9 @@ export class TrackerStore {
     ...[this.classPanel()]
       .filter((p) => p.shown)
       .map((p) => ({ id: CLASS_PANEL_ID, kind: 'classes' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
+    ...[this.pricePanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: PRICE_PANEL_ID, kind: 'prices' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
   ]);
 
   /** Notes that have been put away, in the order they were created. */
@@ -620,6 +652,7 @@ export class TrackerStore {
     else if (id === LEVELING_PANEL_ID) this.updateLevelingPanel({ x, y });
     else if (id === MAP_PANEL_ID) this.updateMapPanel({ x, y });
     else if (id === CLASS_PANEL_ID) this.updateClassPanel({ x, y });
+    else if (id === PRICE_PANEL_ID) this.updatePricePanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -651,6 +684,8 @@ export class TrackerStore {
     if (mapSpot) this.updateMapPanel(mapSpot);
     const classSpot = pos.get(CLASS_PANEL_ID);
     if (classSpot) this.updateClassPanel(classSpot);
+    const priceSpot = pos.get(PRICE_PANEL_ID);
+    if (priceSpot) this.updatePricePanel(priceSpot);
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -683,6 +718,7 @@ export class TrackerStore {
     this.levelingPanel.update((p) => (p.shown ? place(p, p) : p));
     this.mapPanel.update((p) => (p.shown ? place(p, p) : p));
     this.classPanel.update((p) => (p.shown ? place(p, p) : p));
+    this.pricePanel.update((p) => (p.shown ? place(p, p) : p));
   }
 
   // ---------- timers ----------
@@ -1352,6 +1388,37 @@ export class TrackerStore {
     this.placeUnplaced();
   }
 
+  // ---------- prices ----------
+
+  updatePricePanel(patch: Partial<PricePanel>): void {
+    this.pricePanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Prices panel (it comes back in its old spot and size). */
+  togglePrices(): void {
+    const p = this.pricePanel();
+    if (p.shown) {
+      this.updatePricePanel({ shown: false });
+      return;
+    }
+    this.showPrice(null);
+  }
+
+  /** Shows the Prices panel (if hidden), optionally on an item, e.g. from a loot entry. */
+  showPrice(item: string | null): void {
+    const p = this.pricePanel();
+    const fits = p.shown || (p.x >= 0 && p.y >= 0 && this.canPlace(PRICE_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h }));
+    this.updatePricePanel({ shown: true, ...(item ? this.pricePick(item) : {}), ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** Picks an item in the Prices panel and puts it at the front of the recent list. */
+  pricePick(item: string): Partial<PricePanel> {
+    const name = item.trim();
+    const recent = [name, ...this.pricePanel().recent.filter((r) => r.toLowerCase() !== name.toLowerCase())].slice(0, 8);
+    return { item: name, recent };
+  }
+
   /** Shows the Spells panel (if hidden) filtered to a class, e.g. from the Classes panel. */
   showSpellsFor(cls: string): void {
     this.updateSpellPanel({ cls, level: null });
@@ -1377,6 +1444,8 @@ export class TrackerStore {
         return MAP_MIN;
       case 'classes':
         return CLASS_MIN;
+      case 'prices':
+        return PRICE_MIN;
       case 'counter':
         return PANEL_MIN[p.item.kind];
       default:
@@ -1421,6 +1490,9 @@ export class TrackerStore {
         break;
       case 'classes':
         this.updateClassPanel(size);
+        break;
+      case 'prices':
+        this.updatePricePanel(size);
         break;
     }
     return true;
@@ -1589,6 +1661,7 @@ export class TrackerStore {
     this.levelingPanel.set(state.levelingPanel);
     this.mapPanel.set(state.mapPanel);
     this.classPanel.set(state.classPanel);
+    this.pricePanel.set(state.pricePanel);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
@@ -1683,6 +1756,7 @@ export class TrackerStore {
       levelingPanel: this.levelingPanel(),
       mapPanel: this.mapPanel(),
       classPanel: this.classPanel(),
+      pricePanel: this.pricePanel(),
       soundOn: this.soundOn(),
       theme: this.theme(),
     };
@@ -1709,6 +1783,7 @@ export class TrackerStore {
     this.levelingPanel.set(state.levelingPanel);
     this.mapPanel.set(state.mapPanel);
     this.classPanel.set(state.classPanel);
+    this.pricePanel.set(state.pricePanel);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);

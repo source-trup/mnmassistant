@@ -1,0 +1,358 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--named);
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.head .server {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.66rem;
+  line-height: 16px;
+  color: var(--muted);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.search {
+  position: relative;
+
+  input {
+    width: 100%;
+  }
+}
+
+.suggest {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 3px;
+  list-style: none;
+  background: var(--dialog-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.5);
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.86rem;
+
+    &.active,
+    &:hover {
+      background: var(--spirit-soft);
+    }
+  }
+  small {
+    flex: none;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.74rem;
+    overflow: hidden;
+
+    &.on {
+      border-color: var(--named);
+    }
+    button {
+      border: none;
+      border-radius: 0;
+      background: none;
+      padding: 0 6px;
+      line-height: 18px;
+      font-size: inherit;
+    }
+    .x {
+      padding: 0 5px 0 2px;
+      color: var(--muted);
+      font-size: 0.62rem;
+    }
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: 0.84rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+
+  img {
+    flex: none;
+    border-radius: 4px;
+    background: var(--input-bg);
+  }
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--bone);
+  }
+  .flags {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--named);
+  }
+  .ext {
+    margin-left: auto;
+    font-size: 0.74rem;
+    color: var(--spirit);
+  }
+}
+
+.lbl {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+section {
+  margin-bottom: 8px;
+}
+
+.market {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--input-bg) 60%, transparent);
+
+  .mhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .seg {
+    display: inline-flex;
+
+    button {
+      padding: 0 7px;
+      font-size: 0.72rem;
+      line-height: 18px;
+      border-radius: 0;
+
+      &:first-child { border-radius: 4px 0 0 4px; }
+      &:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+      &.on {
+        color: var(--bg);
+        background: var(--named);
+        border-color: var(--named);
+      }
+    }
+  }
+  .big {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    margin-top: 4px;
+
+    div {
+      display: flex;
+      flex-direction: column;
+    }
+    .k {
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .v {
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--named);
+      font-variant-numeric: tabular-nums;
+    }
+    .v2 {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.6;
+      color: var(--bone);
+    }
+    small {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+  }
+  .note,
+  .bids {
+    margin: 4px 0 0;
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+  .bids b {
+    color: var(--spirit);
+  }
+  .note b {
+    color: var(--paused);
+  }
+}
+
+.vendor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+
+  b {
+    color: var(--bone);
+  }
+  small,
+  .vs {
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+}
+
+.ltabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+
+  button {
+    padding: 2px 8px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 4px 4px 0 0;
+    background: none;
+    font-size: 0.78rem;
+    color: var(--muted);
+
+    &.on {
+      color: var(--bone);
+      font-weight: 700;
+      border-bottom-color: var(--named);
+    }
+  }
+}
+
+.listings {
+  width: 100%;
+  margin-bottom: 8px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+
+  th {
+    padding: 3px 5px;
+    text-align: left;
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  td {
+    padding: 2px 5px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+  .num {
+    font-weight: 700;
+    color: var(--bone);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.about {
+  p {
+    margin: 2px 0;
+  }
+  small {
+    color: var(--muted);
+  }
+  .mob {
+    color: var(--bone);
+  }
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 3px 0;
+
+  span {
+    padding: 0 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.74rem;
+    line-height: 18px;
+  }
+}
+
+.zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+
+  .zone {
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+}
+
+.hint {
+  margin: 10px 2px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.credit {
+  margin: 0 12px 0 0; /* keep clear of the resize corner */
+  font-size: 0.68rem;
+  color: var(--muted);
+
+  a {
+    color: inherit;
+  }
+}

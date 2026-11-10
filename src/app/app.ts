@@ -15,6 +15,7 @@ import { SpellsCard } from './spells/spells-card';
 import { LevelingCard } from './leveling/leveling-card';
 import { MapCard } from './map/map-card';
 import { ClassesCard } from './classes/classes-card';
+import { PricesCard } from './prices/prices-card';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
@@ -52,7 +53,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -93,6 +94,7 @@ export class App {
         title: 'Reference',
         tools: [
           tool('🛡️', 'Classes', 'How to play each class', s.classPanel().shown, () => s.toggleClasses()),
+          tool('💰', 'Prices', 'Trem market and vendor prices (MnMdb)', s.pricePanel().shown, () => s.togglePrices()),
           tool('📊', 'Level range', 'Who a level can group with', s.levelPanel().shown, () => s.toggleLevels()),
           tool('📖', 'Spells', 'By class and level, with costs', s.spellPanel().shown, () => s.toggleSpells()),
           tool('🗺️', 'Leveling', 'Where to hunt for a level', s.levelingPanel().shown, () => s.toggleLeveling()),
