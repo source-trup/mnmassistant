@@ -1,7 +1,7 @@
 /** Size of one grid cell in pixels. */
 export const GRID = 20;
 
-export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells';
+export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling';
 
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
@@ -18,8 +18,27 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   checklist: { w: 15, h: 20 }, // 280 x 380
   players: { w: 15, h: 15 }, // 280 x 280
   levels: { w: 15, h: 22 }, // 280 x 420
+  leveling: { w: 22, h: 28 }, // 420 x 540 (resizable)
   spells: { w: 22, h: 28 }, // 420 x 540 (resizable; this is the starting size)
 };
+
+/**
+ * Smallest each panel can be resized to (grid cells): enough that its controls never get cut off.
+ * Notes, Spells and Leveling have their own minimums in TrackerStore.
+ */
+export const PANEL_MIN: Record<'timer' | 'standard' | 'namedPh' | 'buffs' | 'players' | 'levels', { w: number; h: number }> = {
+  timer: { w: 13, h: 9 },
+  standard: { w: 12, h: 8 },
+  namedPh: { w: 14, h: 12 },
+  buffs: { w: 13, h: 9 },
+  players: { w: 13, h: 10 },
+  levels: { w: 14, h: 15 },
+};
+
+/** A panel's footprint: its saved size, or the default for its kind. */
+export function sizeOf(item: { w?: number; h?: number }, def: { w: number; h: number }): { w: number; h: number } {
+  return { w: item.w ?? def.w, h: item.h ?? def.h };
+}
 
 export interface Rect {
   x: number;

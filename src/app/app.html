@@ -9,8 +9,8 @@
     </div>
   </div>
 
-  <div class="group">
-    <span class="lbl">Add timer</span>
+  <div class="group timers" role="group" aria-label="Add a timer">
+    <span class="lbl" title="Add a timer" aria-hidden="true">⏱</span>
     @for (m of quickMinutes; track m) {
       <button class="primary" (click)="addQuickTimer(m)" [title]="'Add a ' + m + ' minute timer'">{{ m }}m</button>
     }
@@ -18,93 +18,80 @@
       #custom
       class="custom"
       placeholder="7:30"
-      title="Custom duration: 7:30, 90s, 1h30m, or minutes"
+      aria-label="Custom timer length"
+      title="Custom timer: type a length (7:30, 90s, 1h30m, or minutes) and press Enter"
       [class.invalid]="customError()"
       (input)="customError.set(false)"
       (keydown.enter)="addCustomTimer(custom)"
     />
-    <button (click)="addCustomTimer(custom)" title="Add custom timer">+</button>
   </div>
 
-  <div class="group">
-    <span class="lbl">Add</span>
-    <button class="primary" (click)="store.addCounter('standard')">Count</button>
-    <button class="primary" (click)="store.addCounter('namedPh')">Named / PH</button>
-    <button class="primary" (click)="store.addBuffPanel()">Buff Tracker</button>
-    <span class="split">
-      <button class="primary" (click)="store.addNote()" title="New note">Note</button>
-      <button
-        class="primary more"
-        popovertarget="notes-menu"
-        [title]="store.closedNotes().length ? 'Saved notes (' + store.closedNotes().length + ')' : 'Saved notes'"
-      >
-        @if (store.closedNotes().length) {
-          <span class="badge">{{ store.closedNotes().length }}</span>
-        }
-        ▾
+  <button class="primary menu-btn add-btn" popovertarget="add-menu" title="Add a panel, or bring back a saved note">
+    ＋ Add <span class="caret">▾</span>
+    @if (store.closedNotes().length) {
+      <span class="badge" [title]="store.closedNotes().length + ' saved notes'">{{ store.closedNotes().length }}</span>
+    }
+  </button>
+
+  <div #addMenu id="add-menu" class="menu anchored add-menu" popover>
+    <span class="menu-title">Add a panel</span>
+    @for (a of addItems; track a.label) {
+      <button class="item" (click)="a.add(); addMenu.hidePopover()">
+        <span class="ic" aria-hidden="true">{{ a.icon }}</span>
+        <span class="txt">
+          <span class="nm">{{ a.label }}</span>
+          <span class="sub">{{ a.hint }}</span>
+        </span>
       </button>
-    </span>
-    <button class="primary" (click)="store.addNote('checklist')" title="New checklist (shopping list): check items off; paste a list or a wiki materials table">Checklist</button>
-  </div>
-
-  <div #notesMenu id="notes-menu" class="menu notes-menu" popover>
+    }
+    <hr />
     <span class="menu-title">Saved notes</span>
     @for (n of store.closedNotes(); track n.id) {
       <div class="saved-note">
-        <button class="open" (click)="openNote(n.id, notesMenu)" title="Put this note back on the board">
+        <button class="open" (click)="openNote(n.id, addMenu)" title="Put this note back on the board">
           <span class="nm">{{ n.name }}</span>
-          <span class="preview">{{ notePreview(n) }}</span>
+          <span class="sub">{{ notePreview(n) }}</span>
         </button>
         <button class="del" (click)="deleteNote(n, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
       </div>
     } @empty {
-      <p class="menu-empty">No saved notes. Click <b>—</b> on a note to put it away here; its text is kept.</p>
+      <p class="menu-empty">None. Click <b>—</b> on a note to put it away here; its text is kept.</p>
     }
-    <hr />
-    <button (click)="store.addNote(); notesMenu.hidePopover()">＋ New note</button>
-    <button (click)="store.addNote('checklist'); notesMenu.hidePopover()">＋ New checklist</button>
   </div>
 
-  <div class="group lists">
-    <span class="lbl">Lists</span>
-    @for (k of playerLists; track k) {
-      <button
-        class="toggle"
-        [class.on]="store.listPanels()[k].shown"
-        [attr.aria-pressed]="store.listPanels()[k].shown"
-        (click)="store.toggleList(k)"
-        [attr.aria-label]="(k === 'naughty' ? 'Naughty' : 'Nice') + ' list'"
-        [title]="(store.listPanels()[k].shown ? 'Hide' : 'Show') + ' your ' + (k === 'naughty' ? 'Naughty' : 'Nice') + ' list (' + store.players()[k].length + ')'"
-      >
-        {{ k === 'naughty' ? '😈' : '😇' }}<span class="t"> {{ k === 'naughty' ? 'Naughty' : 'Nice' }}</span>
-      </button>
+  <button class="menu-btn tools-btn" popovertarget="tools-menu" title="Show or hide tool panels">
+    Tools <span class="caret">▾</span>
+    @if (openTools()) {
+      <span class="badge" [title]="openTools() + ' open'">{{ openTools() }}</span>
     }
-    <button
-      class="toggle"
-      [class.on]="store.levelPanel().shown"
-      [attr.aria-pressed]="store.levelPanel().shown"
-      (click)="store.toggleLevels()"
-      aria-label="Levels"
-      [title]="(store.levelPanel().shown ? 'Hide' : 'Show') + ' the group level range chart'"
-    >
-      📊<span class="t"> Levels</span>
-    </button>
-    <button
-      class="toggle"
-      [class.on]="store.spellPanel().shown"
-      [attr.aria-pressed]="store.spellPanel().shown"
-      (click)="store.toggleSpells()"
-      aria-label="Spells"
-      [title]="(store.spellPanel().shown ? 'Hide' : 'Show') + ' the spell list: filter by class and level, see what a level costs, search'"
-    >
-      📖<span class="t"> Spells</span>
-    </button>
+  </button>
+
+  <div id="tools-menu" class="menu anchored tools-menu" popover>
+    @for (g of toolGroups(); track g.title) {
+      <span class="menu-title">{{ g.title }}</span>
+      @for (t of g.tools; track t.label) {
+        <button
+          class="item"
+          role="menuitemcheckbox"
+          [class.on]="t.shown"
+          [attr.aria-checked]="t.shown"
+          (click)="t.toggle()"
+          [title]="(t.shown ? 'Hide ' : 'Show ') + t.label"
+        >
+          <span class="ic" aria-hidden="true">{{ t.icon }}</span>
+          <span class="txt">
+            <span class="nm">{{ t.label }}</span>
+            <span class="sub">{{ t.hint }}</span>
+          </span>
+          <span class="check" aria-hidden="true">{{ t.shown ? '✓' : '' }}</span>
+        </button>
+      }
+    }
   </div>
 
   <span class="spacer"></span>
 
   <div class="group">
-    <button (click)="store.autoArrange()" title="Pack all panels neatly onto the grid">Tidy</button>
     <button (click)="store.toggleSound()" [title]="store.soundOn() ? 'Mute alerts' : 'Unmute alerts'">
       {{ store.soundOn() ? '🔔' : '🔕' }}
     </button>
@@ -112,13 +99,16 @@
   </div>
 
   <div #menu id="main-menu" class="menu" popover (click)="onMenuClick($event, menu)">
+    <button (click)="store.autoArrange()" title="Pack all panels neatly onto the grid">▦ Tidy panels</button>
+    <hr />
     <button (click)="saveLayout()">💾 Save layout to file…</button>
     <button (click)="fileInput.click()">📂 Load layout from file…</button>
     <hr />
     <button (click)="resetAllTimers()">Reset all timers</button>
     <button (click)="resetAllCounters()">Reset all counters</button>
     <hr />
-    <button (click)="openThemes()">🎨 Theme: {{ currentTheme().label }}…</button>    <button (click)="store.testSound()">Test sound &amp; voice</button>
+    <button (click)="openThemes()">🎨 Theme: {{ currentTheme().label }}…</button>
+    <button (click)="store.testSound()">Test sound &amp; voice</button>
   </div>
   <input #fileInput type="file" accept=".json,application/json" hidden (change)="loadLayout(fileInput)" />
 </header>
@@ -180,17 +170,18 @@
           @case ('spells') {
             <app-spells-card [panel]="p.item" />
           }
+          @case ('leveling') {
+            <app-leveling-card [panel]="p.item" />
+          }
         }
-        @if (store.minSize(p)) {
-          <div
-            class="resize-grip"
-            title="Drag to resize"
-            (pointerdown)="startResize($event, p)"
-            (pointermove)="moveResize($event)"
-            (pointerup)="endResize($event)"
-            (pointercancel)="resize.set(null)"
-          ></div>
-        }
+        <div
+          class="resize-grip"
+          title="Drag to resize"
+          (pointerdown)="startResize($event, p)"
+          (pointermove)="moveResize($event)"
+          (pointerup)="endResize($event)"
+          (pointercancel)="resize.set(null)"
+        ></div>
       </div>
     } @empty {
       <p class="empty">The spirits are quiet… add a timer or counter from the toolbar.</p>

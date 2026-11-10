@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "spells": "node tools/build-spells.mjs"
+    "spells": "node tools/build-spells.mjs",
+    "leveling": "node tools/build-leveling.mjs"
   },
   "private": true,
   "packageManager": "npm@11.12.1",

@@ -21,6 +21,7 @@ Monsters and Memories Wiki.
 - [Naughty and Nice lists](#naughty-and-nice-lists)
 - [Level range](#level-range)
 - [Spells](#spells)
+- [Leveling](#leveling)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -63,26 +64,27 @@ The page is a free-form board of panels. There are four panel types: **timers**,
 | Action | How |
 | --- | --- |
 | Move a panel | Drag it by its **header** (the title bar with ⠿). A dot grid appears while you drag. |
+| Resize a panel | Drag its **bottom-right corner**. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. Each kind of panel has a smallest size so its buttons never get cut off. Timer clocks and counter numbers grow with the panel. |
 | See where it will land | A dashed outline shows the snap spot: **green** is free, **red** would overlap (the panel springs back). |
-| Neat layout | **Tidy** in the toolbar packs every panel onto the grid, keeping their order. |
+| Neat layout | **☰ → Tidy panels** packs every panel onto the grid, keeping their order. |
 | Delete a panel | **✕** in its header asks for confirmation. **Shift + click ✕** deletes immediately. |
 | Rename a panel | **Right-click its title**, type, then Enter (or click away). Esc cancels. Works on every panel type. |
 | Panel settings | **⚙** in its header. |
 
-Panels are 280px wide and snap to a 20px grid with a built-in gutter, so panels placed side by side are always
-evenly spaced. (Boards saved when panels were narrower are tidied automatically if anything would overlap.)
+New panels start 280px wide, and every panel snaps to a 20px grid with a built-in gutter, so panels placed side by
+side are always evenly spaced. Sizes are saved with the layout, and a hidden tool panel comes back at its last size. (Boards saved when panels were narrower are tidied automatically if anything would overlap.)
 
 ### Toolbar
 
-| Section | Buttons |
+| Section | What it does |
 | --- | --- |
-| **Add timer** | `5m` `6m` `8m` `10m` (common placeholder respawns), or type a custom time in the box and press Enter / `+` |
-| **Add** | `Count` (standard counter), `Named / PH` (camp counter), `Buff Tracker`, `Note` (▾ next to it lists [saved notes](#notes)) |
-| **Lists** | `😈 Naughty` / `😇 Nice` show or hide the [player lists](#naughty-and-nice-lists) |
-| Right side | `Tidy`, 🔔 / 🔕 mute all alerts, ☰ menu |
+| **⏱ Timers** | `5m` `6m` `8m` `10m` (common placeholder respawns) add a timer in one click. For any other length, type it in the box (`7:30`, `90s`, `1h30m`) and press Enter. |
+| **＋ Add ▾** | Adds a panel: Count (standard counter), Named / PH (camp counter), Buff Tracker, Note or Checklist. Below them are your [saved notes](#notes); the number on the button is how many are put away. |
+| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Level range](#level-range), [Spells](#spells), [Leveling](#leveling). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
+| Right side | 🔔 / 🔕 mute all alerts, ☰ menu |
 
-**☰ menu:** Save layout to file, Load layout from file, Reset all timers, Reset all counters, [Theme](#themes)
-picker, Test sound & voice.
+**☰ menu:** Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters,
+[Theme](#themes) picker, Test sound & voice.
 
 ---
 
@@ -253,15 +255,15 @@ A free-text panel for camp notes, quest steps, who to group with, and so on.
 | Text size | **A−** / **A+** in the header (10px to 32px, 2px per click) |
 | Rename | Right-click the title, or **⚙** (or double-click the title) |
 | Put away | **—** in the header (or **Put away** in ⚙). The note leaves the board but keeps its text. |
-| Bring it back | **▾** next to `Note` in the toolbar lists saved notes (and checklists) with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
+| Bring it back | **＋ Add** in the toolbar lists saved notes (and checklists) under **Saved notes**, with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
 | Resize | Drag the bottom-right corner. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. |
 
-The text area takes up the whole panel and scrolls if the note gets long. The **▾** shows how many notes are put
-away.
+The text area takes up the whole panel and scrolls if the note gets long. The number on **＋ Add** shows how many notes
+are put away.
 
 ### Checklists
 
-**Checklist** in the toolbar adds a note whose content is a list of items you check off, such as a shopping list
+**＋ Add → Checklist** adds a note whose content is a list of items you check off, such as a shopping list
 for a tradeskill run. It has the same title, text size, put away and resize controls as a note.
 
 | Action | How |
@@ -283,7 +285,7 @@ gives you the totals.
 ## Naughty and Nice lists
 
 Two lists of players: the **😈 Naughty list** for people you'd rather not group with again, and the **😇 Nice
-list** for people you'd happily group with again. Each list has one panel. **Lists → 😈 Naughty / 😇 Nice** in the
+list** for people you'd happily group with again. Each list has one panel. **Tools → Naughty list / Nice list** in the
 toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in the same spot.
 
 | Action | How |
@@ -297,14 +299,11 @@ toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in 
 The lists are saved with everything else and included in layout files. Loading a layout file adds its names to
 yours rather than replacing them.
 
-On screens narrower than about 1700px the **Lists** toggles show just their icons (😈 😇 📊 📖) so the toolbar stays on
-one row. Hover one to see its name.
-
 ---
 
 ## Level range
 
-Who can group with whom. **Lists → 📊 Levels** in the toolbar shows or hides the panel (there's only one, and it
+Who can group with whom. **Tools → Level range** in the toolbar shows or hides the panel (there's only one, and it
 comes back in the same spot).
 
 - Type a level (or use **−** / **+**) and the panel immediately shows the **lowest** and **highest** levels it can
@@ -321,7 +320,7 @@ comes back in the same spot).
 ## Spells
 
 Every class spell and ability with its kind, level, school, mana, vendor price, classes and effect.
-**Lists → 📖 Spells** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and
+**Tools → Spells** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and
 size). Drag its bottom-right corner to resize it.
 
 | Action | How |
@@ -340,6 +339,37 @@ The list is only downloaded the first time you open the panel. It lives in `data
 file run `npm run spells` to rebuild `public/spells.json`.
 
 *Spell data from the Monsters and Memories Wiki — https://monstersandmemories.wiki/spells*
+
+---
+
+## Leveling
+
+Where to hunt for a given level. **Tools → Leveling** in the toolbar shows or hides the panel (there's only one;
+it comes back in the same spot and size). Drag its bottom-right corner to resize it.
+
+| Action | How |
+| --- | --- |
+| Pick a level | Type it in the **Level** box, or use **−** / **+**. The first time you open the panel it starts from the level in the [Level range](#level-range) panel, if you've entered one there. |
+| Pick a range | Also fill the **to** box (e.g. 15 to 24). **−** / **+** then slide the whole range. **✕** goes back to a single level. |
+| Pick a bracket | The **1 5 10 … 60** buttons pick that column of the leveling sheet (e.g. **15** = levels 15–19). |
+| Filter | **Region** (Szuur / Calafrey), **Source** (sheet camps, hunting guide, or both), and **Raids** to include or hide raid encounters. |
+
+Results are grouped by zone, with each camp's level range on the right and raid encounters marked **Raid**. Hunting
+guide spots (marked **Guide**) show the area, the guide's own solo and group levels, the monsters there and any notes.
+
+The data comes from two places:
+
+- **Camps:** the community [leveling sheet](https://docs.google.com/spreadsheets/d/1z3O-QkdgvAwUXrCVF3fRQRBGxXxDq6FcoipuA52sdl0/edit?gid=1120375141#gid=1120375141),
+  saved as `data/leveling.csv`. A camp listed under the sheet's **15** column counts as levels 15–19; one listed
+  under both **15** and **20** counts as 15–24. The levels are rough group levels.
+- **Guide spots:** the [Per-Level Hunting Guide](https://monstersandmemories.miraheze.org/wiki/Per-Level_Hunting_Guide)
+  on the Monsters and Memories Wiki (Miraheze), saved as `data/hunting-guide.json`. Its level text is free-form, so
+  "17+" is read as 17–22 and "12?" as 12. A spot with no usable level ("Most Can't", blank) uses the page section it's
+  under. That page's content is licensed
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the guide data in this project is shared under
+  the same license.
+
+After editing either file, run `npm run leveling` to rebuild `src/app/leveling/leveling-data.ts`.
 
 ---
 

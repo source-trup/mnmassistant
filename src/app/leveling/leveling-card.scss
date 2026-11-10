@@ -1,0 +1,239 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--spirit);
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  label {
+    margin-right: 2px;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .to {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  input {
+    width: 52px;
+    text-align: center;
+    font-weight: 700;
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+  }
+  button {
+    min-width: 24px;
+  }
+}
+
+.cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+
+  button {
+    min-width: 25px;
+    padding: 1px 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .on {
+    color: var(--bg);
+    background: var(--spirit);
+    border-color: var(--spirit);
+  }
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  select {
+    flex: 1;
+    min-width: 0;
+  }
+  .check {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+}
+
+.summary {
+  font-size: 0.8rem;
+  color: var(--muted);
+
+  b {
+    color: var(--spirit);
+  }
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--input-bg) 70%, transparent);
+}
+
+.zone {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+
+  .zn {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--bone);
+  }
+  .za {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--spirit);
+  }
+  .zr {
+    margin-left: auto;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0 4px;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 14px;
+  font-size: 0.84rem;
+
+  .cn {
+    flex: 1;
+    min-width: 0;
+  }
+  .lv {
+    flex: none;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .badge {
+    flex: none;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    line-height: 16px;
+    color: var(--bg);
+    background: var(--done);
+  }
+  &.raid .cn {
+    color: var(--bone);
+  }
+}
+
+.spots {
+  padding-top: 0;
+}
+
+li.spot {
+  display: block;
+  margin: 2px 8px 4px 10px;
+  padding: 4px 8px;
+  border-left: 2px solid var(--named);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--named) 6%, transparent);
+  font-size: 0.8rem;
+
+  .top {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .tag {
+    flex: none;
+    padding: 0 5px;
+    border-radius: 6px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--named);
+    border: 1px solid color-mix(in srgb, var(--named) 50%, transparent);
+  }
+  .area {
+    font-weight: 700;
+    color: var(--bone);
+  }
+  .lvls {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--spirit);
+  }
+  .mobs {
+    color: var(--text);
+  }
+  .notes {
+    font-size: 0.74rem;
+    font-style: italic;
+    color: var(--muted);
+  }
+}
+
+.hint {
+  margin: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.credit {
+  margin: 0 12px 0 0; /* keep clear of the resize corner */
+  font-size: 0.68rem;
+  color: var(--muted);
+
+  a {
+    color: inherit;
+  }
+}

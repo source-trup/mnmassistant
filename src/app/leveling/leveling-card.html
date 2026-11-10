@@ -1,0 +1,138 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">🗺️ Leveling</span>
+    <button class="icon" (click)="store.toggleLeveling()" title="Hide (show it again from the toolbar)">✕</button>
+  </div>
+
+  <div class="entry">
+    <label for="lvlg-from">Level</label>
+    <button class="small" (click)="step(-1)" [disabled]="range()?.lo === 1" title="One level lower">−</button>
+    <input
+      id="lvlg-from"
+      #fromBox
+      type="number"
+      min="1"
+      [max]="CAP"
+      inputmode="numeric"
+      [value]="panel().from ?? ''"
+      (input)="setFrom(fromBox)"
+      (focus)="fromBox.select()"
+      placeholder="1–{{ CAP }}"
+    />
+    <span class="to">to</span>
+    <input
+      #toBox
+      type="number"
+      min="1"
+      [max]="CAP"
+      inputmode="numeric"
+      aria-label="Up to level (optional)"
+      title="Optional: the top of a level range"
+      [value]="panel().to ?? ''"
+      (input)="setTo(toBox)"
+      (focus)="toBox.select()"
+      placeholder="—"
+    />
+    <button class="small" (click)="step(1)" [disabled]="range()?.hi === CAP" title="One level higher">+</button>
+    @if (panel().to !== null) {
+      <button class="small" (click)="store.updateLevelingPanel({ to: null })" title="Just one level">✕</button>
+    }
+  </div>
+
+  <div class="cols" role="group" aria-label="Level brackets">
+    @for (c of columns; track c) {
+      <button class="small" [class.on]="isColumn(c)" (click)="pickColumn(c)" [title]="'Camps for the ' + c + (c === CAP ? '' : '+') + ' bracket'">{{ c }}</button>
+    }
+  </div>
+
+  <div class="filters">
+    <select #regionSel (change)="setRegion(regionSel.value)" aria-label="Region">
+      <option value="" [selected]="!panel().region">All regions</option>
+      @for (r of regions; track r) {
+        <option [value]="r" [selected]="r === panel().region">{{ r }}</option>
+      }
+    </select>
+    <select #srcSel (change)="setSource(srcSel.value)" aria-label="Source" title="Which data to show">
+      <option value="both" [selected]="panel().source === 'both'">Sheet + guide</option>
+      <option value="sheet" [selected]="panel().source === 'sheet'">Sheet camps</option>
+      <option value="guide" [selected]="panel().source === 'guide'">Hunting guide</option>
+    </select>
+    <label class="check" title="Include raid encounters">
+      <input type="checkbox" [checked]="panel().raids" (change)="store.updateLevelingPanel({ raids: !panel().raids })" />
+      Raids
+    </label>
+  </div>
+
+  @if (range()) {
+    <div class="summary" aria-live="polite">
+      <b>{{ label() }}</b> ·
+      @if (panel().source !== 'guide') {
+        {{ campCount() }} camp{{ campCount() === 1 ? '' : 's' }}
+      }
+      @if (panel().source === 'both') {
+        +
+      }
+      @if (panel().source !== 'sheet') {
+        {{ spotCount() }} guide spot{{ spotCount() === 1 ? '' : 's' }}
+      }
+      in {{ matches().length }} zone{{ matches().length === 1 ? '' : 's' }}
+    </div>
+  }
+
+  <div class="list">
+    @if (!range()) {
+      <p class="hint">Type a level (or a range, e.g. 15 to 24), or pick a bracket above, to see where to hunt.</p>
+    } @else {
+      @for (m of matches(); track m.zone.name) {
+        <div class="zone">
+          <span class="zn">{{ m.zone.name }}</span>
+          @if (m.zone.abbr) {
+            <span class="za">{{ m.zone.abbr }}</span>
+          }
+          <span class="zr">{{ m.zone.region }}</span>
+        </div>
+        @if (m.camps.length) {
+        <ul>
+          @for (c of m.camps; track c.name) {
+            <li [class.raid]="c.raid">
+              <span class="cn">{{ c.name }}</span>
+              @if (c.raid) {
+                <span class="badge" title="Raid encounter">Raid</span>
+              }
+              <span class="lv" [title]="'Suits levels ' + bracket(c)">{{ bracket(c) }}</span>
+            </li>
+          }
+        </ul>
+        }
+        @if (m.spots.length) {
+          <ul class="spots">
+            @for (s of m.spots; track $index) {
+              <li class="spot">
+                <div class="top">
+                  <span class="tag" title="From the wiki's Per-Level Hunting Guide">Guide</span>
+                  <span class="area">{{ s.area }}</span>
+                </div>
+                <div class="lvls">{{ spotLevels(s) }}</div>
+                @if (s.monsters) {
+                  <div class="mobs">{{ s.monsters }}</div>
+                }
+                @if (s.notes) {
+                  <div class="notes">{{ s.notes }}</div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      } @empty {
+        <p class="hint">Nothing listed for {{ label().toLowerCase() }}{{ panel().region ? ' in ' + panel().region : '' }}.</p>
+      }
+    }
+  </div>
+
+  <p class="credit">
+    Camps: community <a [href]="SHEET" target="_blank" rel="noopener">leveling sheet</a>. Guide:
+    <a [href]="GUIDE" target="_blank" rel="noopener">Per-Level Hunting Guide</a>, Monsters and Memories Wiki,
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+  </p>
+</div>

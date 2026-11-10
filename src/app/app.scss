@@ -98,17 +98,39 @@ h1 {
   gap: 6px;
 }
 
-.lbl {
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
+.timers .lbl {
+  font-size: 1.05rem;
+  opacity: 0.8;
 }
 
 .custom {
-  width: 70px;
+  width: 64px;
 }
+
+/* "＋ Add ▾" and "Tools ▾": buttons that open a dropdown anchored under them. */
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  .caret {
+    font-size: 0.7em;
+    opacity: 0.75;
+  }
+  .badge {
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    color: var(--bg);
+    background: var(--spirit);
+  }
+}
+.add-btn { anchor-name: --add-btn; }
+.tools-btn { anchor-name: --tools-btn; }
 
 /* ☰ dropdown (native popover: closes on outside click / Esc). */
 .menu {
@@ -211,54 +233,22 @@ h1 {
   color: var(--muted);
 }
 
-/* "Note" + "▾" split button. */
-.split {
-  display: inline-flex;
-
-  > button:first-child {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-  .more {
-    anchor-name: --notes-btn;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 7px;
-    border-left: none;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-  .badge {
-    min-width: 16px;
-    padding: 0 4px;
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    line-height: 16px;
-    text-align: center;
-    color: var(--bg);
-    background: var(--spirit);
-  }
-}
-
-/* Saved notes dropdown, opened from the ▾ next to "Note". */
-.notes-menu {
+/* Add / Tools dropdowns: rows with an icon, a name and a one-line hint. */
+.anchored {
   right: auto;
   left: 16px;
-  width: 280px;
-  max-height: 60vh;
+  width: 300px;
+  max-height: calc(100vh - 80px);
   overflow-y: auto;
 
   @supports (position-anchor: --a) {
-    position-anchor: --notes-btn;
     top: calc(anchor(bottom) + 6px);
     left: anchor(left);
   }
   .menu-title {
-    padding: 2px 8px 4px;
+    padding: 4px 8px 2px;
     font-family: var(--font-display);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--muted);
@@ -268,19 +258,27 @@ h1 {
     font-size: 0.8rem;
     color: var(--muted);
   }
-  .saved-note {
+  .item {
     display: flex;
-    gap: 2px;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 8px;
   }
+  .ic {
+    flex: none;
+    width: 22px;
+    text-align: center;
+    font-size: 1.05rem;
+  }
+  .txt,
   .open {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    padding: 4px 8px;
   }
   .nm,
-  .preview {
+  .sub {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -289,9 +287,25 @@ h1 {
     font-weight: 600;
     color: var(--bone);
   }
-  .preview {
-    font-size: 0.78rem;
+  .sub {
+    font-size: 0.75rem;
     color: var(--muted);
+  }
+  .check {
+    flex: none;
+    width: 18px;
+    font-weight: 800;
+    color: var(--spirit);
+  }
+  .item.on {
+    background: var(--spirit-soft);
+  }
+  .saved-note {
+    display: flex;
+    gap: 2px;
+  }
+  .open {
+    padding: 4px 8px 4px 40px;
   }
   .del {
     padding: 0 8px;
@@ -299,6 +313,8 @@ h1 {
     color: var(--muted);
   }
 }
+.add-menu { position-anchor: --add-btn; }
+.tools-menu { position-anchor: --tools-btn; }
 
 .board-wrap {
   position: relative;

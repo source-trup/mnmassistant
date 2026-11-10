@@ -1,0 +1,694 @@
+{
+ "source": "https://monstersandmemories.miraheze.org/wiki/Per-Level_Hunting_Guide",
+ "license": "CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/) - Monsters and Memories Wiki (Miraheze) contributors",
+ "retrieved": "2026-11-10",
+ "spots": [
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "1-5",
+   "group": "",
+   "zones": [
+    "Night Harbor",
+    "Evershade Weald"
+   ],
+   "area": "Starting zones (North and West gates. Main Faelindral lift).",
+   "monsters": "Rats - Bats - Snakes - Spiders - Beetles - Skeletons - Ashira - Wasp - Black Widow - Drakeling - Drayd",
+   "notes": ""
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "1-3",
+   "group": "",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "Shaded Bloom Inn basement",
+   "monsters": "Beetles - Rats",
+   "notes": ""
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "1-5",
+   "group": "",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "Saltbreeze Park",
+   "monsters": "Bats",
+   "notes": "Bats spawn at night"
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "1-5",
+   "group": "",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "Necropolis Front yard",
+   "monsters": "Rats - Bats - Spiders - Beetles - Skeletons - Shadow Knight Trainees",
+   "notes": "Night Terror (Lvl 8) spawns at Night"
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "1-5",
+   "group": "",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "The Garrison Boatyard",
+   "monsters": "Rats",
+   "notes": ""
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "4-6",
+   "group": "3-6",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "West gate by the shoreline, continues into shaded dunes. North gate also has spawns tucked away on the far right relative to gate. North gate crocs has a chance to spawn a name (Snar the egg collector) typically the area is either dead or camped.",
+   "monsters": "Crocodile Hatchlings",
+   "notes": "Non-hostile"
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "3+",
+   "group": "1-6",
+   "zones": [
+    "Evershade Weald"
+   ],
+   "area": "Wasp Ruins",
+   "monsters": "a wasp worker",
+   "notes": "Neutral but will social aggro. Located on the west following the main walkways through evershade weald."
+  },
+  {
+   "section": [
+    1,
+    5
+   ],
+   "solo": "3+",
+   "group": "1-6",
+   "zones": [
+    "Evershade Weald"
+   ],
+   "area": "Scout Camp",
+   "monsters": "a fellstone orc scout",
+   "notes": "Near a fork in the main paths, if you see spiders you're going the right way. Camp of 3 orcs + roamer + spawn inside a tree. Drops unstackable repeatable turnin item \"Unintelligible notes\". Named spawn."
+  },
+  {
+   "section": [
+    6,
+    10
+   ],
+   "solo": "8",
+   "group": "4-14",
+   "zones": [
+    "Tomb of the Last Wyrmsbane"
+   ],
+   "area": "Entrance",
+   "monsters": "Undead",
+   "notes": "Can grind for a while here at increasingly difficult camps. Good gear drops."
+  },
+  {
+   "section": [
+    6,
+    10
+   ],
+   "solo": "",
+   "group": "6-10",
+   "zones": [
+    "Shaded Dunes"
+   ],
+   "area": "Near zoneline into Tel'Ekir",
+   "monsters": "Ashira",
+   "notes": "Contains multiple camps of Ashira with a convenient zoneline to evac to if pulls get wacky."
+  },
+  {
+   "section": [
+    6,
+    10
+   ],
+   "solo": "9",
+   "group": "6-10",
+   "zones": [
+    "Evershade Weald"
+   ],
+   "area": "West after following the hillside path near the Druid Ring",
+   "monsters": "Wolves",
+   "notes": "Named wolf spawn. Great source of leather."
+  },
+  {
+   "section": [
+    11,
+    15
+   ],
+   "solo": "13-15",
+   "group": "8-12",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "West of the twilight harbor in NH (by the cranes)",
+   "monsters": "Goblins",
+   "notes": "No faction hit. Social."
+  },
+  {
+   "section": [
+    11,
+    15
+   ],
+   "solo": "",
+   "group": "9-16",
+   "zones": [
+    "Tel Ekir"
+   ],
+   "area": "Ashira entrance",
+   "monsters": "Ashira",
+   "notes": "4 named mobs, alpha camp is higher level"
+  },
+  {
+   "section": [
+    11,
+    15
+   ],
+   "solo": "12?",
+   "group": "8-12",
+   "zones": [
+    "Sungreet Strand"
+   ],
+   "area": "By the beach, past the Ashira camps",
+   "monsters": "Thugs, Acolytes",
+   "notes": "It's best to have a tank and a healer, damage is high"
+  },
+  {
+   "section": [
+    11,
+    15
+   ],
+   "solo": "12?",
+   "group": "10-14?",
+   "zones": [
+    "Night Harbor"
+   ],
+   "area": "Graveyard in town, above the necro area",
+   "monsters": "Undead",
+   "notes": "Need a key to get in (There's a quest). They come out at night"
+  },
+  {
+   "section": [
+    11,
+    15
+   ],
+   "solo": "17+",
+   "group": "10-15",
+   "zones": [
+    "Sungreet Strand"
+   ],
+   "area": "Tel Ekir",
+   "monsters": "Bloodynose goblin",
+   "notes": "Tank and healer needed"
+  },
+  {
+   "section": [
+    11,
+    15
+   ],
+   "solo": "21?",
+   "group": "13-18",
+   "zones": [
+    "Ancient Crypt"
+   ],
+   "area": "Entrance, Kitchen, Commander, Library, Researcher",
+   "monsters": "Skeletons",
+   "notes": "Tank and healer needed"
+  },
+  {
+   "section": [
+    16,
+    20
+   ],
+   "solo": "17-20",
+   "group": "15",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Pit just inside zone (don't go up the ramp)",
+   "monsters": "Dusty Skeletons",
+   "notes": "They seem to range from 16-19. Easy single pulls, anywhere along the wall is generally safe."
+  },
+  {
+   "section": [
+    16,
+    20
+   ],
+   "solo": "18",
+   "group": "16-20",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "Goblin camp (Turn left once you zone into GF from SS)",
+   "monsters": "Goblins",
+   "notes": ""
+  },
+  {
+   "section": [
+    16,
+    20
+   ],
+   "solo": "24",
+   "group": "16-20",
+   "zones": [
+    "Sungreet Strand"
+   ],
+   "area": "Quarry",
+   "monsters": "Cinder Worker",
+   "notes": "Loot is used in the Cinder Beetle Armor Quests"
+  },
+  {
+   "section": [
+    16,
+    20
+   ],
+   "solo": "21+",
+   "group": "18-23",
+   "zones": [
+    "Sungreet Strand"
+   ],
+   "area": "Ashira camp by Glass Flats zoneline (near the water)",
+   "monsters": "Ashira",
+   "notes": "Can someone double check the level ranges? Were red at 17 but was in a group killing them."
+  },
+  {
+   "section": [
+    21,
+    25
+   ],
+   "solo": "",
+   "group": "18-23",
+   "zones": [
+    "Sungreet Strand"
+   ],
+   "area": "Quarry",
+   "monsters": "Goblins",
+   "notes": "2 named spawns, big pulls, multiple quests, casters, dangerous area"
+  },
+  {
+   "section": [
+    21,
+    25
+   ],
+   "solo": "27",
+   "group": "20-25",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Pit",
+   "monsters": "Bone Carver Beetles",
+   "notes": "Necroferius is a good beetle named looting some items"
+  },
+  {
+   "section": [
+    21,
+    25
+   ],
+   "solo": "28",
+   "group": "20-25",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Up the ramp to the left",
+   "monsters": "Skeletons and Ghouls",
+   "notes": "The ghoul adepts nuke for 200 (blaze) so interrupt it. Great xp, tons of pulls."
+  },
+  {
+   "section": [
+    21,
+    25
+   ],
+   "solo": "28",
+   "group": "20-24",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "Beach, going straight ahead after entering",
+   "monsters": "Szuurian viper, beetles",
+   "notes": "Single pull 20-25 (watchout for roaming named 30+) great xp"
+  },
+  {
+   "section": [
+    21,
+    25
+   ],
+   "solo": "30",
+   "group": "20-25",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Rat cave, bank of the canyon",
+   "monsters": "Undead rats, fallen adventurers",
+   "notes": "Best exp/kill of FP but less xp/hour, not many mobs."
+  },
+  {
+   "section": [
+    26,
+    30
+   ],
+   "solo": "32",
+   "group": "22-28",
+   "zones": [
+    "Vale of Zintar"
+   ],
+   "area": "Hug right wall, you'll see tents near a lake, beneath the corrupted floating castle",
+   "monsters": "Corrupted Ashira Hunter",
+   "notes": "Great drops sellable between 30s and 1g at npcs/ooc"
+  },
+  {
+   "section": [
+    26,
+    30
+   ],
+   "solo": "27",
+   "group": "22-27",
+   "zones": [
+    "Scarwood"
+   ],
+   "area": "Center of the zone, island in the middle of river",
+   "monsters": "Bandits",
+   "notes": "2 named mobs, may not be enough mobs for a full group"
+  },
+  {
+   "section": [
+    26,
+    30
+   ],
+   "solo": "26-32",
+   "group": "22-28",
+   "zones": [
+    "Sungreet Strand"
+   ],
+   "area": "Cellar (third agricole building) and pirates (fourth)",
+   "monsters": "Pirate, hired tracker",
+   "notes": "Cellar is a secret zone, double clic on a wall and it will open."
+  },
+  {
+   "section": [
+    26,
+    30
+   ],
+   "solo": "32-35",
+   "group": "26-30",
+   "zones": [
+    "Vale of Zintar"
+   ],
+   "area": "Orc camp - Fp entrance, north west.",
+   "monsters": "Dustrend Orcs",
+   "notes": "Loot doesn't compare with corrupted ashiras but exp is better."
+  },
+  {
+   "section": [
+    31,
+    35
+   ],
+   "solo": "~32+",
+   "group": "28-35",
+   "zones": [
+    "Keeper's Bight"
+   ],
+   "area": "poachers camps",
+   "monsters": "poachers",
+   "notes": "named poachers drop tunic, leggings, boots, and dagger which can be handed in to undead npc in bear cave. Also quest skinning daggers drop here which can be handed in for wis bracer."
+  },
+  {
+   "section": [
+    31,
+    35
+   ],
+   "solo": "",
+   "group": "29-35",
+   "zones": [
+    "Grain Cellar"
+   ],
+   "area": "",
+   "monsters": "undead, cultists",
+   "notes": "Full of casters"
+  },
+  {
+   "section": [
+    31,
+    35
+   ],
+   "solo": "32-35",
+   "group": "32-35",
+   "zones": [
+    "Vale of Zintar"
+   ],
+   "area": "Tomb burrower camp - Spot 3.",
+   "monsters": "a tomb burrower / a giant tomb burrower",
+   "notes": "not kos but will social. will disappear and show up at random spot. watch out for adds"
+  },
+  {
+   "section": [
+    36,
+    40
+   ],
+   "solo": "36+",
+   "group": "30-35",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Plagueborn Undead area the ramp down is on opposite side of cliffs once you go up ramp from shaded dunes",
+   "monsters": "Plagueborn Undead",
+   "notes": "Watch out for undead restless parade that comes down the ramp to fight plagueborn at night. Also constable patrols are higher level"
+  },
+  {
+   "section": [
+    36,
+    40
+   ],
+   "solo": "38+",
+   "group": "30-35",
+   "zones": [
+    "Shallow Shoals"
+   ],
+   "area": "Island across from boat dock at Zaedin's Landing",
+   "monsters": "Basilisks",
+   "notes": "Great area for mining iron and some gold"
+  },
+  {
+   "section": [
+    36,
+    40
+   ],
+   "solo": "36-39",
+   "group": "36-38",
+   "zones": [
+    "Vale of Zintar"
+   ],
+   "area": "Tomb burrower camp - Spot 3.",
+   "monsters": "an elder tomb burrower, an ancient tomb burrower, a silver devourer, a gold devourer",
+   "notes": "not kos but will social. will dig away and show up at random spot. watch out for adds"
+  },
+  {
+   "section": [
+    36,
+    40
+   ],
+   "solo": "38-44",
+   "group": "34-38",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Skri'Var rat camps NE past stables through mountains",
+   "monsters": "Skri'Var Rats",
+   "notes": "many different namers and camping spots - always groups camping these"
+  },
+  {
+   "section": [
+    41,
+    45
+   ],
+   "solo": "45-52",
+   "group": "38-44",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "From SGS go left past globins and hug wall. There is a ramp up to thier location",
+   "monsters": "Highwaymen Camp/Highwaymen Caves",
+   "notes": "Good XP with good namers Tarakhan the Boulder Soraya the Mirage Malik the Glass Viper"
+  },
+  {
+   "section": [
+    41,
+    45
+   ],
+   "solo": "45-52",
+   "group": "38-42",
+   "zones": [
+    "Night Harbor East"
+   ],
+   "area": "Pale Tower marked \"Temple to Yuum\" on map",
+   "monsters": "The Pale",
+   "notes": "SE corner of Night Harbor before the Bends area. Good xp upper and lower areas of tower. Captain Caspian Victualler Veera Manciple Daphne namers"
+  },
+  {
+   "section": [
+    41,
+    45
+   ],
+   "solo": "45-52",
+   "group": "42-48",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "outer cultists",
+   "monsters": "Cultists",
+   "notes": "easy exp, single mobs spread out through canyons getting more dense as you approach the building"
+  },
+  {
+   "section": [
+    41,
+    45
+   ],
+   "solo": "48+",
+   "group": "41-48",
+   "zones": [
+    "Shallow Shoals"
+   ],
+   "area": "Orc Fortress",
+   "monsters": "Orcs",
+   "notes": "large island not too far from KB docks"
+  },
+  {
+   "section": [
+    46,
+    50
+   ],
+   "solo": "48-52",
+   "group": "45-50",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "Outer Cultists, South West",
+   "monsters": "cultists",
+   "notes": ""
+  },
+  {
+   "section": [
+    46,
+    50
+   ],
+   "solo": "50-55",
+   "group": "45-50",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "Various camps around undead tower",
+   "monsters": "skeletons, ghosts",
+   "notes": ""
+  },
+  {
+   "section": [
+    46,
+    50
+   ],
+   "solo": "52-56",
+   "group": "45-52",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Elder Drakes",
+   "monsters": "a Plagueborn elder drake",
+   "notes": ""
+  },
+  {
+   "section": [
+    51,
+    55
+   ],
+   "solo": "57+",
+   "group": "51-60",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Lower Saman/Stables",
+   "monsters": "undead, plagueborn ghouls",
+   "notes": ""
+  },
+  {
+   "section": [
+    51,
+    55
+   ],
+   "solo": "",
+   "group": "51-60",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "Inner Cultists",
+   "monsters": "Cultists",
+   "notes": ""
+  },
+  {
+   "section": [
+    51,
+    55
+   ],
+   "solo": "57+",
+   "group": "51-60",
+   "zones": [
+    "Glass Flats"
+   ],
+   "area": "Various camps around undead tower",
+   "monsters": "skeletons, ghosts, spiders",
+   "notes": ""
+  },
+  {
+   "section": [
+    56,
+    60
+   ],
+   "solo": "Most Can't",
+   "group": "55-60",
+   "zones": [
+    "Vale of Zintar"
+   ],
+   "area": "Giant City",
+   "monsters": "Sand giants and other giant monsters",
+   "notes": ""
+  },
+  {
+   "section": [
+    56,
+    60
+   ],
+   "solo": "58+",
+   "group": "53-60",
+   "zones": [
+    "Fallen Pass"
+   ],
+   "area": "Upper Saman",
+   "monsters": "undead, plagueborn ghouls",
+   "notes": ""
+  }
+ ]
+}

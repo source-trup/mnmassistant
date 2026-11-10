@@ -12,6 +12,7 @@ import { NoteCard } from './note-card/note-card';
 import { LevelRangeCard } from './level-range/level-range-card';
 import { PlayerListCard } from './player-list/player-list-card';
 import { SpellsCard } from './spells/spells-card';
+import { LevelingCard } from './leveling/leveling-card';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
@@ -49,7 +50,7 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -60,8 +61,47 @@ export class App {
 
   protected readonly GRID = GRID;
   protected readonly quickMinutes = [5, 6, 8, 10];
-  protected readonly playerLists = PLAYER_LISTS;
   protected readonly customError = signal(false);
+
+  /** The "＋ Add" menu: panels you can add as many of as you like. */
+  protected readonly addItems = [
+    { icon: '🔢', label: 'Count', hint: 'A plain counter', add: () => this.store.addCounter('standard') },
+    { icon: '👑', label: 'Named / PH', hint: 'Placeholder and named kills, with loot log', add: () => this.store.addCounter('namedPh') },
+    { icon: '✨', label: 'Buff Tracker', hint: 'Buff timers with fade warnings', add: () => this.store.addBuffPanel() },
+    { icon: '📝', label: 'Note', hint: 'Free text', add: () => this.store.addNote() },
+    { icon: '☑️', label: 'Checklist', hint: 'Shopping list; paste a list or wiki table', add: () => this.store.addNote('checklist') },
+  ];
+
+  /** The "Tools" menu: one-of-a-kind panels, shown or hidden. */
+  protected readonly toolGroups = computed(() => {
+    const s = this.store;
+    const lists = s.listPanels();
+    const players = s.players();
+    const tool = (icon: string, label: string, hint: string, shown: boolean, toggle: () => void) => ({ icon, label, hint, shown, toggle });
+    return [
+      {
+        title: 'Players',
+        tools: PLAYER_LISTS.map((k) =>
+          k === 'naughty'
+            ? tool('😈', 'Naughty list', `${players.naughty.length} players you'd rather avoid`, lists.naughty.shown, () => s.toggleList('naughty'))
+            : tool('😇', 'Nice list', `${players.nice.length} players you'd group with again`, lists.nice.shown, () => s.toggleList('nice')),
+        ),
+      },
+      {
+        title: 'Reference',
+        tools: [
+          tool('📊', 'Level range', 'Who a level can group with', s.levelPanel().shown, () => s.toggleLevels()),
+          tool('📖', 'Spells', 'By class and level, with costs', s.spellPanel().shown, () => s.toggleSpells()),
+          tool('🗺️', 'Leveling', 'Where to hunt for a level', s.levelingPanel().shown, () => s.toggleLeveling()),
+        ],
+      },
+    ];
+  });
+
+  /** How many tool panels are showing (badge on the Tools button). */
+  protected readonly openTools = computed(() =>
+    this.toolGroups().reduce((n, g) => n + g.tools.filter((t) => t.shown).length, 0),
+  );
 
   protected readonly drag = signal<DragState | null>(null);
 
@@ -341,7 +381,7 @@ export class App {
 
   protected startResize(e: PointerEvent, p: Panel): void {
     const min = this.store.minSize(p);
-    if (e.button !== 0 || !min) return;
+    if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);

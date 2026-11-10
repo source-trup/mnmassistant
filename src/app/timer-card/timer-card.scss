@@ -1,6 +1,8 @@
 :host {
   display: block;
   height: 100%;
+  /* The clock grows with the panel when it's resized (cqw / cqh are % of the panel's width / height). */
+  container-type: size;
 }
 
 .card {
@@ -45,7 +47,7 @@
 }
 
 .time {
-  font-size: 2.6rem;
+  font-size: var(--clock);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -55,9 +57,11 @@
 
 /* Holds the clock with the time-left box laid over the big digits while editing. */
 .clock-wrap {
+  --clock: clamp(2.6rem, min(15cqw, 23cqh), 9rem);
   position: relative;
   display: flex;
   flex-direction: column;
+  margin-block: auto; /* centered in a tall panel; the time-left box stays over the digits */
 }
 
 .time-edit {
@@ -65,10 +69,10 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 130px;
-  height: calc(2.6rem * 1.1);
+  width: calc(var(--clock) * 3.1);
+  height: calc(var(--clock) * 1.1);
   padding: 0 6px;
-  font-size: 2rem;
+  font-size: calc(var(--clock) * 0.77);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-align: center;

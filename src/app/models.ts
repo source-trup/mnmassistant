@@ -6,7 +6,16 @@ export interface GridPos {
   y: number;
 }
 
-export interface TimerItem extends GridPos {
+/**
+ * A panel's size in grid cells, once it has been resized. Missing means the default size for its kind
+ * (PANEL_SIZE in layout.ts), so boards saved before panels were resizable load unchanged.
+ */
+export interface Sized {
+  w?: number;
+  h?: number;
+}
+
+export interface TimerItem extends GridPos, Sized {
   id: string;
   name: string;
   /** True while the name is the generated default (e.g. "6:00 spawn"); such timers chime instead of speaking. */
@@ -21,7 +30,7 @@ export interface TimerItem extends GridPos {
   repeat: boolean;
 }
 
-interface CounterBase extends GridPos {
+interface CounterBase extends GridPos, Sized {
   id: string;
   name: string;
   /** Epoch ms of the last reset, used for per-hour rates and "session" stats. */
@@ -94,7 +103,7 @@ export interface BuffEntry {
 }
 
 /** A panel holding a list of buff reminders. */
-export interface BuffPanel extends GridPos {
+export interface BuffPanel extends GridPos, Sized {
   id: string;
   name: string;
   buffs: BuffEntry[];
@@ -148,13 +157,13 @@ export interface PlayerEntry {
 }
 
 /** Position and visibility of a list panel (each list has exactly one panel). */
-export interface PlayerListPanel extends GridPos {
+export interface PlayerListPanel extends GridPos, Sized {
   kind: PlayerListKind;
   shown: boolean;
 }
 
 /** The single Level range panel: where it is, whether it's shown, and the last level typed in. */
-export interface LevelPanel extends GridPos {
+export interface LevelPanel extends GridPos, Sized {
   shown: boolean;
   level: number | null;
 }
@@ -168,6 +177,22 @@ export interface SpellPanel extends GridPos {
   cls: string | null;
   /** Level filter; null = all levels. */
   level: number | null;
+}
+
+/** The single Leveling panel: position, size, visibility and the last filters used. */
+export interface LevelingPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  /** Level, or the low end of a range; null = nothing picked yet. */
+  from: number | null;
+  /** High end of a range; null = a single level. */
+  to: number | null;
+  /** Region filter; null = all regions. */
+  region: string | null;
+  raids: boolean;
+  /** Which data to show: the leveling sheet's camps, the wiki hunting guide's spots, or both. */
+  source: 'both' | 'sheet' | 'guide';
 }
 
 /** One theme per class (see themes.ts); "shaman" is the default. */
@@ -188,6 +213,7 @@ export interface AppState {
   listPanels: Record<PlayerListKind, PlayerListPanel>;
   levelPanel: LevelPanel;
   spellPanel: SpellPanel;
+  levelingPanel: LevelingPanel;
   soundOn: boolean;
   theme: Theme;
 }
