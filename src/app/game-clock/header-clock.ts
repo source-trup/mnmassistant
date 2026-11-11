@@ -66,6 +66,14 @@ export class HeaderClock {
     return `${g.weekday}, the ${ordinal(g.dayOfMonth)} of ${g.month}`;
   });
   protected readonly dayPct = computed(() => (this.now().minutes / 1440) * 100);
+
+  /** Your own clock, shown small beside the game time for a quick reference. */
+  protected readonly localTime = computed(() =>
+    new Date(this.store.now()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+  );
+  protected readonly localDate = computed(() =>
+    new Date(this.store.now()).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }),
+  );
   protected readonly realPerHour = computed(() => 60 / this.speed());
 
   private mark(hour: number) {

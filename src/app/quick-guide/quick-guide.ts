@@ -1,4 +1,4 @@
-import { Component, ElementRef, afterNextRender, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, afterNextRender, inject, output, viewChild } from '@angular/core';
 import { TrackerStore } from '../tracker.store';
 
 /** The full README on GitHub (the quick guide is the short version). */
@@ -17,11 +17,24 @@ export class QuickGuide {
   private readonly store = inject(TrackerStore);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
   protected readonly README = README_URL;
+  /** Fires when the guide that opened by itself on a first visit is closed (the app then offers a theme). */
+  readonly firstVisitClosed = output<void>();
+  private firstVisitOpen = false;
 
   constructor() {
     afterNextRender(() => {
-      if (this.store.firstVisit) this.open();
+      if (this.store.firstVisit) {
+        this.firstVisitOpen = true;
+        this.open();
+      }
     });
+  }
+
+  /** However the dialog closes (Got it, Esc). */
+  protected onClose(): void {
+    if (!this.firstVisitOpen) return;
+    this.firstVisitOpen = false;
+    this.firstVisitClosed.emit();
   }
 
   open(): void {

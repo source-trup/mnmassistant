@@ -1,6 +1,32 @@
 :host {
   display: flex;
   align-items: center;
+  gap: 2px;
+}
+
+/* Your local time: small and quiet, beside the game clock. */
+.local {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 1px 6px;
+  line-height: 1.15;
+  border-right: 1px solid var(--border);
+  cursor: default;
+
+  .lbl {
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .lt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* The toolbar clock: time on top, 6 PM / 6 AM countdowns underneath. */

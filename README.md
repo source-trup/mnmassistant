@@ -90,7 +90,7 @@ side are always evenly spaced. Sizes are saved with the layout, and a hidden too
 
 **Quick guide:** **?** in the toolbar (or **☰ → Quick guide**) opens a short "How to use" guide covering the
 toolbar, panels, timers, camps, buffs and notes, the tools, and saving. It opens by itself the first time someone
-uses the app.
+uses the app, and when it's closed the [theme](#themes) picker follows, so a new user can pick a look for their class.
 
 **☰ menu:** Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters,
 [Theme](#themes) picker, Test sound & voice, Quick guide.
@@ -395,8 +395,9 @@ which removes scripts and styles.
 ## Game time
 
 The in-game clock is always in the toolbar (top right): **🕰️ 10:00 PM**, with **6 AM in 24m · 6 PM in 1h 0m**
-underneath (soonest first). A gold dot appears next to the time while one of your windows is open. Click the clock for
-the rest:
+underneath (soonest first). A gold dot appears next to the time while one of your windows is open. Your own **local
+time** sits just left of it, smaller, for a quick glance (hover it for today's date). Click the game clock for the
+rest:
 
 - **The time**, **Day N of 20** and the **Eth-ur date** (e.g. *Sorophden, the 10th of Dyingember*), worked out the same
   way as the clock in the [community wiki](https://monstersandmemories.miraheze.org/)'s sidebar: game time runs 20×

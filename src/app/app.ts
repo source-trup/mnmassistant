@@ -214,7 +214,11 @@ export class App {
   private readonly themeDlg = viewChild.required<ElementRef<HTMLDialogElement>>('themeDlg');
 
   /** Picking a tile applies the theme right away (so you can preview); Done closes. */
-  protected openThemes(): void {
+  /** True when the theme picker was opened for a new user, right after the quick guide (shows a welcome line). */
+  protected readonly themeIntro = signal(false);
+
+  protected openThemes(intro = false): void {
+    this.themeIntro.set(intro);
     this.themeDlg().nativeElement.showModal();
   }
 

@@ -282,3 +282,14 @@ dialog {
   border-radius: 8px;
   background: var(--panel);
 }
+
+/* Welcome line in the theme picker when it opens for a new user (after the quick guide). */
+.themes-dlg .theme-intro {
+  margin: -4px 0 10px;
+  font-size: 0.86rem;
+  color: var(--muted);
+
+  b {
+    color: var(--text);
+  }
+}

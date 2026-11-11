@@ -14,6 +14,14 @@ test.describe('game clock (toolbar)', () => {
     await expect(btn.locator('.next')).toHaveText(/6 AM in 24m\s*·\s*6 PM in 1h 0m/);
   });
 
+  test('local time sits beside the game time', async ({ page }) => {
+    await page.clock.setFixedTime(TEN_PM);
+    await page.reload();
+    const expected = await page.evaluate(() => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+    await expect(page.locator('app-header-clock .local .lt')).toHaveText(expected);
+    await expect(page.locator('app-header-clock .local .lbl')).toHaveText(/local/i);
+  });
+
   test('the popover shows the date, all four marks and the wiki check', async ({ page }) => {
     await page.clock.setFixedTime(TEN_PM);
     await page.reload();

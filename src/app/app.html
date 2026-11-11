@@ -238,8 +238,14 @@
   </div>
 </div>
 
-<dialog #themeDlg class="themes-dlg">
+<dialog #themeDlg class="themes-dlg" (close)="themeIntro.set(false)">
   <h3>Choose a class theme</h3>
+  @if (themeIntro()) {
+    <p class="theme-intro">
+      Welcome! Pick a look for your class. Each theme changes the colors, the background art and the drifting motes.
+      You can change it any time from <b>☰ → Theme</b>.
+    </p>
+  }
   <div class="theme-grid">
     @for (t of themes; track t.id) {
       <button
@@ -271,4 +277,4 @@
 
 <app-loot-prompt />
 <app-confirm-dialog />
-<app-quick-guide #guide />
+<app-quick-guide #guide (firstVisitClosed)="openThemes(true)" />

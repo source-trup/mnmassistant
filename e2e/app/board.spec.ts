@@ -68,17 +68,33 @@ test.describe('board and toolbar', () => {
 });
 
 test.describe('quick guide', () => {
-  test('opens by itself on a first visit only', async ({ freshVisit: page }) => {
+  test('opens by itself on a first visit only, then offers a theme', async ({ freshVisit: page }) => {
     const guide = page.locator('dialog.guide');
+    const themes = page.locator('dialog.themes-dlg');
     await expect(guide).toBeVisible();
     await expect(guide.locator('summary')).toHaveCount(7);
     await guide.getByRole('button', { name: 'Got it' }).click();
+
+    await expect(themes).toBeVisible();
+    await expect(themes.locator('.theme-intro')).toContainText('Welcome');
+    await themes.locator('.theme-tile', { hasText: 'Monk' }).click();
+    await themes.getByRole('button', { name: 'Done' }).click();
+    await expect(themes).not.toBeVisible();
+    await expect.poll(async () => (await savedState(page)).theme).toBe('monk');
+
     await page.reload();
     await page.locator('app-root header').waitFor();
     await expect(guide).not.toBeVisible();
+    await expect(themes).not.toBeVisible();
   });
 
-  test('? and the menu reopen it', async ({ page }) => {
+  test('closing the first-visit guide with Esc also offers a theme', async ({ freshVisit: page }) => {
+    await expect(page.locator('dialog.guide')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog.themes-dlg')).toBeVisible();
+  });
+
+  test('? and the menu reopen it (without the theme offer)', async ({ page }) => {
     const guide = page.locator('dialog.guide');
     await expect(guide).not.toBeVisible();
     await page.getByTitle(/^Quick guide/).click();
@@ -87,5 +103,14 @@ test.describe('quick guide', () => {
     await page.locator('header').getByTitle('Menu', { exact: true }).click();
     await page.getByRole('button', { name: /Quick guide/ }).click();
     await expect(guide).toBeVisible();
+    await guide.getByRole('button', { name: 'Got it' }).click();
+    await expect(page.locator('dialog.themes-dlg')).not.toBeVisible();
+  });
+
+  test('the theme picker from the menu has no welcome line', async ({ page }) => {
+    await page.locator('header').getByTitle('Menu', { exact: true }).click();
+    await page.getByRole('button', { name: /Theme:/ }).click();
+    await expect(page.locator('dialog.themes-dlg')).toBeVisible();
+    await expect(page.locator('dialog.themes-dlg .theme-intro')).toHaveCount(0);
   });
 });
