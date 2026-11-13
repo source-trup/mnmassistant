@@ -88,11 +88,62 @@ test.describe('leveling', () => {
 });
 
 test.describe('map', () => {
-  test('embeds the chosen MnM Atlas map', async ({ page }) => {
+  test('type to find a zone, Enter picks it', async ({ page }) => {
     await openTool(page, 'Map');
     const card = page.locator('app-map-card');
-    await card.getByLabel('Map', { exact: true }).selectOption('fallen-pass');
+    const picker = card.getByRole('combobox', { name: 'Map' });
+    await expect(picker).toHaveValue('Night Harbor');
+
+    await picker.click();
+    await expect(card.locator('#map-options').getByRole('option')).toHaveCount(29); // every map before typing
+    await picker.fill('fall');
+    await expect(card.locator('#map-options').getByRole('option').first()).toContainText('Fallen Pass'); // starts with "fall" first
+    await expect(card.locator('#map-options').getByRole('option')).toContainText(['Fallen Pass', 'Fallen Watch']);
+    await picker.press('Enter');
     await expect(card.locator('iframe')).toHaveAttribute('src', 'https://www.mnmatlas.com/fallen-pass/?embed=1');
+    await expect(picker).toHaveValue('Fallen Pass');
+    await expect(card.locator('#map-options')).toHaveCount(0); // the list closed
+  });
+
+  test('a word inside the name, arrow keys, and clicking work too', async ({ page }) => {
+    await openTool(page, 'Map');
+    const card = page.locator('app-map-card');
+    const picker = card.getByRole('combobox', { name: 'Map' });
+    await picker.click();
+    await picker.fill('weald');
+    await expect(card.locator('#map-options').getByRole('option').first()).toContainText('Evershade Weald');
+    await picker.fill('crypt');
+    // Ancient Crypt, Infested Crypt, then Rothold's "Keep floor -2 and Crypt" floor.
+    await expect(card.locator('#map-options').getByRole('option')).toHaveCount(3);
+    await expect(card.locator('#map-options').getByRole('option').nth(2)).toContainText('Rothold');
+    await picker.press('ArrowDown');
+    await picker.press('Enter');
+    await expect(card.locator('iframe')).toHaveAttribute('src', 'https://www.mnmatlas.com/infested-crypt/?embed=1');
+
+    await picker.click();
+    await picker.fill('vale');
+    await card.getByRole('option', { name: /Vale of Zintar/ }).click();
+    await expect(card.locator('iframe')).toHaveAttribute('src', 'https://www.mnmatlas.com/vale-of-zintar/?embed=1');
+  });
+
+  test('a floor name opens that floor; Esc puts the box back', async ({ page }) => {
+    await openTool(page, 'Map');
+    const card = page.locator('app-map-card');
+    const picker = card.getByRole('combobox', { name: 'Map' });
+    await picker.click();
+    await picker.fill('ossuary');
+    await expect(card.locator('#map-options').getByRole('option').first()).toContainText('Tomb of the Last Wyrmsbane');
+    await expect(card.locator('#map-options').getByRole('option').first()).toContainText('floor: Ossuary and bone construct');
+    await picker.press('Enter');
+    await expect(card.locator('iframe')).toHaveAttribute('src', 'https://www.mnmatlas.com/wyrmsbane-tomb/?embed=1&level=floor-3');
+    await expect(card.getByLabel('Level or floor')).toHaveValue('floor-3');
+
+    await picker.click();
+    await picker.fill('zzz');
+    await expect(card.locator('.options .none')).toContainText('No zone matches');
+    await picker.press('Escape');
+    await expect(picker).toHaveValue('Tomb of the Last Wyrmsbane');
+    expect((await savedState(page)).mapPanel.map).toBe('wyrmsbane-tomb');
   });
 });
 

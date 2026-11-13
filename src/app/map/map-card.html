@@ -8,14 +8,53 @@
   </div>
 
   <div class="pick">
-    <select #mapSel (change)="setMap(mapSel.value)" aria-label="Map" [class.dim]="!!panel().find">
-      @if (panel().find) {
-        <option value="" selected disabled>Showing search result: pick a map…</option>
+    <div class="combo">
+      <input
+        #mapBox
+        role="combobox"
+        aria-label="Map"
+        aria-autocomplete="list"
+        aria-controls="map-options"
+        [attr.aria-expanded]="pickerOpen()"
+        [attr.aria-activedescendant]="pickerOpen() && options().length ? 'map-opt-' + highlighted() : null"
+        [value]="pickerText()"
+        [placeholder]="panel().find ? 'Showing search result: pick a map…' : 'Type a zone…'"
+        [class.dim]="!!panel().find"
+        (focus)="onPickerFocus(mapBox)"
+        (input)="onPickerInput(mapBox.value)"
+        (keydown)="onPickerKey($event, mapBox)"
+        (blur)="closePicker(mapBox)"
+        autocomplete="off"
+        spellcheck="false"
+        title="Type to find a zone (or a floor, e.g. “ossuary”), then Enter"
+      />
+      <span class="caret" aria-hidden="true">▾</span>
+      @if (pickerOpen()) {
+        <ul id="map-options" class="options" role="listbox" aria-label="Maps">
+          @for (o of options(); track o.map.id + (o.level?.id ?? ''); let i = $index) {
+            <li
+              [id]="'map-opt-' + i"
+              role="option"
+              [attr.aria-selected]="i === highlighted()"
+              [class.active]="i === highlighted()"
+              [class.current]="!o.level && o.map.id === current().id && !panel().find"
+              (mousedown)="$event.preventDefault()"
+              (click)="pickOption(o, mapBox)"
+              (mouseenter)="highlighted.set(i)"
+            >
+              <span class="on">{{ o.map.name }}</span>
+              @if (o.level) {
+                <small>floor: {{ o.level.name }}</small>
+              } @else if (o.map.levels.length) {
+                <small>{{ o.map.levels.length }} floors</small>
+              }
+            </li>
+          } @empty {
+            <li class="none">No zone matches “{{ typed() }}”.</li>
+          }
+        </ul>
       }
-      @for (m of maps; track m.id) {
-        <option [value]="m.id" [selected]="!panel().find && m.id === current().id">{{ m.name }}</option>
-      }
-    </select>
+    </div>
     @if (current().levels.length && !panel().find) {
       <select #lvlSel (change)="setLevel(lvlSel.value)" aria-label="Level or floor" [class.dim]="!!panel().find">
         <option value="" [selected]="!panel().level">Default view</option>

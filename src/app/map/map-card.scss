@@ -70,3 +70,71 @@
     color: inherit;
   }
 }
+
+/* ---- Searchable map picker ---- */
+.combo {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding-right: 22px;
+  }
+  .caret {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+}
+
+.options {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 3px;
+  list-style: none;
+  background: var(--dialog-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.5);
+
+  li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.86rem;
+
+    &.active {
+      background: var(--spirit-soft);
+    }
+    &.current .on {
+      font-weight: 700;
+      color: var(--spirit);
+    }
+    &.none {
+      cursor: default;
+      color: var(--muted);
+    }
+  }
+  small {
+    flex: none;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+}

@@ -496,7 +496,7 @@ back in the same spot and size). Drag its bottom-right corner to resize it: maps
 
 | Action | How |
 | --- | --- |
-| Pick a map | The map box: the World map, then every zone A–Z. |
+| Pick a map | Click the map box for the World map and every zone A–Z, or **type to find one**: zones starting with what you type come first, then a word inside the name (`weald` → Evershade Weald), then anywhere in it. Floor names count too: `ossuary` offers the Tomb's *Ossuary and bone construct* floor and opens straight onto it. ↑ / ↓ and Enter pick; Esc puts the box back. |
 | Pick a floor | Zones with levels or floors (the Tomb, Tel Ekir, Fallen Pass, Fallen Watch…) get a second box. **Default view** is how the atlas opens the map. |
 | Find something | Type an NPC, a place or e.g. `enchanter trainer` in the find box and press Enter. The atlas searches every map and opens the right one on that marker. **✕** (or Esc) goes back to the chosen map. |
 | Use the map | Drag, scroll to zoom (just hover; no click needed), switch floors and open marker popups inside it. The atlas's own bar at the top of the map also has a map picker, a search menu and sign-in for suggesting edits. While the mouse is over the map the wheel zooms it; move off the map to scroll the board. |
