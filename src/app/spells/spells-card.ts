@@ -1,7 +1,8 @@
-import { Component, ElementRef, computed, inject, input, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import { ConfirmService } from '../confirm.service';
 import { SpellPanel } from '../models';
 import { TrackerStore } from '../tracker.store';
-import { Spell, SpellService, formatCoin } from './spell.service';
+import { Spell, SpellService, formatCoin, spellKey } from './spell.service';
 
 /** Rows drawn before "Show all" is needed (keeps the all-classes, all-levels view fast). */
 const PAGE = 150;
@@ -9,7 +10,7 @@ const PAGE = 150;
 interface Group {
   level: number;
   spells: Spell[];
-  /** Total price of the group's spells in copper. */
+  /** Total price of the group's spells still to buy, in copper. */
   total: number;
 }
 
@@ -24,6 +25,58 @@ export class SpellsCard {
   protected readonly store = inject(TrackerStore);
   protected readonly data = inject(SpellService);
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
+  private readonly confirm = inject(ConfirmService);
+  private readonly settings = viewChild.required<ElementRef<HTMLDialogElement>>('settings');
+
+  // ---------- bought spells ----------
+
+  private readonly bought = computed(() => new Set(this.panel().bought));
+
+  protected isBought(s: Spell): boolean {
+    return this.bought().has(spellKey(s));
+  }
+
+  /** What a spell still costs you: nothing once bought. */
+  private cost(s: Spell): number {
+    return this.isBought(s) ? 0 : (s.price ?? 0);
+  }
+
+  /** Right-click a spell to mark it bought (or not). */
+  protected markBought(s: Spell, e?: Event): void {
+    e?.preventDefault();
+    this.store.toggleSpellBought(spellKey(s));
+  }
+
+  protected openSettings(): void {
+    this.settings().nativeElement.showModal();
+  }
+
+  protected closeSettings(): void {
+    this.settings().nativeElement.close();
+  }
+
+  /** Bought spells by class, for the settings dialog. */
+  protected readonly boughtByClass = computed(() => {
+    const counts = new Map<string, number>();
+    const all = this.data.spells();
+    for (const key of this.panel().bought) {
+      const s = all.find((x) => spellKey(x) === key);
+      const cls = s ? (s.classes.length === 1 ? s.classes[0] : 'Several classes') : 'No longer listed';
+      counts.set(cls, (counts.get(cls) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  });
+
+  protected async clearBought(): Promise<void> {
+    const n = this.panel().bought.length;
+    if (!n) return;
+    const ok = await this.confirm.ask(
+      'Clear bought spells?',
+      `Unmark all ${n} bought spell${n === 1 ? '' : 's'}? Their prices count toward the totals again.`,
+      'Clear',
+    );
+    if (ok) this.store.clearBoughtSpells();
+  }
 
   protected readonly query = signal('');
   protected readonly openId = signal<number | null>(null);
@@ -75,7 +128,7 @@ export class SpellsCard {
   /** Visible rows grouped by level, each with its cost. Group totals always cover the whole level, not just the visible rows. */
   protected readonly groups = computed<Group[]>(() => {
     const totals = new Map<number, number>();
-    for (const s of this.results()) totals.set(s.level, (totals.get(s.level) ?? 0) + (s.price ?? 0));
+    for (const s of this.results()) totals.set(s.level, (totals.get(s.level) ?? 0) + this.cost(s));
     // Search results are ranked (name matches first), so they aren't split up by level.
     if (this.searching()) return this.visible().length ? [{ level: -1, spells: this.visible(), total: 0 }] : [];
     const out: Group[] = [];
@@ -91,12 +144,13 @@ export class SpellsCard {
   protected readonly summary = computed(() => {
     const list = this.results();
     const level = this.level();
-    const sum = (xs: Spell[]) => xs.reduce((n, s) => n + (s.price ?? 0), 0);
+    const sum = (xs: Spell[]) => xs.reduce((n, s) => n + this.cost(s), 0);
     const upTo = level === null ? null : this.pool().filter((s) => s.level <= level);
     return {
       count: list.length,
       total: formatCoin(sum(list)),
-      unpriced: list.filter((s) => s.price === null).length,
+      bought: list.filter((s) => this.isBought(s)).length,
+      unpriced: list.filter((s) => s.price === null && !this.isBought(s)).length,
       upTo: upTo && level !== null && level > (this.levels()[0] ?? 1) ? { total: formatCoin(sum(upTo)), count: upTo.length } : null,
     };
   });

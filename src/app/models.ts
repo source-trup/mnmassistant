@@ -179,6 +179,8 @@ export interface SpellPanel extends GridPos {
   cls: string | null;
   /** Level filter; null = all levels. */
   level: number | null;
+  /** Spells you've bought (spellKey: name|level|classes), left out of the cost totals. */
+  bought: string[];
 }
 
 /** The single Leveling panel: position, size, visibility and the last filters used. */

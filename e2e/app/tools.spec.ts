@@ -21,6 +21,50 @@ test.describe('spells', () => {
   });
 });
 
+test.describe('spells: bought', () => {
+  test('right-click marks bought, totals skip it, settings clears all', async ({ page }) => {
+    await openTool(page, 'Spells');
+    const card = page.locator('app-spells-card');
+    await card.locator('.spell').first().waitFor();
+    await card.locator('select.cls').selectOption('Shaman');
+    await card.locator('.lvl select').selectOption('8');
+    const total = card.locator('.summary .cost').first().locator('.v');
+    const upTo = card.locator('.summary .cost.sub .v');
+    await expect(total).toHaveText('15s 99c');
+    await expect(upTo).toHaveText('18s 77c');
+
+    // Two spells at 1s 23c each.
+    await card.locator('.row', { hasText: 'Spirit Mending' }).first().click({ button: 'right' });
+    await card.locator('.row', { hasText: 'Pact of Haste' }).first().click({ button: 'right' });
+    await expect(card.locator('.spell.bought')).toHaveCount(2);
+    await expect(total).toHaveText('13s 53c');
+    await expect(upTo).toHaveText('16s 31c');
+    await expect(card.locator('.summary .bought-note')).toContainText('2 bought');
+
+    // Right-click again unmarks; the details button marks it back.
+    await card.locator('.row', { hasText: 'Pact of Haste' }).first().click({ button: 'right' });
+    await expect(total).toHaveText('14s 76c');
+    await card.locator('.row', { hasText: 'Pact of Haste' }).first().click();
+    await card.getByRole('button', { name: '✓ Mark as bought' }).click();
+    await expect(total).toHaveText('13s 53c');
+
+    // Remembered after a reload.
+    await page.reload();
+    await expect(page.locator('app-spells-card .spell.bought')).toHaveCount(2);
+    expect((await savedState(page)).spellPanel.bought).toHaveLength(2);
+
+    // Settings: clear (after confirming).
+    await page.locator('app-spells-card').getByTitle('Settings: bought spells').click();
+    const dlg = page.locator('dialog.spell-settings');
+    await expect(dlg).toContainText('2 spells marked as bought');
+    await dlg.getByRole('button', { name: 'Clear bought spells' }).click();
+    await page.locator('app-confirm-dialog').getByRole('button', { name: 'Clear' }).click();
+    await dlg.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('app-spells-card .spell.bought')).toHaveCount(0);
+    await expect(page.locator('app-spells-card .summary .cost').first().locator('.v')).toHaveText('15s 99c');
+  });
+});
+
 test.describe('classes', () => {
   test('starts on the theme class and switches tabs', async ({ page }) => {
     await openTool(page, 'Classes');

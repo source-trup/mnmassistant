@@ -291,3 +291,50 @@ button:disabled {
     color: inherit;
   }
 }
+
+/* ---- Bought spells ---- */
+.spell.bought {
+  .rn {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+  .rp {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+}
+
+.tick {
+  flex: none;
+  font-weight: 800;
+  color: var(--spirit);
+}
+
+.summary .bought-note {
+  font-style: normal;
+  color: var(--spirit);
+}
+
+.detail .dactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  .on {
+    color: var(--bg);
+    background: var(--spirit);
+    border-color: var(--spirit);
+  }
+}
+
+.spell-settings {
+  width: min(420px, calc(100vw - 32px));
+
+  p {
+    margin: 0 0 10px;
+    font-size: 0.88rem;
+  }
+  .hint {
+    color: var(--muted);
+  }
+}

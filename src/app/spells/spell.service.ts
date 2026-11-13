@@ -26,6 +26,11 @@ interface SpellFile {
   spells: [string, number[], number, number, number | string | null, number | null, number[], string][];
 }
 
+/** A stable id for a spell entry (survives rebuilding the spell list): name, level and classes. */
+export function spellKey(s: { name: string; level: number; classes: string[] }): string {
+  return `${s.name}|${s.level}|${s.classes.join(',')}`;
+}
+
 /** "1g 4s 50c" from a copper amount (100c = 1s, 100s = 1g). */
 export function formatCoin(copper: number): string {
   const g = Math.floor(copper / 10000);

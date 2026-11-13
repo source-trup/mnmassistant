@@ -2,6 +2,7 @@
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
     <span class="name">📖 Spells</span>
+    <button class="icon" (click)="openSettings()" title="Settings: bought spells">⚙</button>
     <button class="icon" (click)="store.toggleSpells()" title="Hide (show it again from the toolbar)">✕</button>
   </div>
 
@@ -68,6 +69,9 @@
           @if (summary().unpriced) {
             <span class="note" title="Spells with no price listed aren't counted in the total">{{ summary().unpriced }} without a price</span>
           }
+          @if (summary().bought) {
+            <span class="note bought-note" title="Spells you've marked as bought aren't counted (right-click a spell to change)">✓ {{ summary().bought }} bought, not counted</span>
+          }
         }
       </div>
 
@@ -80,8 +84,14 @@
             </div>
           }
           @for (s of g.spells; track s.id) {
-            <div class="spell" [class.open]="openId() === s.id">
-              <button class="row" (click)="toggle(s)" [attr.aria-expanded]="openId() === s.id">
+            <div class="spell" [class.open]="openId() === s.id" [class.bought]="isBought(s)">
+              <button
+                class="row"
+                (click)="toggle(s)"
+                (contextmenu)="markBought(s, $event)"
+                [attr.aria-expanded]="openId() === s.id"
+                [title]="isBought(s) ? 'Bought · right-click to unmark' : 'Click for details · right-click to mark as bought'"
+              >
                 @if (g.level < 0) {
                   <span class="rl" title="Level">{{ s.level }}</span>
                 }
@@ -96,6 +106,9 @@
                     <i [attr.data-kind]="k" [title]="k"></i>
                   }
                 </span>
+                @if (isBought(s)) {
+                  <span class="tick" aria-label="bought">✓</span>
+                }
                 <span class="rp">{{ coin(s.price) }}</span>
               </button>
               @if (openId() === s.id) {
@@ -115,7 +128,12 @@
                   </dl>
                   <p class="classes"><span class="lbl">{{ s.classes.length === 1 ? 'Class' : 'Classes' }}</span> {{ s.classes.join(', ') }}</p>
                   <p class="effect">{{ s.effect || 'No description yet.' }}</p>
-                  <button class="small" (click)="store.showWiki(s.name)" [title]="'Look up ' + s.name + ' on the wiki'">📖 Wiki</button>
+                  <div class="dactions">
+                    <button class="small" [class.on]="isBought(s)" (click)="markBought(s)">
+                      {{ isBought(s) ? '✓ Bought (unmark)' : '✓ Mark as bought' }}
+                    </button>
+                    <button class="small" (click)="store.showWiki(s.name)" [title]="'Look up ' + s.name + ' on the wiki'">📖 Wiki</button>
+                  </div>
                 </div>
               }
             </div>
@@ -151,3 +169,26 @@
     Spell data from the <a href="https://monstersandmemories.wiki/spells" target="_blank" rel="noopener">Monsters and Memories Wiki</a>
   </p>
 </div>
+
+<dialog #settings class="spell-settings">
+  <h3>Spells settings</h3>
+  <p class="hint">
+    Right-click a spell (or open it and press <b>✓ Mark as bought</b>) to mark it as bought. Bought spells are struck
+    through and left out of every cost total.
+  </p>
+  @if (panel().bought.length) {
+    <p>
+      <b>{{ panel().bought.length }}</b> spell{{ panel().bought.length === 1 ? '' : 's' }} marked as bought:
+      @for (c of boughtByClass(); track c[0]; let last = $last) {
+        {{ c[0] }} ({{ c[1] }})@if (!last) {, }
+      }
+    </p>
+  } @else {
+    <p class="hint">No spells are marked as bought.</p>
+  }
+  <div class="dialog-actions">
+    <button class="danger" (click)="clearBought()" [disabled]="!panel().bought.length">Clear bought spells</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeSettings()">Done</button>
+  </div>
+</dialog>

@@ -443,6 +443,7 @@ size). Drag its bottom-right corner to resize it.
 | What a level costs | The line under the search box: the number of spells and their **total vendor price** at the chosen level, plus the running total for **levels 1 to that level**. Spells with no price listed are counted separately and left out of the total. |
 | Search | Type part of a name. Searches of 3+ letters also look in the effect text (try `underwater`). Search covers every level of the chosen class and offers the matches in other classes. Esc clears it. |
 | Spell details | Click a spell: kind(s), level, school, mana, price, classes and the full effect text. Click again to close. |
+| Mark as bought | **Right-click** a spell (or open it and press **✓ Mark as bought**). Bought spells are struck through with a ✓ and left out of every total: the level, the level headings, and levels 1 to N. Right-click again to unmark. **⚙ → Clear bought spells** unmarks them all (it asks first). |
 
 The colored dots on each row are the spell's kinds (damage, heal, buff, debuff, crowd control, defense, pet, cure,
 threat, utility); hover one to see which. Prices use 100c = 1s and 100s = 1g. The class and level you picked are

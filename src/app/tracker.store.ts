@@ -126,7 +126,7 @@ function defaultLevelPanel(): LevelPanel {
 }
 
 function defaultSpellPanel(): SpellPanel {
-  return { shown: false, ...PANEL_SIZE.spells, cls: 'Shaman', level: null, ...UNPLACED };
+  return { shown: false, ...PANEL_SIZE.spells, cls: 'Shaman', level: null, bought: [], ...UNPLACED };
 }
 
 function normalizeSpellPanel(raw: any): SpellPanel {
@@ -139,6 +139,7 @@ function normalizeSpellPanel(raw: any): SpellPanel {
     h: Math.max(SPELLS_MIN.h, Math.floor(Number(raw.h)) || base.h),
     cls: typeof raw.cls === 'string' && raw.cls ? raw.cls : raw.cls === null ? null : base.cls,
     level: level >= 1 && level <= LEVEL_CAP ? level : null,
+    bought: Array.isArray(raw.bought) ? [...new Set<string>(raw.bought.filter((k: unknown) => typeof k === 'string' && k.length < 300))] : [],
     x: raw.x ?? -1,
     y: raw.y ?? -1,
   };
@@ -1517,6 +1518,16 @@ export class TrackerStore {
     const fits = p.x >= 0 && p.y >= 0 && this.canPlace(WIKI_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
     this.updateWikiPanel({ shown: true, ...(fits ? {} : UNPLACED) });
     this.placeUnplaced();
+  }
+
+  /** Marks a spell as bought, or unmarks it (bought spells aren't counted in the Spells panel's costs). */
+  toggleSpellBought(key: string): void {
+    const bought = this.spellPanel().bought;
+    this.updateSpellPanel({ bought: bought.includes(key) ? bought.filter((k) => k !== key) : [...bought, key] });
+  }
+
+  clearBoughtSpells(): void {
+    this.updateSpellPanel({ bought: [] });
   }
 
   /** Shows the Spells panel (if hidden) filtered to a class, e.g. from the Classes panel. */
