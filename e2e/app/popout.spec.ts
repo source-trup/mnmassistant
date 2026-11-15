@@ -1,5 +1,5 @@
 import type { BrowserContext, Page } from '@playwright/test';
-import { addPanel, expect, savedState, test } from '../support/fixtures';
+import { addPanel, expect, loadState, savedState, test } from '../support/fixtures';
 
 /**
  * The pop-out window. These run the plain pop-up path (what Firefox and Waterfox get): Playwright can't drive
@@ -80,6 +80,52 @@ test.describe('pop-out window', () => {
     await closed;
     await expect(page.locator('.popped-slot')).toHaveCount(0);
     expect((await savedState(page)).counters).toHaveLength(0);
+  });
+
+  test('a linked timer and camp pop out together as one compact panel', async ({ page, context }) => {
+    await withoutPip(page, context);
+    await page.getByRole('button', { name: '6m', exact: true }).click();
+    await addPanel(page, 'Named / PH');
+    await page.getByRole('button', { name: '10m', exact: true }).click(); // not linked: stays on the board
+    const s = await savedState(page);
+    s.counters[0].linkedTimerId = s.timers[0].id;
+    await loadState(page, s);
+
+    // Popping out the camp brings its timer too.
+    const camp = page.locator('app-counter-card');
+    await expect(camp.getByTitle(/combined with its linked timer/)).toBeVisible();
+    const popup = await popOut(page, context, camp);
+    const combined = popup.locator('app-linked-pop-card');
+    await expect(combined).toHaveCount(1);
+    await expect(popup.locator('app-timer-card, app-counter-card')).toHaveCount(0);
+    await expect(page.locator('.popped-slot')).toHaveCount(2);
+    await expect(page.locator('.board app-timer-card')).toHaveCount(1); // the unlinked 10m timer
+
+    // Smaller than the two panels it replaces (180 + 220 px).
+    expect((await combined.boundingBox())!.height).toBeLessThan(200);
+
+    // + PH counts and restarts the timer; the timer can be started by itself too.
+    await expect(combined.locator('.time')).toHaveText('6:00');
+    await combined.getByRole('button', { name: '+ PH' }).click();
+    await expect(combined.locator('.ph b')).toHaveText('1');
+    await expect(combined.locator('.card')).toHaveAttribute('data-status', 'running');
+    await combined.getByTitle('Pause').click();
+    await expect(combined.locator('.card')).toHaveAttribute('data-status', 'paused');
+    await combined.locator('.clock').click();
+    await expect(combined.locator('.card')).toHaveAttribute('data-status', 'running');
+
+    // + Named asks for loot in the pop-out.
+    await combined.getByRole('button', { name: '+ Named' }).click();
+    await expect(combined.locator('.named b')).toHaveText('1');
+    await expect(popup.locator('app-loot-prompt .drawer')).toBeVisible();
+    await popup.locator('app-loot-prompt').getByRole('button', { name: 'Skip' }).click();
+
+    // ⤓ puts both back.
+    const closed = popup.waitForEvent('close');
+    await combined.getByTitle('Put back on the board').click();
+    await closed;
+    await expect(page.locator('.board app-timer-card')).toHaveCount(2);
+    await expect(page.locator('.board app-counter-card .big.ph')).toHaveText('1');
   });
 
   test('closing the window puts everything back', async ({ page, context }) => {

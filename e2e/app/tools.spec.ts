@@ -69,6 +69,7 @@ test.describe('classes', () => {
   test('starts on the theme class and switches tabs', async ({ page }) => {
     await openTool(page, 'Classes');
     const card = page.locator('app-classes-card');
+    await card.locator('.snap h3').waitFor(); // classes.json is large; the busy test server can be slow with it
     await expect(card.locator('.snap h3')).toHaveText('Shaman');
     await card.getByRole('tab', { name: 'Build' }).click();
     await expect(card.locator('table').first().locator('tbody tr')).not.toHaveCount(0);

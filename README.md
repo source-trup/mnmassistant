@@ -517,6 +517,11 @@ Keep a timer, a Named / PH camp or a Buff Tracker in a small window of its own, 
 - Click **⧉** on the panel's title bar. The panel moves into the pop-out window; its spot on the board shows
   *In the pop-out window* with a **⤓ Bring back** button.
 - Pop out more panels and they stack in the same window.
+- **Linked timer and camp:** popping out either one brings the other along (a timer brings every counter linked to
+  it). In the window they're combined into one compact panel: the countdown and a pause button on top, then a row per
+  camp with its PH and named counts and **+ PH** / **+ Named** (which restart the timer, as on the board). Click the
+  time to start or restart the timer on its own. **⤓** puts them all back; history, settings and undo are on the
+  full panels on the board.
 - It's the same panel, not a copy: clicks, kills, loot and history all go to the same place. A named kill's loot
   question and any "are you sure?" open in whichever window you clicked in.
 - **⤓** on a popped-out panel, or closing the window, puts panels back on the board. Reloading or closing the main

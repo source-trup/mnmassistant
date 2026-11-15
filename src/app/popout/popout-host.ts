@@ -2,9 +2,9 @@ import { Component, ElementRef, inject, signal } from '@angular/core';
 import { BuffCard } from '../buff-card/buff-card';
 import { ConfirmDialog } from '../confirm-dialog';
 import { CounterCard } from '../counter-card/counter-card';
-import { GRID } from '../layout';
 import { LootPrompt } from '../loot/loot-prompt';
 import { TimerCard } from '../timer-card/timer-card';
+import { LinkedPopCard } from './linked-pop-card';
 import { PopoutService } from './popout.service';
 
 const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
@@ -15,7 +15,7 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
  */
 @Component({
   selector: 'app-popout-host',
-  imports: [TimerCard, CounterCard, BuffCard, ConfirmDialog, LootPrompt],
+  imports: [TimerCard, CounterCard, BuffCard, LinkedPopCard, ConfirmDialog, LootPrompt],
   template: `
     @if (popout.mode(); as mode) {
       @if (mode === 'window' && showHint()) {
@@ -33,20 +33,24 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
         </div>
       }
       <div class="list">
-        @for (p of popout.panels(); track p.id) {
-          <div class="pop-panel" [style.height.px]="(p.h - 1) * GRID">
-            @switch (p.kind) {
-              @case ('timer') {
-                <app-timer-card [timer]="p.item" />
+        @for (u of popout.units(); track u.kind + u.id) {
+          @if (u.kind === 'linked') {
+            <app-linked-pop-card [timer]="u.timer" [counters]="u.counters" />
+          } @else {
+            <div class="pop-panel" [style.height.px]="u.height">
+              @switch (u.panel.kind) {
+                @case ('timer') {
+                  <app-timer-card [timer]="u.panel.item" />
+                }
+                @case ('counter') {
+                  <app-counter-card [counter]="u.panel.item" />
+                }
+                @case ('buffs') {
+                  <app-buff-card [panel]="u.panel.item" />
+                }
               }
-              @case ('counter') {
-                <app-counter-card [counter]="p.item" />
-              }
-              @case ('buffs') {
-                <app-buff-card [panel]="p.item" />
-              }
-            }
-          </div>
+            </div>
+          }
         }
       </div>
       <app-loot-prompt place="popout" />
@@ -96,7 +100,6 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
 })
 export class PopoutHost {
   protected readonly popout = inject(PopoutService);
-  protected readonly GRID = GRID;
   protected readonly windows = /Windows/i.test(navigator.userAgent);
   protected readonly showHint = signal(readHintShown());
 

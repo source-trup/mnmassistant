@@ -17,7 +17,7 @@
     <button
       class="icon pop"
       (click)="popout.toggle(timer().id)"
-      [title]="popout.isPopped(timer().id) ? 'Put back on the board' : 'Pop out into its own window (stays on top)'"
+      [title]="popout.isPopped(timer().id) ? 'Put back on the board' : popout.isLinked(timer().id) ? 'Pop out into its own window, combined with its linked ' + 'camp' : 'Pop out into its own window (stays on top)'"
     >{{ popout.isPopped(timer().id) ? '⤓' : '⧉' }}</button>
     <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
     <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
