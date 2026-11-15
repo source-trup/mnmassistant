@@ -27,6 +27,7 @@ Monsters and Memories Wiki.
 - [Spells](#spells)
 - [Leveling](#leveling)
 - [Map](#map)
+- [Pop-out window](#pop-out-window)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
@@ -506,6 +507,31 @@ The map loads live from mnmatlas.com, so it needs an internet connection and alw
 version. The zone list lives in `src/app/map/atlas-maps.ts`; add new maps there when the atlas adds them.
 
 *Maps: [MnM Atlas](https://www.mnmatlas.com/) and the community map authors credited on each map.*
+
+---
+
+## Pop-out window
+
+Keep a timer, a Named / PH camp or a Buff Tracker in a small window of its own, on top of the game.
+
+- Click **⧉** on the panel's title bar. The panel moves into the pop-out window; its spot on the board shows
+  *In the pop-out window* with a **⤓ Bring back** button.
+- Pop out more panels and they stack in the same window.
+- It's the same panel, not a copy: clicks, kills, loot and history all go to the same place. A named kill's loot
+  question and any "are you sure?" open in whichever window you clicked in.
+- **⤓** on a popped-out panel, or closing the window, puts panels back on the board. Reloading or closing the main
+  page closes the pop-out too.
+
+How it stays on top depends on the browser:
+
+- **Edge and Chrome:** the window is a browser Picture-in-Picture window and stays on top by itself. Drag it where
+  you like; the browser remembers its size.
+- **Firefox, Waterfox and others:** it's a normal pop-up window (allow pop-ups for the site if it's blocked). To pin
+  it on top on Windows, click it and press **Win+Ctrl+T** with Microsoft
+  [PowerToys Always On Top](https://learn.microsoft.com/windows/powertoys/always-on-top) installed; the window
+  shows this tip until you dismiss it. Its size and position are remembered.
+
+Either way the game has to run in **windowed or borderless** mode; nothing can draw over exclusive fullscreen.
 
 ---
 

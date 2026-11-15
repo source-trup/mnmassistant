@@ -14,6 +14,11 @@
     @if (linkedBy()) {
       <span class="tag" [title]="'Restarted by: ' + linkedBy()">🔗</span>
     }
+    <button
+      class="icon pop"
+      (click)="popout.toggle(timer().id)"
+      [title]="popout.isPopped(timer().id) ? 'Put back on the board' : 'Pop out into its own window (stays on top)'"
+    >{{ popout.isPopped(timer().id) ? '⤓' : '⧉' }}</button>
     <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
     <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>

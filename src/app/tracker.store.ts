@@ -1792,6 +1792,11 @@ export class TrackerStore {
 
   // ---------- internals ----------
 
+  /** Runs the clock now (the pop-out window calls this when the main window's timers are throttled). */
+  tickNow(): void {
+    this.tick();
+  }
+
   private tick(): void {
     const now = Date.now();
     this.now.set(now);

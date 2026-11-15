@@ -153,6 +153,13 @@
         (pointerup)="onPointerUp()"
         (pointercancel)="onPointerCancel()"
       >
+        @if (popout.isPopped(p.id)) {
+          <div class="popped-slot">
+            <span class="ic" aria-hidden="true">⧉</span>
+            <span>In the pop-out window</span>
+            <button (click)="popout.dock(p.id)" title="Put this panel back on the board">⤓ Bring back</button>
+          </div>
+        } @else {
         @switch (p.kind) {
           @case ('timer') {
             <app-timer-card [timer]="p.item" />
@@ -223,6 +230,7 @@
             }
           }
         }
+        }
         <div
           class="resize-grip"
           title="Drag to resize"
@@ -277,4 +285,5 @@
 
 <app-loot-prompt />
 <app-confirm-dialog />
+<app-popout-host />
 <app-quick-guide #guide (firstVisitClosed)="openThemes(true)" />

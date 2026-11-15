@@ -13,6 +13,7 @@ import { ConfirmService } from '../confirm.service';
 import { BuffEntry, BuffPanel } from '../models';
 import { formatDuration, parseDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { PopoutService } from '../popout/popout.service';
 import { PanelTitle } from '../panel-title';
 
 type BuffState = 'idle' | 'active' | 'warn' | 'faded';
@@ -33,6 +34,7 @@ interface BuffRow {
 export class BuffCard {
   readonly panel = input.required<BuffPanel>();
   protected readonly store = inject(TrackerStore);
+  protected readonly popout = inject(PopoutService);
   private readonly confirm = inject(ConfirmService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

@@ -293,3 +293,33 @@ dialog {
     color: var(--text);
   }
 }
+
+/* A panel that's in the pop-out window keeps its spot on the board. */
+.popped-slot {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 50%, transparent);
+
+  .ic {
+    font-size: 1.4rem;
+    color: var(--spirit);
+  }
+}
+
+/* Inside the pop-out window: panels can't be dragged there. */
+.popout-body {
+  .grip {
+    display: none;
+  }
+  .drag-handle {
+    cursor: default;
+  }
+}

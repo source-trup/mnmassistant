@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
+import { PopoutService } from '../popout/popout.service';
 import { LootItem } from '../models';
 import { formatClock } from '../time';
 import { TrackerStore } from '../tracker.store';
@@ -13,7 +14,7 @@ import { ItemSearch } from './item-search';
   imports: [ItemSearch],
   template: `
     @for (r of current(); track r.event.id) {
-      <aside class="drawer">
+      <aside class="drawer" [class.in-popout]="place() === 'popout'">
         <div class="top">
           <span class="title">Named down!</span>
           @if (store.lootQueue().length > 1) {
@@ -63,6 +64,12 @@ import { ItemSearch } from './item-search';
       box-shadow: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 24px var(--card-glow);
       animation: slide-in 0.2s ease-out;
     }
+    .drawer.in-popout {
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      width: auto;
+    }
     @keyframes slide-in {
       from { transform: translateX(24px); opacity: 0; }
     }
@@ -90,9 +97,12 @@ import { ItemSearch } from './item-search';
 })
 export class LootPrompt {
   protected readonly store = inject(TrackerStore);
+  private readonly popout = inject(PopoutService);
+  /** The main page's drawer, or the pop-out window's (for camps that are popped out). */
+  readonly place = input<'main' | 'popout'>('main');
 
   /** The request at the front of the queue, resolved to its camp and event (as a 0/1 list so it re-renders per event). */
-  protected readonly current = computed(() => {
+  private readonly front = computed(() => {
     const req = this.store.lootQueue()[0];
     if (!req) return [];
     const c = this.store.counters().find((x) => x.id === req.counterId);
@@ -101,10 +111,15 @@ export class LootPrompt {
     return event ? [{ counterId: c.id, camp: c.name, event, drops: this.store.dropsOf(c) }] : [];
   });
 
+  /** The front request, if it belongs in this window. */
+  protected readonly current = computed(() =>
+    this.front().filter((r) => this.popout.isPopped(r.counterId) === (this.place() === 'popout')),
+  );
+
   constructor() {
     // Drop requests whose camp or kill no longer exists.
     effect(() => {
-      if (this.store.lootQueue().length && !this.current().length) this.store.dismissLoot();
+      if (this.place() === 'main' && this.store.lootQueue().length && !this.front().length) this.store.dismissLoot();
     });
   }
 

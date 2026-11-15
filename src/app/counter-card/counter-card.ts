@@ -3,6 +3,7 @@ import { ConfirmService } from '../confirm.service';
 import { CounterItem } from '../models';
 import { formatAgo, formatDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { PopoutService } from '../popout/popout.service';
 import { PanelTitle } from '../panel-title';
 import { CampHistory } from './camp-history';
 
@@ -15,6 +16,7 @@ import { CampHistory } from './camp-history';
 export class CounterCard {
   readonly counter = input.required<CounterItem>();
   protected readonly store = inject(TrackerStore);
+  protected readonly popout = inject(PopoutService);
   private readonly confirm = inject(ConfirmService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
 

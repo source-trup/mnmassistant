@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { PopoutService } from './popout/popout.service';
 
 export interface ConfirmRequest {
   title: string;
@@ -6,17 +7,20 @@ export interface ConfirmRequest {
   confirmText: string;
   /** 'danger' (red) for destructive actions, 'primary' for everything else. */
   tone: 'danger' | 'primary';
+  /** Which window shows it: where the user last clicked or typed. */
+  place: 'main' | 'popout';
   resolve: (ok: boolean) => void;
 }
 
 /** In-app confirmation dialog (rendered by ConfirmDialog in the app shell). */
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {
+  private readonly popout = inject(PopoutService);
   readonly pending = signal<ConfirmRequest | null>(null);
 
   ask(title: string, message: string, confirmText = 'Delete', tone: 'danger' | 'primary' = 'danger'): Promise<boolean> {
     this.pending()?.resolve(false);
-    return new Promise((resolve) => this.pending.set({ title, message, confirmText, tone, resolve }));
+    return new Promise((resolve) => this.pending.set({ title, message, confirmText, tone, resolve, place: this.popout.inPopout() ? 'popout' : 'main' }));
   }
 
   answer(ok: boolean): void {

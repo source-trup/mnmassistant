@@ -19,6 +19,8 @@ import { PricesCard } from './prices/prices-card';
 import { WikiCard } from './community-wiki/wiki-card';
 import { QuickGuide } from './quick-guide/quick-guide';
 import { HeaderClock } from './game-clock/header-clock';
+import { PopoutHost } from './popout/popout-host';
+import { PopoutService } from './popout/popout.service';
 import { THEMES, themeById } from './themes';
 import { parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
@@ -56,13 +58,14 @@ interface DragState {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, QuickGuide, HeaderClock, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   protected readonly store = inject(TrackerStore);
   private readonly confirm = inject(ConfirmService);
+  protected readonly popout = inject(PopoutService);
   private readonly board = viewChild.required<ElementRef<HTMLElement>>('board');
 
   protected readonly GRID = GRID;

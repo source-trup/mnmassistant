@@ -15,6 +15,7 @@ import { NameInput } from '../name-input';
 import { PanelTitle } from '../panel-title';
 import { formatDuration, parseDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { PopoutService } from '../popout/popout.service';
 
 @Component({
   selector: 'app-timer-card',
@@ -25,6 +26,7 @@ import { TrackerStore } from '../tracker.store';
 export class TimerCard {
   readonly timer = input.required<TimerItem>();
   protected readonly store = inject(TrackerStore);
+  protected readonly popout = inject(PopoutService);
   private readonly confirm = inject(ConfirmService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

@@ -3,6 +3,11 @@
     <span class="grip">⠿</span>
     <app-panel-title [name]="panel().name" (renamed)="store.updateBuffPanel(panel().id, { name: $event })" />
     <button class="icon" (click)="addBuff()" title="Add a buff">＋</button>
+    <button
+      class="icon pop"
+      (click)="popout.toggle(panel().id)"
+      [title]="popout.isPopped(panel().id) ? 'Put back on the board' : 'Pop out into its own window (stays on top)'"
+    >{{ popout.isPopped(panel().id) ? '⤓' : '⧉' }}</button>
     <button class="icon" (click)="openEdit()" title="Settings &amp; buff sets">⚙</button>
     <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
   </div>
