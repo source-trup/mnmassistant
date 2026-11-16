@@ -4,6 +4,7 @@ import { ItemSearch } from '../loot/item-search';
 import { CampEvent, LootItem, NamedPhCounter } from '../models';
 import { formatAgo, formatClock, formatDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { estimateRespawn } from './respawn';
 
 const MAX_ROWS = 300;
 
@@ -44,6 +45,9 @@ export class CampHistory {
     const gaps: number[] = [];
     for (let i = 1; i < ev.length; i++) gaps.push(ev[i].t - ev[i - 1].t);
     const median = gaps.length ? [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)] : null;
+    // The same average the linked timer shows (late and missed presses allowed for); the plain median until there
+    // are enough kills for it.
+    const avg = estimateRespawn(ev.map((e) => e.t))?.interval ?? median;
 
     let streak = 0;
     let longest = 0;
@@ -59,7 +63,7 @@ export class CampHistory {
       ph,
       named,
       odds: named ? `1 in ${((ph + named) / named).toFixed(1)}` : '—',
-      median: median !== null ? formatDuration(median, false) : '—',
+      median: avg !== null ? formatDuration(avg, false) : '—',
       last: gaps.length ? formatDuration(gaps[gaps.length - 1], false) : '—',
       longest,
       lastNamed: lastNamed ? `${formatAgo(now - lastNamed.t)} ago` : 'never',

@@ -165,6 +165,31 @@ says so before replacing that link. From then on:
 
 The timer restarts **the instant you click**. It never waits for loot entry or anything else.
 
+#### Respawn estimate
+
+Once a Named/PH camp linked to a timer has a few respawns logged (four kills), the timer shows a line under the
+clock:
+
+- **⟳ avg 6:00**: the camp's typical respawn time, from its kill log (the last 40 kills).
+- **next ≈ 2:41:10 PM**: when the next spawn is expected, in your local time. Once it's passed it reads
+  *(1:30 ago)*: the mob should be up.
+- **1:12 before timer** (or *after timer*, or *matches timer*): how that compares with when the timer will end.
+
+It isn't a plain average of the gaps between kills:
+
+- **Missed spawns:** a gap close to two or three respawns counts as that many (12 minutes on a 6 minute camp is two
+  6 minute respawns, one of them not logged).
+- **Outliers are left out:** gaps that aren't close to a whole number of respawns (within 20%), such as a late
+  press (8 minutes on a 6 minute camp), an in-between 9 minutes, or a break. A double click counts once.
+- **The typical gap:** what's left gives the middle (median) respawn time, so a stray gap can't drag it.
+- **Late presses:** if you press **+ PH** a minute or two late, the timer runs from your press, but **next ≈** stays
+  on the camp's rhythm. It's projected from each of the last few kills, and the earliest projection wins, since a
+  late press can only make a kill look later.
+
+After a long break, **next ≈** waits for the next kill. Hover the line to see how many respawns it's based on and how
+many gaps were left out. The pop-out window's combined panel shows the same line, and the camp's 📜 history shows the same
+**Average respawn**.
+
 Linking a Named/PH counter to a timer you've named also **names the counter after it**: *Grimfang's log*. If you
 rename the timer, the counter follows. A name you gave the counter yourself is never changed.
 
@@ -194,7 +219,7 @@ Toggle between **Session** and **All time**. The Session view shows when the cur
 - A new session also starts **automatically**: a + PH / + Named logged more than an hour after the camp's previous
   kill opens a fresh session before it's counted.
 
-- **Stats:** placeholders, named, named odds ("1 in 7.0"), last named, typical respawn (median time between kills),
+- **Stats:** placeholders, named, named odds ("1 in 7.0"), last named, average respawn (the same estimate the linked timer shows),
   last respawn, longest PH streak, kills/hr, named/hr.
 - **Loot summary:** every item with its count and drop rate per named kill.
 - **Kill log:** newest first, with timestamps.

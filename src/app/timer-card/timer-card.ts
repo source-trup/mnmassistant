@@ -12,6 +12,7 @@ import {
 import { ConfirmService } from '../confirm.service';
 import { TimerItem, TimerStatus } from '../models';
 import { NameInput } from '../name-input';
+import { RespawnInfo } from './respawn-info';
 import { PanelTitle } from '../panel-title';
 import { formatDuration, parseDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
@@ -19,7 +20,7 @@ import { PopoutService } from '../popout/popout.service';
 
 @Component({
   selector: 'app-timer-card',
-  imports: [PanelTitle, NameInput],
+  imports: [PanelTitle, NameInput, RespawnInfo],
   templateUrl: './timer-card.html',
   styleUrl: './timer-card.scss',
 })

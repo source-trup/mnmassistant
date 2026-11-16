@@ -1,4 +1,4 @@
-import { HOUR, addPanel, dragBy, expect, loadState, savedState, test } from '../support/fixtures';
+import { HOUR, MINUTE, addPanel, dragBy, expect, loadState, savedState, test } from '../support/fixtures';
 
 test.describe('timers', () => {
   test('click starts, right-click sets the time left', async ({ page }) => {
@@ -150,5 +150,60 @@ test.describe('dragging', () => {
     const second = (await panels.nth(1).boundingBox())!;
     await dragBy(page, panels.nth(1).locator('.head'), first.x - second.x + 20, 0);
     await expect.poll(async () => Math.round((await panels.nth(1).boundingBox())!.x)).toBe(Math.round(second.x));
+  });
+});
+
+test.describe('respawn estimate on a linked timer', () => {
+  test('average respawn, next spawn in local time, and the gap to the timer', async ({ page }) => {
+    await page.getByRole('button', { name: '10m', exact: true }).click();
+    await addPanel(page, 'Named / PH');
+    const s = await savedState(page);
+    const camp = s.counters[0];
+    camp.linkedTimerId = s.timers[0].id;
+    // Kills every 10 minutes; the latest really died 2 minutes ago, but the button wasn't pressed yet.
+    const died = Date.now() - 2 * MINUTE;
+    s.campLogs = [
+      {
+        key: 'counter:' + camp.id,
+        name: camp.name,
+        history: [40, 30, 20, 10].map((m, i) => ({ id: 'k' + i, t: died - m * MINUTE, type: 'ph', loot: [] })),
+      },
+    ];
+    await loadState(page, s);
+
+    const timer = page.locator('app-timer-card');
+    // Before the press: the spawn was due about 2 minutes ago.
+    await expect(timer.locator('app-respawn-info .avg')).toHaveText('⟳ avg 10:00');
+    await expect(timer.locator('app-respawn-info .next')).toContainText(/\(2:0\d ago\)/);
+
+    // The late press: the timer runs 10:00 from now, but the rhythm says the next spawn is in about 8 minutes.
+    await page.locator('app-counter-card').getByRole('button', { name: /\+ PH/ }).click();
+    const info = timer.locator('app-respawn-info');
+    await expect(info.locator('.avg')).toHaveText('⟳ avg 10:00');
+    const expected = await page.evaluate(
+      (t) => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }),
+      died + 10 * MINUTE,
+    );
+    // Allow a second either way for the time between the evaluate and the click.
+    await expect(info.locator('.next')).toContainText('next ≈ ');
+    const shown = (await info.locator('.next').innerText()).replace('next ≈ ', '');
+    const toSec = (x: string) => {
+      const [h, m, rest] = x.split(':');
+      return (+h % 12) * 3600 + +m * 60 + parseInt(rest);
+    };
+    expect(Math.abs(toSec(shown) - toSec(expected))).toBeLessThanOrEqual(1);
+    // About 2 minutes (plus the few seconds the test took between setting up and pressing).
+    await expect(info.locator('.diff')).toHaveText(/^2:0\d before timer$/);
+    await expect(info.locator('.diff')).toHaveAttribute('data-dir', 'early');
+
+    // The history dialog shows the same average.
+    await page.locator('app-counter-card').getByTitle('Camp history & loot').click();
+    await page.locator('app-camp-history').getByRole('button', { name: 'All time' }).click();
+    await expect(page.locator('app-camp-history')).toContainText('Average respawn');
+  });
+
+  test('nothing shows without a linked camp or enough kills', async ({ page }) => {
+    await page.getByRole('button', { name: '10m', exact: true }).click();
+    await expect(page.locator('app-timer-card .respawn')).toHaveCount(0);
   });
 });

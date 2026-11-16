@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { CounterItem, TimerItem, TimerStatus } from '../models';
 import { formatDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { RespawnInfo } from '../timer-card/respawn-info';
 import { PopoutService } from './popout.service';
 
 /**
@@ -10,6 +11,7 @@ import { PopoutService } from './popout.service';
  */
 @Component({
   selector: 'app-linked-pop-card',
+  imports: [RespawnInfo],
   template: `
     <div class="card" [attr.data-status]="status()">
       <div class="head">
@@ -34,6 +36,7 @@ import { PopoutService } from './popout.service';
           <button class="small" (click)="store.pauseTimer(timer().id)" title="Pause">❚❚</button>
         }
       </div>
+      <app-respawn-info [timer]="timer()" />
       <div class="bar"><span class="fill" [style.width.%]="progress() * 100"></span></div>
 
       @for (c of counters(); track c.id) {
