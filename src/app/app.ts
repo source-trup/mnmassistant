@@ -1,4 +1,5 @@
-import { Component, ElementRef, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, afterNextRender, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { Analytics, eventSlug } from './analytics.service';
 import { Backdrop } from './art/backdrop';
 import { DalgrimmMark } from './art/dalgrimm-mark';
 import { BuffCard } from './buff-card/buff-card';
@@ -76,6 +77,7 @@ export class App {
   protected readonly store = inject(TrackerStore);
   private readonly confirm = inject(ConfirmService);
   protected readonly popout = inject(PopoutService);
+  protected readonly analytics = inject(Analytics);
   private readonly board = viewChild.required<ElementRef<HTMLElement>>('board');
 
   protected readonly GRID = GRID;
@@ -122,7 +124,13 @@ export class App {
     { icon: '✨', label: 'Buff Tracker', hint: 'Buff timers with fade warnings', add: () => this.store.addBuffPanel() },
     { icon: '📝', label: 'Note', hint: 'Free text', add: () => this.store.addNote() },
     { icon: '☑️', label: 'Checklist', hint: 'Shopping list; paste a list or wiki table', add: () => this.store.addNote('checklist') },
-  ];
+  ].map((a) => ({
+    ...a,
+    add: () => {
+      a.add();
+      this.analytics.count(`add/${eventSlug(a.label)}`, `Added a ${a.label}`);
+    },
+  }));
 
   /** Put-away Named / PH timers and notes (badge on ＋ Add). */
   protected readonly savedCount = computed(() => this.store.closedCamps().length + this.store.closedNotes().length);
@@ -164,6 +172,7 @@ export class App {
   });
 
   constructor() {
+    this.trackUsage();
     afterNextRender(() => {
       const el = this.board().nativeElement;
       const update = () => this.store.cols.set(Math.max(15, Math.floor(el.clientWidth / GRID)));
@@ -193,6 +202,30 @@ export class App {
   private addLength(kind: 'timer' | 'camp', ms: number): void {
     if (kind === 'camp') this.store.addCamp(ms);
     else this.store.addTimer(ms);
+    const what = kind === 'camp' ? 'Named / PH timer' : 'Timer';
+    this.analytics.count(`add/${eventSlug(what)}`, `Added a ${what}`);
+  }
+
+  /**
+   * Anonymous usage counts (see Analytics): the page view, a new-visitor count on a first visit, which tools are open
+   * when the page loads (panels stay open between visits, so this is what people actually use), and each time a tool
+   * is opened, however it was opened (the toolbar, or a 📖 / 🧭 button in another panel).
+   */
+  private trackUsage(): void {
+    this.analytics.start();
+    if (this.store.firstVisit) this.analytics.count('new-visitor', 'First visit');
+    let before: Set<string> | null = null;
+    effect(() => {
+      const open = new Set(this.tools().filter((t) => t.shown).map((t) => t.label));
+      const prev = before;
+      before = open;
+      untracked(() => {
+        for (const label of open) {
+          if (!prev) this.analytics.count(`in-use/${eventSlug(label)}`, `${label} open on load`);
+          else if (!prev.has(label)) this.analytics.count(`open/${eventSlug(label)}`, `Opened ${label}`);
+        }
+      });
+    });
   }
 
   /** A saved Named / PH timer's line in the ＋ Add menu. */

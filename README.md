@@ -35,6 +35,7 @@ MnMdb, Worth the Camp, MnM Atlas), but nothing about you is sent anywhere.
 - [Pop-out window](#pop-out-window)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
+  - [Anonymous usage stats](#anonymous-usage-stats)
 - [Themes](#themes)
 - [Item suggestions when recording loot](#item-suggestions-when-recording-loot)
   - [Wiki item search (optional, local only)](#wiki-item-search-optional-local-only)
@@ -648,6 +649,21 @@ between setups such as one layout per camp:
 > Browser data can be wiped by clearing site data or using a different browser or profile. Save a layout file now
 > and then if your history matters to you.
 
+### Anonymous usage stats
+
+Your board, history, notes and lists never leave your browser. The site does count, anonymously, how it's used, so
+I know which tools matter most. It uses [GoatCounter](https://www.goatcounter.com/), which sets no cookies and
+keeps no ID for you. What's counted:
+
+- a page view (with the referring site, browser, screen size and country, as GoatCounter counts them),
+- a first visit (once per browser),
+- which tools are open when the page loads, and each time you open a tool or add a panel (just its name, like
+  "Opened Price Checker" or "Added a Timer").
+
+Nothing you type, track or save is sent. **☰ → Share anonymous usage stats** turns it off (or back on) for this
+browser. It starts off if your browser sends Do Not Track or Global Privacy Control. Running the app yourself
+(`npm start`) sends nothing.
+
 ---
 
 ## Themes
@@ -754,6 +770,7 @@ src/
     alerts.service.ts       Web Audio chimes and speech
     wiki.service.ts         Wiki partner API item search (via dev-server proxy)
     confirm.service.ts      In-app confirmation dialogs (+ confirm-dialog.ts)
+    analytics.service.ts    Anonymous usage counts (GoatCounter), live site only
     leveling/               Leveling Spots panel, Worth the Camp data and rules (archive/: the old leveling data)
     timer-card/             Timer panel, the countdown face it shares with Named / PH timers, respawn line
     camp-card/              Named / PH timer panel (countdown + PH / named kills)

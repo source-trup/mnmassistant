@@ -134,3 +134,25 @@ test.describe('quick guide', () => {
     await expect(page.locator('dialog.themes-dlg .theme-intro')).toHaveCount(0);
   });
 });
+
+test.describe('usage stats', () => {
+  test('nothing is sent off the live site, and the menu switch is remembered', async ({ page }) => {
+    const sent: string[] = [];
+    page.on('request', (r) => {
+      if (/goatcounter|gc\.zgo\.at/.test(r.url())) sent.push(r.url());
+    });
+    await page.reload();
+    await toolButton(page, 'Wiki').click();
+    await addTimer(page, 5);
+
+    const item = page.locator('#main-menu button', { hasText: 'Share anonymous usage stats' });
+    await page.getByTitle('Menu', { exact: true }).click();
+    await expect(item).toHaveText(/☑/);
+    await item.click();
+    await page.reload();
+    await page.getByTitle('Menu', { exact: true }).click();
+    await expect(item).toHaveText(/☐/);
+    expect(await page.evaluate(() => localStorage.getItem('mnm-assistant.analytics'))).toBe('off');
+    expect(sent).toEqual([]);
+  });
+});

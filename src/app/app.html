@@ -145,6 +145,12 @@
     <hr />
     <button (click)="openThemes()">🎨 Theme: {{ currentTheme().label }}…</button>
     <button (click)="store.testSound()">Test sound &amp; voice</button>
+    <button
+      (click)="analytics.setEnabled(!analytics.enabled())"
+      title="Anonymous counts of page views and which tools get opened, so I know what to improve. No cookies, and nothing you type, track or save is ever sent."
+    >
+      {{ analytics.enabled() ? '☑' : '☐' }} Share anonymous usage stats
+    </button>
     <hr />
     <button (click)="guide.open()">❔ Quick guide</button>
   </div>
