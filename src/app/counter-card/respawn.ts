@@ -1,82 +1,118 @@
 /**
- * Respawn estimates from a camp's kill log.
+ * The estimated time between spawns, from a camp's kill log.
  *
- * The log only records when the button was pressed. Pressing late (finishing a fight, looting first) makes a kill
- * look later than it was, never earlier. So:
- *  - the interval is the typical (median) cycle, not a plain average. A gap close to a whole number of cycles
- *    counts as that many (12 min on a 6 min camp is a missed spawn: two cycles of 6). Anything else is an outlier
- *    and left out: a late press (8 min on a 6 min camp), an in-between gap (9 min), a break, a double click;
- *  - the next spawn is projected from each of the last few kills by whole intervals, and the earliest projection
- *    wins. Late presses are part of that run (they're what it corrects for), so one late press doesn't push the
- *    estimate back.
+ * The log only records when the button was pressed, and a press can be late (finishing a fight, looting first) but
+ * never early. A plain average of the gaps is pulled up by every late press and wrecked by a missed spawn or a break,
+ * so instead:
+ *  1. Double presses (a few seconds apart) are merged.
+ *  2. Each gap is read as a whole number of respawns (1 to 3) of a first guess (the gap that explains the most other
+ *     gaps that way, so a log where most spawns were missed still finds the real respawn): 12 min on a 6 min
+ *     camp is two respawns, one not logged. A gap that's halfway between (9 min on a 6 min camp) or too long (a break)
+ *     can't be placed; it splits the log into separate runs and is left out.
+ *  3. Within each run every kill gets its respawn number, and every pair of kills in the run gives an interval
+ *     (time apart ÷ respawns apart). The estimate is the middle of all of those (a Theil–Sen fit). Pairs far apart
+ *     dominate, and a late press is just one point, so it shifts the estimate very little.
+ *  4. The fit is run a second time from its own result, to place gaps that the first guess got wrong.
  */
 
 export interface RespawnEstimate {
-  /** Typical time from one spawn to the next, in ms. */
+  /** Estimated time from one spawn to the next, in ms (to the second). */
   interval: number;
-  /** How many respawn cycles the interval is based on. */
+  /** How many respawns the estimate is based on. */
   cycles: number;
-  /** Gaps left out as outliers (late presses, odd gaps, breaks; double clicks aren't counted). */
+  /** Gaps left out or treated as late presses (more than 20% off a whole number of respawns; breaks included). */
   outliers: number;
-  /** When the next spawn is expected (epoch ms), from the rhythm of the last few kills. */
-  next: number;
+  /** How far a single respawn usually is from the estimate (median absolute difference, ms): late presses mostly. */
+  spread: number;
   /** The latest logged kill (epoch ms). */
   last: number;
 }
 
-/** Fewest cycles before an estimate is shown. */
+/** Fewest respawns before an estimate is shown. */
 export const MIN_CYCLES = 3;
 /** Only the most recent kills count (camps and spawn timers change). */
 const RECENT_KILLS = 40;
-/** Kills used to place the next spawn. */
-const PHASE_KILLS = 6;
 /** Gaps shorter than this are a second press for the same kill. */
 const DOUBLE_PRESS_MS = 15_000;
-/** A gap of up to this many cycles counts (spawns not logged in between); longer is a break. */
+/** A gap of up to this many respawns can be placed (spawns not logged in between); longer is a break. */
 const MAX_CYCLES_PER_GAP = 3;
-/** How far a gap may be from a whole number of cycles (as a share of one cycle) and still count. */
+/** How far a gap may be from a whole number of respawns (share of one respawn) and still be placed in its run. */
+const PLACE_TOLERANCE = 0.35;
+/** Beyond this share of a respawn, a placed gap still counts as an outlier (a late press). */
 const TOLERANCE = 0.2;
 
+interface Fit {
+  interval: number;
+  cycles: number;
+  outliers: number;
+  spread: number;
+}
+
 export function estimateRespawn(times: readonly number[]): RespawnEstimate | null {
-  const t = [...times].sort((a, b) => a - b).slice(-RECENT_KILLS);
-  const gaps: number[] = [];
-  for (let i = 1; i < t.length; i++) gaps.push(t[i] - t[i - 1]);
-  const real = gaps.filter((g) => g >= DOUBLE_PRESS_MS);
-  if (real.length < MIN_CYCLES) return null;
+  const sorted = [...times].sort((a, b) => a - b).slice(-RECENT_KILLS);
+  const kills: number[] = [];
+  for (const t of sorted) if (!kills.length || t - kills[kills.length - 1] >= DOUBLE_PRESS_MS) kills.push(t);
+  if (kills.length <= MIN_CYCLES) return null;
 
-  // A first guess from the middle gap, then each gap as whole cycles of it.
-  const rough = median(real);
-  const cyclesIn = (g: number): number => {
-    const k = Math.round(g / rough);
-    return k >= 1 && k <= MAX_CYCLES_PER_GAP && Math.abs(g / k - rough) <= TOLERANCE * rough ? k : 0;
-  };
-  // Each counted gap gives one cycle length per cycle in it; the middle one is the interval (so a single late press
-  // doesn't stretch it).
-  const lengths: number[] = [];
+  const gaps = kills.slice(1).map((t, i) => t - kills[i]);
+  let fit = fitRuns(kills, firstGuess(gaps));
+  if (fit) fit = fitRuns(kills, fit.interval) ?? fit;
+  if (!fit || fit.cycles < MIN_CYCLES) return null;
+  return { ...fit, interval: Math.round(fit.interval / 1000) * 1000, last: kills[kills.length - 1] };
+}
+
+/**
+ * The gap that explains the most other gaps as whole respawns (1 to 3 of it). On a tie the longer one wins, so a
+ * steady 10 minute camp isn't read as a 5 minute camp with every other spawn missed.
+ */
+function firstGuess(gaps: number[]): number {
+  let best = { gap: median(gaps), placed: -1, cycles: Infinity };
+  for (const c of gaps) {
+    let placed = 0;
+    let cycles = 0;
+    for (const g of gaps) {
+      const k = Math.round(g / c);
+      if (k >= 1 && k <= MAX_CYCLES_PER_GAP && Math.abs(g / k - c) <= TOLERANCE * c) {
+        placed++;
+        cycles += k;
+      }
+    }
+    if (placed > best.placed || (placed === best.placed && cycles < best.cycles)) best = { gap: c, placed, cycles };
+  }
+  return best.gap;
+}
+
+/** Splits the kills into runs whose gaps are whole respawns of `guess`, then fits one interval across all runs. */
+function fitRuns(kills: number[], guess: number): Fit | null {
+  if (!(guess > 0)) return null;
+  const runs: { t: number; n: number }[][] = [[{ t: kills[0], n: 0 }]];
+  const perCycle: number[] = [];
+  let cycles = 0;
   let outliers = 0;
-  for (const g of real) {
-    const k = cyclesIn(g);
-    if (!k) outliers++;
-    for (let i = 0; i < k; i++) lengths.push(g / k);
+  for (let i = 1; i < kills.length; i++) {
+    const g = kills[i] - kills[i - 1];
+    const k = Math.round(g / guess);
+    const run = runs[runs.length - 1];
+    if (k < 1 || k > MAX_CYCLES_PER_GAP || Math.abs(g - k * guess) > PLACE_TOLERANCE * guess) {
+      outliers++;
+      runs.push([{ t: kills[i], n: 0 }]);
+      continue;
+    }
+    if (Math.abs(g / k - guess) > TOLERANCE * guess) outliers++;
+    run.push({ t: kills[i], n: run[run.length - 1].n + k });
+    cycles += k;
+    perCycle.push(g / k);
   }
-  const cycles = lengths.length;
-  if (cycles < MIN_CYCLES) return null;
-  const interval = median(lengths);
 
-  // The latest run of kills up to a break (double presses skipped), then the earliest projection from it.
-  const last = t[t.length - 1];
-  const run = [last];
-  for (let i = t.length - 2; i >= 0 && run.length < PHASE_KILLS; i--) {
-    const g = run[run.length - 1] - t[i];
-    if (g < DOUBLE_PRESS_MS) continue;
-    if (g > (MAX_CYCLES_PER_GAP + 0.5) * interval) break;
-    run.push(t[i]);
+  const slopes: number[] = [];
+  for (const run of runs) {
+    for (let a = 0; a < run.length; a++) {
+      for (let b = a + 1; b < run.length; b++) slopes.push((run[b].t - run[a].t) / (run[b].n - run[a].n));
+    }
   }
-  let next = Infinity;
-  for (const k of run) next = Math.min(next, k + (Math.round((last - k) / interval) + 1) * interval);
-  // Never earlier than half a cycle after the last kill (a respawn can't be that quick).
-  next = Math.max(next, last + interval / 2);
-  return { interval, cycles, outliers, next: Math.round(next), last };
+  if (!slopes.length) return null;
+  const interval = median(slopes);
+  return { interval, cycles, outliers, spread: median(perCycle.map((p) => Math.abs(p - interval))) };
 }
 
 function median(xs: number[]): number {

@@ -1,6 +1,15 @@
 :host {
   display: block;
   height: 100%;
+
+  /* In-game consider colours. */
+  --con-grey: #8d929b;
+  --con-green: #4fd16b;
+  --con-lightblue: #7fdcff;
+  --con-blue: #5b8cff;
+  --con-white: #f2f2f2;
+  --con-yellow: #f4d03f;
+  --con-red: #ff5c5c;
 }
 
 .card {
@@ -13,7 +22,19 @@
   padding: 8px 10px 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
+}
+
+.wtc-link {
+  font-family: var(--font-body, inherit);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--spirit);
+  text-decoration: none;
+  white-space: nowrap;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 button:disabled {
@@ -21,25 +42,27 @@ button:disabled {
   cursor: default;
 }
 
+/* ---- class · level · solo / group ---- */
+
 .entry {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 
-  label {
-    margin-right: 2px;
-    font-family: var(--font-display);
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--muted);
+  select {
+    flex: 1 1 110px;
+    min-width: 0;
   }
-  .to {
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
+}
+
+.lvl {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
   input {
-    width: 52px;
+    width: 54px;
     text-align: center;
     font-weight: 700;
     -moz-appearance: textfield;
@@ -53,15 +76,25 @@ button:disabled {
   }
 }
 
-.cols {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
+.small {
+  padding: 2px 7px;
+  font-size: 0.8rem;
+}
+
+.seg {
+  display: inline-flex;
 
   button {
-    min-width: 25px;
-    padding: 1px 3px;
-    font-variant-numeric: tabular-nums;
+    padding: 3px 10px;
+    font-size: 0.82rem;
+    border-radius: 0;
+    &:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+    &:last-child {
+      border-radius: 0 6px 6px 0;
+      margin-left: -1px;
+    }
   }
   .on {
     color: var(--bg);
@@ -70,189 +103,209 @@ button:disabled {
   }
 }
 
-.filters {
+/* ---- what to aim for ---- */
+
+.aim {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 5px;
 
-  select {
-    flex: 1;
-    min-width: 0;
-  }
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+  p {
+    margin: 0;
     font-size: 0.82rem;
-    white-space: nowrap;
+    color: var(--muted);
   }
-}
-
-.summary {
-  font-size: 0.8rem;
-  color: var(--muted);
-
   b {
-    color: var(--spirit);
+    color: var(--bone);
+  }
+  .why {
+    font-size: 0.75rem;
+  }
+  .tier {
+    color: var(--text);
   }
 }
+
+/* The level strip: each level in its con colour, your target outlined. */
+.strip {
+  display: flex;
+  gap: 2px;
+}
+
+.cell {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: #111;
+  background: var(--c);
+  opacity: 0.45;
+
+  &.target {
+    opacity: 1;
+    outline: 2px solid var(--bone);
+    outline-offset: -2px;
+  }
+  &.named {
+    opacity: 0.8;
+    outline: 1px dashed var(--bone);
+    outline-offset: -2px;
+  }
+  &.you {
+    text-decoration: underline;
+  }
+}
+
+.con-grey { --c: var(--con-grey); }
+.con-green { --c: var(--con-green); }
+.con-lightblue { --c: var(--con-lightblue); }
+.con-blue { --c: var(--con-blue); }
+.con-white { --c: var(--con-white); }
+.con-yellow { --c: var(--con-yellow); }
+.con-red { --c: var(--con-red); }
+
+/* ---- zones ---- */
 
 .list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--input-bg) 70%, transparent);
+  padding: 0 2px;
+}
+
+.hint,
+.summary {
+  margin: 8px 2px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.summary {
+  margin: 0 2px 6px;
+  font-size: 0.75rem;
 }
 
 .zone {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--input-bg) 60%, transparent);
+  overflow: hidden;
+}
+
+.zh {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
-  padding: 3px 8px;
-  background: var(--panel);
+  padding: 4px 6px 4px 8px;
+  background: color-mix(in srgb, var(--spirit) 8%, transparent);
   border-bottom: 1px solid var(--border);
 
   .zn {
     font-family: var(--font-display);
     font-weight: 700;
     color: var(--bone);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .za {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--spirit);
-  }
-  .map {
-    flex: none;
-    padding: 0 3px;
-    font-size: 0.85rem;
-    line-height: 1.2;
-  }
-  .zr {
-    margin-left: auto;
+  .hub {
+    padding: 0 5px;
+    border-radius: 8px;
     font-size: 0.68rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
     color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .zc {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  a.icon {
+    text-decoration: none;
+    color: var(--spirit);
   }
 }
 
 ul {
   list-style: none;
   margin: 0;
-  padding: 2px 0 4px;
+  padding: 3px 8px 4px;
 }
 
 li {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 8px 2px 14px;
-  font-size: 0.84rem;
+  padding: 2px 0;
+  font-size: 0.82rem;
 
-  .cn {
-    flex: 1;
+  .dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .nn {
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+    text-decoration: none;
+    &:hover {
+      color: var(--spirit);
+      text-decoration: underline;
+    }
   }
-  .lv {
-    flex: none;
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .badge {
-    flex: none;
-    padding: 0 6px;
-    border-radius: 8px;
-    font-size: 0.66rem;
-    font-weight: 800;
-    line-height: 16px;
-    color: var(--bg);
-    background: var(--done);
-  }
-  &.raid .cn {
-    color: var(--bone);
-  }
-}
-
-.spots {
-  padding-top: 0;
-}
-
-li.spot {
-  display: block;
-  margin: 2px 8px 4px 10px;
-  padding: 4px 8px;
-  border-left: 2px solid var(--named);
-  border-radius: 0 4px 4px 0;
-  background: color-mix(in srgb, var(--named) 6%, transparent);
-  font-size: 0.8rem;
-
-  .top {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-  }
-  .tag {
+  .named {
     flex: none;
     padding: 0 5px;
-    border-radius: 6px;
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    border-radius: 8px;
+    font-size: 0.68rem;
     color: var(--named);
-    border: 1px solid color-mix(in srgb, var(--named) 50%, transparent);
+    background: var(--named-bg);
   }
-  .area {
+  .nl {
+    margin-left: auto;
+    flex: none;
     font-weight: 700;
-    color: var(--bone);
+    font-variant-numeric: tabular-nums;
+    color: var(--c);
   }
-  .lvls {
+  .nd {
+    flex: none;
+    width: 52px;
+    text-align: right;
     font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--spirit);
-  }
-  .mobs {
-    color: var(--text);
-  }
-  .notes {
-    font-size: 0.74rem;
-    font-style: italic;
     color: var(--muted);
   }
 }
 
-.hint {
-  margin: 10px;
-  font-size: 0.82rem;
-  color: var(--muted);
+.more {
+  display: block;
+  margin: 0 8px 6px auto;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  background: none;
+  border-color: transparent;
+  color: var(--spirit);
 }
 
 .credit {
-  margin: 0 12px 0 0; /* keep clear of the resize corner */
+  margin: 0;
   font-size: 0.68rem;
+  line-height: 1.35;
   color: var(--muted);
 
   a {
-    color: inherit;
+    color: var(--spirit);
   }
-}
-
-/* Wiki lookup on a camp row: shows on hover. */
-li .wk {
-  flex: none;
-  padding: 0 3px;
-  font-size: 0.75rem;
-  line-height: 1.2;
-  visibility: hidden;
-}
-li:hover .wk,
-li .wk:focus-visible {
-  visibility: visible;
 }

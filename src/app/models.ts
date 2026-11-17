@@ -35,8 +35,6 @@ interface CounterBase extends GridPos, Sized {
   name: string;
   /** Epoch ms of the last reset, used for per-hour rates and "session" stats. */
   since: number;
-  /** Timer to restart whenever this counter is incremented via its main buttons. */
-  linkedTimerId: string | null;
 }
 
 /** A single number starting at 0. */
@@ -65,11 +63,19 @@ export interface CampEvent {
 }
 
 /**
- * Tracks named spawns vs placeholder spawns at a camp. The kill history lives in a CampLog: the named NPC's log
- * when the counter is linked to a timer you've named (e.g. "Grimfang"), otherwise the counter's own log.
+ * A Named / PH timer: one panel with the camp's respawn countdown and its named vs placeholder kills. + PH and
+ * + Named restart the countdown. The kill history lives in a CampLog: the named NPC's log once the camp has a name
+ * of your own (e.g. "Grimfang"), otherwise the camp's own log.
  */
 export interface NamedPhCounter extends CounterBase {
   kind: 'namedPh';
+  /**
+   * The camp's countdown. It's kept in the timers list (so it alerts like any timer) but only ever shown inside this
+   * panel; its name is the camp's name.
+   */
+  timerId: string;
+  /** Put away: kept (counts, countdown length, kill log) but not shown on the board. Reopen it from ＋ Add. */
+  closed: boolean;
   ph: number;
   named: number;
   /** Placeholders killed since the last named. */
@@ -188,15 +194,12 @@ export interface LevelingPanel extends GridPos {
   shown: boolean;
   w: number;
   h: number;
-  /** Level, or the low end of a range; null = nothing picked yet. */
-  from: number | null;
-  /** High end of a range; null = a single level. */
-  to: number | null;
-  /** Region filter; null = all regions. */
-  region: string | null;
-  raids: boolean;
-  /** Which data to show: the leveling sheet's camps, the wiki hunting guide's spots, or both. */
-  source: 'both' | 'sheet' | 'guide';
+  /** Your class, as Worth the Camp names it ("Shaman"); null = follow the theme's class. */
+  cls: string | null;
+  /** Your level; null = nothing picked yet. */
+  level: number | null;
+  /** Hunting alone or with a group. */
+  mode: 'solo' | 'group';
 }
 
 /** The single Map panel (MnM Atlas embed): position, size, visibility and what it's showing. */
@@ -243,6 +246,29 @@ export interface WikiPanel extends GridPos {
   page: string | null;
 }
 
+/** An item on the wishlist. Stats and sources come from MnMdb and the wikis; `from` is what you typed yourself. */
+export interface WishItem {
+  id: string;
+  name: string;
+  /** Where it drops or how to get it, in your own words (shown when MnMdb has nothing, or alongside it). */
+  from: string;
+  /** Its page on monstersandmemories.wiki, when known (found by the wiki's item search, or pasted in). */
+  wikiUrl: string | null;
+  /** Got it: kept on the list, struck through, at the bottom. */
+  got: boolean;
+  added: number;
+}
+
+/** The single Wishlist panel: position, size, visibility and the list itself. */
+export interface WishlistPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  items: WishItem[];
+  /** Hide items you've got. */
+  hideGot: boolean;
+}
+
 /** A span of game hours to watch, e.g. a named that only spawns at night (22 → 4). */
 export interface GameWindow {
   id: string;
@@ -282,6 +308,7 @@ export interface AppState {
   classPanel: ClassPanel;
   pricePanel: PricePanel;
   wikiPanel: WikiPanel;
+  wishlistPanel: WishlistPanel;
   gameClock: GameClockSettings;
   soundOn: boolean;
   theme: Theme;

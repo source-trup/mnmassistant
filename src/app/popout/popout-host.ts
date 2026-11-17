@@ -4,7 +4,7 @@ import { ConfirmDialog } from '../confirm-dialog';
 import { CounterCard } from '../counter-card/counter-card';
 import { LootPrompt } from '../loot/loot-prompt';
 import { TimerCard } from '../timer-card/timer-card';
-import { LinkedPopCard } from './linked-pop-card';
+import { CampPopCard } from './camp-pop-card';
 import { PopoutService } from './popout.service';
 
 const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
@@ -15,7 +15,7 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
  */
 @Component({
   selector: 'app-popout-host',
-  imports: [TimerCard, CounterCard, BuffCard, LinkedPopCard, ConfirmDialog, LootPrompt],
+  imports: [TimerCard, CounterCard, BuffCard, CampPopCard, ConfirmDialog, LootPrompt],
   template: `
     @if (popout.mode(); as mode) {
       @if (mode === 'window' && showHint()) {
@@ -34,8 +34,8 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
       }
       <div class="list">
         @for (u of popout.units(); track u.kind + u.id) {
-          @if (u.kind === 'linked') {
-            <app-linked-pop-card [timer]="u.timer" [counters]="u.counters" />
+          @if (u.kind === 'camp') {
+            <app-camp-pop-card [camp]="u.camp" />
           } @else {
             <div class="pop-panel" [style.height.px]="u.height">
               @switch (u.panel.kind) {
@@ -43,7 +43,9 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
                   <app-timer-card [timer]="u.panel.item" />
                 }
                 @case ('counter') {
-                  <app-counter-card [counter]="u.panel.item" />
+                  @if (u.panel.item.kind === 'standard') {
+                    <app-counter-card [counter]="u.panel.item" />
+                  }
                 }
                 @case ('buffs') {
                   <app-buff-card [panel]="u.panel.item" />

@@ -3,7 +3,7 @@ import { atlasMapForZone } from '../map/atlas-maps';
 import { PricePanel } from '../models';
 import { formatAgo } from '../time';
 import { TrackerStore } from '../tracker.store';
-import { Listing, MARKET_SERVER, MNMDB_URL, PriceItem, PriceService, coin, median, slotName } from './price.service';
+import { Listing, MARKET_SERVER, MNMDB_URL, PriceItem, PriceService, coin, itemSources, itemStatLines, median, mnmdbItemUrl } from './price.service';
 
 
 /** Price checker: Trem auction asks and bids, NPC vendor value, and where an item comes from (data from MnMdb). */
@@ -140,36 +140,9 @@ export class PricesCard {
   protected readonly listings = computed(() => (this.listTab() === 'sell' ? this.inWindow().asks : this.inWindow().bids));
 
   /** The item's stat lines ("AC 22", "STR +2", "HP +10"…). */
-  protected readonly statLines = computed(() => {
-    const i = this.item()?.info;
-    if (!i) return [];
-    const out: string[] = [];
-    if (i.slot) out.push(slotName(i.slot));
-    if (i.ac) out.push(`AC ${i.ac}`);
-    if (i.dmg && i.delay) out.push(`${i.dmg}/${i.delay} dmg/delay`);
-    for (const [k, v] of Object.entries(i.stats)) out.push(`${k} ${v > 0 ? '+' : ''}${v}`);
-    if (i.hp) out.push(`HP +${i.hp}`);
-    if (i.mana) out.push(`Mana +${i.mana}`);
-    if (i.haste) out.push(`Haste ${i.haste}%`);
-    for (const [k, v] of Object.entries(i.resists)) out.push(`${k} resist +${v}`);
-    return out;
-  });
+  protected readonly statLines = computed(() => itemStatLines(this.item()?.info));
 
-  protected readonly sources = computed(() => {
-    const it = this.item();
-    if (!it) return { drops: [] as { mob: string; rate: number | null }[], zones: [] as string[] };
-    const drops = it.droppedBy.length
-      ? it.droppedBy.slice(0, 6).map((d) => ({ mob: d.mob, rate: d.corpses >= 5 ? d.rate : null }))
-      : (it.info?.from ?? []).slice(0, 6).map((mob) => ({ mob, rate: null }));
-    // MnMdb's two files spell zones differently ("Fallen Pass" / "Fallenpass"): keep one of each, preferring the spaced one.
-    const byKey = new Map<string, string>();
-    for (const z of [...(it.info?.zones ?? []), ...it.zones]) {
-      const key = z.toLowerCase().replace(/[^a-z]/g, '');
-      const had = byKey.get(key);
-      if (!had || (z.includes(' ') && !had.includes(' '))) byKey.set(key, z);
-    }
-    return { drops, zones: [...byKey.values()] };
-  });
+  protected readonly sources = computed(() => itemSources(this.item()));
 
   // ---------- display helpers ----------
 
@@ -196,6 +169,6 @@ export class PricesCard {
   }
 
   protected itemUrl(it: PriceItem): string {
-    return `${MNMDB_URL}#/item/${encodeURIComponent(it.id)}`;
+    return mnmdbItemUrl(it);
   }
 }

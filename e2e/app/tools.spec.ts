@@ -1,8 +1,8 @@
-import { expect, openTool, savedState, test } from '../support/fixtures';
+import { expect, loadState, openTool, savedState, test } from '../support/fixtures';
 
 test.describe('level range', () => {
   test('shows the lowest and highest partners', async ({ page }) => {
-    await openTool(page, 'Level range');
+    await openTool(page, 'Group Range');
     const card = page.locator('app-level-range-card');
     await card.locator('.entry input').fill('18');
     await expect(card.locator('.say')).toHaveText('Level 18 can group with levels 13 to 26.');
@@ -67,7 +67,7 @@ test.describe('spells: bought', () => {
 
 test.describe('classes', () => {
   test('starts on the theme class and switches tabs', async ({ page }) => {
-    await openTool(page, 'Classes');
+    await openTool(page, 'Class Guides');
     const card = page.locator('app-classes-card');
     await card.locator('.snap h3').waitFor(); // classes.json is large; the busy test server can be slow with it
     await expect(card.locator('.snap h3')).toHaveText('Shaman');
@@ -78,13 +78,63 @@ test.describe('classes', () => {
   });
 });
 
-test.describe('leveling', () => {
-  test('a bracket lists camps by zone', async ({ page }) => {
-    await openTool(page, 'Leveling');
+test.describe('leveling spots (Worth the Camp)', () => {
+  test('class, level and solo / group give zones whose mobs con right, best first', async ({ page }) => {
+    await openTool(page, 'Leveling Spots');
     const card = page.locator('app-leveling-card');
-    await card.locator('.cols button', { hasText: /^15$/ }).click();
-    await expect(card.locator('.summary')).toContainText('Levels 15–19');
-    await expect(card.locator('.zone').first()).toBeVisible();
+    // The class follows the theme (Shaman) until you pick one.
+    await expect(card.getByLabel('Class')).toHaveValue('Shaman');
+    await expect(card.locator('.hint')).toContainText('Type your level');
+    await card.getByLabel('Your level').fill('20');
+
+    // Shaman solos well (tier A): mobs 3 to 1 below, named 2 lower still.
+    await expect(card.locator('.aim p')).toContainText('Aim for mobs 17–19, named 15–17');
+    await expect(card.locator('.aim p')).toContainText('Shaman solos well (solo tier A)');
+    await expect(card.locator('.strip .cell.target')).toHaveText(['17', '18', '19']);
+    await expect(card.locator('.strip .cell', { hasText: /^20$/ })).toHaveClass(/con-white/);
+
+    // Raid bosses and mobs without known levels are left out; a city counts for less.
+    await expect(card.locator('.zone .zn')).toHaveText(['Blind Midden', 'Night Harbor', 'Tel Ekir']);
+    await expect(card.locator('.summary')).toHaveText('6 mobs in 3 zones, best first');
+    const midden = card.locator('.zone').first();
+    await expect(midden.locator('li .nn')).toHaveText(['A mud gnoll', 'A gnoll digger', 'Ferg the Filthy']); // regulars, then named
+    await expect(midden.locator('.zc')).toHaveText('3 mobs · zone 5–19');
+    await expect(midden.locator('li', { hasText: 'Ferg' }).locator('.named')).toHaveText('Named');
+    const gnoll = midden.locator('li', { hasText: 'A mud gnoll' });
+    await expect(gnoll.locator('.nl')).toHaveText('17–18');
+    await expect(gnoll.locator('.nd')).toHaveText('3 drops');
+    await expect(midden.locator('li', { hasText: 'A gnoll digger' }).locator('.dot')).toHaveClass(/con-blue/);
+    await expect(midden.locator('a.icon')).toHaveAttribute('href', 'https://worththecamp.com/npcs/blind-midden');
+    await expect(card.locator('.zone', { hasText: 'Night Harbor' }).locator('.hub')).toBeVisible();
+
+    // The same choices on Worth the Camp's own page.
+    await expect(card.getByRole('link', { name: 'Worth the Camp ↗' })).toHaveAttribute(
+      'href',
+      'https://worththecamp.com/leveling?cls=Shaman&lvl=20&mode=solo',
+    );
+
+    // A class that finds soloing hard aims lower; a group aims above you.
+    await card.getByLabel('Class').selectOption('Fighter');
+    await card.getByLabel('Your level').fill('25');
+    await expect(card.locator('.aim p')).toContainText('Aim for mobs 19–21, named 17–19');
+    await card.getByRole('button', { name: 'Group' }).click();
+    await expect(card.locator('.aim p')).toContainText('Aim for mobs 27–28, named 25–26');
+    await expect(card.getByRole('link', { name: 'Worth the Camp ↗' })).toHaveAttribute('href', /cls=Fighter&lvl=25&mode=group/);
+
+    // Remembered, and the data is kept in this browser (it's downloaded at most once a day).
+    const s = await savedState(page);
+    expect(s.levelingPanel).toMatchObject({ cls: 'Fighter', level: 25, mode: 'group' });
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('mnm-assistant.wtc.v1') ?? 'null')?.npcs.length)).toBe(10);
+  });
+
+  test("a board from before keeps its level; Worth the Camp being down says so", async ({ page }) => {
+    await page.route('https://worththecamp.com/api/v1/*.json', (route) => route.fulfill({ status: 503 }));
+    const s = await savedState(page);
+    await loadState(page, { ...s, levelingPanel: { shown: true, from: 15, to: 19, region: null, raids: true, source: 'both', x: 0, y: 0 } });
+    const card = page.locator('app-leveling-card');
+    await expect(card.getByLabel('Your level')).toHaveValue('15');
+    await expect(card.locator('.hint')).toContainText("Couldn't reach Worth the Camp");
+    await expect(card.locator('.hint a')).toHaveAttribute('href', /lvl=15&mode=solo/);
   });
 });
 
@@ -150,7 +200,7 @@ test.describe('map', () => {
 
 test.describe('prices', () => {
   test('Trem market summary, window and vendor value', async ({ page }) => {
-    await openTool(page, 'Prices');
+    await openTool(page, 'Price Checker');
     const card = page.locator('app-prices-card');
     const box = card.getByLabel('Item to price check');
     await expect(box).toBeEnabled();
@@ -191,7 +241,7 @@ test.describe('wiki', () => {
   });
 
   test('📖 buttons elsewhere look things up', async ({ page }) => {
-    await openTool(page, 'Classes');
+    await openTool(page, 'Class Guides');
     await page.locator('app-classes-card .snap .wk').click();
     await expect(page.locator('app-wiki-card .ptitle')).toHaveText('Shaman');
   });

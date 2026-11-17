@@ -97,9 +97,16 @@ test.describe('game clock (toolbar)', () => {
     await expect(page.locator('#clock-pop .credit')).toContainText("Couldn't reach the wiki");
   });
 
-  test('the toolbar still fits on one row at 1280px', async ({ page }) => {
+  test('the toolbar: one row on a wide screen; at 1280px the tools get a single row of their own', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 900 });
+    expect((await page.locator('header').boundingBox())!.height).toBeLessThan(70);
     await page.setViewportSize({ width: 1280, height: 800 });
     const header = (await page.locator('header').boundingBox())!;
-    expect(header.height).toBeLessThan(70);
+    expect(header.height).toBeLessThan(110);
+    const tools = page.locator('nav.tools .tool');
+    const first = (await tools.first().boundingBox())!;
+    const last = (await tools.last().boundingBox())!;
+    expect(Math.abs(first.y - last.y)).toBeLessThan(2); // every tool on the one row
+    expect(first.y).toBeGreaterThan((await page.locator('.brand').boundingBox())!.y + 20);
   });
 });

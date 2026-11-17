@@ -45,7 +45,7 @@ export class CampHistory {
     const gaps: number[] = [];
     for (let i = 1; i < ev.length; i++) gaps.push(ev[i].t - ev[i - 1].t);
     const median = gaps.length ? [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)] : null;
-    // The same average the linked timer shows (late and missed presses allowed for); the plain median until there
+    // The same estimate the Named / PH timer shows (late and missed presses allowed for); the plain median until there
     // are enough kills for it.
     const avg = estimateRespawn(ev.map((e) => e.t))?.interval ?? median;
 

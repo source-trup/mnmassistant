@@ -1,20 +1,39 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { LEVEL_CAP } from '../level-range/level-range';
-import { LevelingPanel } from '../models';
 import { atlasMapForZone } from '../map/atlas-maps';
+import { LevelingPanel } from '../models';
+import { formatAgo } from '../time';
 import { TrackerStore } from '../tracker.store';
-import { HUNTING_GUIDE, HuntingSpot, LEVELING_COLUMNS, LEVELING_ZONES, LevelingCamp, LevelingZone } from './leveling-data';
+import { WTC_URL, WorthTheCampService } from './worth-the-camp.service';
+import {
+  CON_LABEL,
+  Con,
+  LevelingMode,
+  SoloTier,
+  ZoneMatch,
+  conOf,
+  levelingPlan,
+  targetFor,
+  wtcLevelingUrl,
+  wtcNpcUrl,
+  wtcZoneUrl,
+} from './wtc-leveling';
 
-export const LEVELING_SHEET_URL =
-  'https://docs.google.com/spreadsheets/d/1z3O-QkdgvAwUXrCVF3fRQRBGxXxDq6FcoipuA52sdl0/edit?gid=1120375141#gid=1120375141';
+/** NPC lines shown per zone before "+N more". */
+const SHOWN = 6;
 
-interface ZoneMatch {
-  zone: LevelingZone;
-  camps: LevelingCamp[];
-  spots: HuntingSpot[];
-}
+const TIER_TEXT: Record<SoloTier, string> = {
+  S: 'solos very well',
+  A: 'solos well',
+  B: 'solos fairly well',
+  C: 'finds soloing hard',
+  D: 'finds soloing very hard',
+};
 
-/** Where to level: pick a level or a level range and see the zones and camps that suit it. */
+/**
+ * Leveling Spots: pick your class, level and solo or group, and see the zones whose mobs con right for you, from
+ * Worth the Camp's NPC data (adapted from the community wiki, CC BY-SA 4.0).
+ */
 @Component({
   selector: 'app-leveling-card',
   templateUrl: './leveling-card.html',
@@ -23,108 +42,122 @@ interface ZoneMatch {
 export class LevelingCard {
   readonly panel = input.required<LevelingPanel>();
   protected readonly store = inject(TrackerStore);
+  protected readonly wtc = inject(WorthTheCampService);
 
   protected readonly CAP = LEVEL_CAP;
-  protected readonly SHEET = LEVELING_SHEET_URL;
-  protected readonly GUIDE = HUNTING_GUIDE.url;
-  protected readonly columns = LEVELING_COLUMNS;
-  protected readonly regions = [...new Set(LEVELING_ZONES.map((z) => z.region))];
+  protected readonly WTC = WTC_URL;
+  protected readonly SHOWN = SHOWN;
+  protected readonly conLabel = CON_LABEL;
 
-  /** The chosen range, low to high; null until a level is picked. */
-  protected readonly range = computed(() => {
-    const { from, to } = this.panel();
-    if (from === null) return null;
-    const hi = to ?? from;
-    return { lo: Math.min(from, hi), hi: Math.max(from, hi) };
+  constructor() {
+    void this.wtc.load();
+  }
+
+  protected readonly classes = computed(() => this.wtc.data()?.classes ?? []);
+
+  /** The class picked, or the theme's class when none is. */
+  protected readonly cls = computed(() => {
+    const list = this.classes();
+    const want = (this.panel().cls ?? this.store.theme()).toLowerCase();
+    return list.find((c) => c.name.toLowerCase() === want) ?? null;
   });
 
-  protected readonly label = computed(() => {
-    const r = this.range();
-    if (!r) return '';
-    return r.lo === r.hi ? `Level ${r.lo}` : `Levels ${r.lo}–${r.hi}`;
+  protected readonly mode = computed<LevelingMode>(() => this.panel().mode);
+  protected readonly level = computed(() => this.panel().level);
+
+  /** Group targets don't depend on the class; solo needs its tier. */
+  protected readonly tier = computed<SoloTier | null>(() => (this.mode() === 'group' ? 'B' : (this.cls()?.tier ?? null)));
+
+  protected readonly target = computed(() => {
+    const lvl = this.level();
+    const tier = this.tier();
+    return lvl !== null && tier ? targetFor(lvl, this.mode(), tier) : null;
   });
 
-  protected readonly matches = computed<ZoneMatch[]>(() => {
-    const r = this.range();
-    if (!r) return [];
-    const { region, raids, source } = this.panel();
-    const fits = (x: { min: number; max: number }) => x.min <= r.hi && x.max >= r.lo;
-    return LEVELING_ZONES.filter((z) => !region || z.region === region)
-      .map((zone) => ({
-        zone,
-        camps: source === 'guide' ? [] : zone.camps.filter((c) => fits(c) && (raids || !c.raid)),
-        spots: source === 'sheet' ? [] : zone.spots.filter(fits),
-      }))
-      .filter((m) => m.camps.length || m.spots.length);
+  protected readonly zones = computed<ZoneMatch[]>(() => {
+    const data = this.wtc.data();
+    const lvl = this.level();
+    const tier = this.tier();
+    return data && lvl !== null && tier ? levelingPlan(data.npcs, lvl, this.mode(), tier) : [];
   });
 
-  protected readonly campCount = computed(() => this.matches().reduce((n, m) => n + m.camps.length, 0));
-  protected readonly spotCount = computed(() => this.matches().reduce((n, m) => n + m.spots.length, 0));
+  protected readonly mobCount = computed(() => this.zones().reduce((n, z) => n + z.npcs.length, 0));
 
-  protected setSource(value: string): void {
-    this.store.updateLevelingPanel({ source: value === 'sheet' || value === 'guide' ? value : 'both' });
-  }
-
-  /** "Solo 17+ · Group 10-15" from the guide's own level text. */
-  protected spotLevels(s: HuntingSpot): string {
-    const parts = [s.solo && `Solo ${s.solo}`, s.group && `Group ${s.group}`].filter(Boolean);
-    return parts.length ? parts.join(' · ') : `Levels ${s.min}–${s.max}`;
-  }
-
-  // ---------- filters ----------
-
-  private parse(value: string): number | null {
-    const n = parseInt(value, 10);
-    return Number.isFinite(n) && n >= 1 ? Math.min(n, LEVEL_CAP) : null;
-  }
-
-  protected setFrom(box: HTMLInputElement): void {
-    const n = this.parse(box.value);
-    if (n !== null && String(n) !== box.value) box.value = String(n);
-    this.store.updateLevelingPanel({ from: n, ...(n === null ? { to: null } : {}) });
-  }
-
-  protected setTo(box: HTMLInputElement): void {
-    const n = this.parse(box.value);
-    if (n !== null && String(n) !== box.value) box.value = String(n);
-    this.store.updateLevelingPanel({ to: n });
-  }
-
-  /** One of the sheet's level columns: that whole bracket (e.g. 15 → 15–19). */
-  protected pickColumn(col: number): void {
-    const next = this.columns.find((c) => c > col);
-    this.store.updateLevelingPanel({ from: col, to: next ? next - 1 : null });
-  }
-
-  protected isColumn(col: number): boolean {
-    const r = this.range();
-    const next = this.columns.find((c) => c > col);
-    return !!r && r.lo === col && r.hi === (next ? next - 1 : col);
-  }
-
-  /** −1 / +1 moves a single level, or slides a whole range. */
-  protected step(dir: -1 | 1): void {
-    const { from, to } = this.panel();
-    if (from === null) {
-      this.store.updateLevelingPanel({ from: dir > 0 ? 1 : LEVEL_CAP });
-      return;
+  /** The level strip: from 6 below to 4 above your level, each with its con colour; the target ones are marked. */
+  protected readonly strip = computed(() => {
+    const lvl = this.level();
+    const t = this.target();
+    if (lvl === null || !t) return [];
+    const out: { level: number; con: Con; target: boolean; named: boolean }[] = [];
+    for (let l = Math.max(1, lvl - 6); l <= Math.min(LEVEL_CAP + 5, lvl + 4); l++) {
+      out.push({ level: l, con: conOf(l, lvl), target: l >= t.lo && l <= t.hi, named: l >= t.namedLo && l <= t.namedHi });
     }
-    const clamp = (n: number) => Math.min(LEVEL_CAP, Math.max(1, n));
-    const r = this.range()!;
-    if ((dir < 0 && r.lo <= 1) || (dir > 0 && r.hi >= LEVEL_CAP)) return;
-    this.store.updateLevelingPanel({ from: clamp(from + dir), to: to === null ? null : clamp(to + dir) });
+    return out;
+  });
+
+  protected readonly tierText = computed(() => {
+    const c = this.cls();
+    return c ? `${c.name} ${TIER_TEXT[c.tier]} (solo tier ${c.tier})` : '';
+  });
+
+  protected readonly wtcPageUrl = computed(() => wtcLevelingUrl(this.cls()?.name ?? null, this.level(), this.mode()));
+
+  protected readonly updated = computed(() => {
+    const d = this.wtc.data();
+    return d ? formatAgo(this.store.now() - d.fetchedAt) : '';
+  });
+
+  /** Zones opened past their first few NPCs. */
+  protected readonly expanded = signal<ReadonlySet<string>>(new Set());
+
+  protected isExpanded(zone: string): boolean {
+    return this.expanded().has(zone);
   }
 
-  protected setRegion(value: string): void {
-    this.store.updateLevelingPanel({ region: value || null });
+  protected toggleZone(zone: string): void {
+    const next = new Set(this.expanded());
+    if (!next.delete(zone)) next.add(zone);
+    this.expanded.set(next);
   }
 
-  /** The MnM Atlas map for a zone, if the atlas has one. */
-  protected atlasId(z: LevelingZone): string | null {
-    return atlasMapForZone(z.name)?.id ?? null;
+  // ---------- inputs ----------
+
+  protected setClass(value: string): void {
+    this.store.updateLevelingPanel({ cls: value || null });
   }
 
-  protected bracket(c: LevelingCamp): string {
-    return c.min === c.max ? `${c.min}` : `${c.min}–${c.max}`;
+  protected setMode(mode: LevelingMode): void {
+    this.store.updateLevelingPanel({ mode });
+  }
+
+  protected setLevel(box: HTMLInputElement): void {
+    const n = parseInt(box.value, 10);
+    const level = Number.isFinite(n) && n >= 1 ? Math.min(n, LEVEL_CAP) : null;
+    if (level !== null && String(level) !== box.value) box.value = String(level);
+    this.store.updateLevelingPanel({ level });
+  }
+
+  protected step(dir: -1 | 1): void {
+    const lvl = this.level();
+    const next = lvl === null ? (dir > 0 ? 1 : LEVEL_CAP) : Math.min(LEVEL_CAP, Math.max(1, lvl + dir));
+    this.store.updateLevelingPanel({ level: next });
+  }
+
+  // ---------- display ----------
+
+  protected levels(lo: number, hi: number): string {
+    return lo === hi ? `${lo}` : `${lo}–${hi}`;
+  }
+
+  protected atlasId(zone: string): string | null {
+    return atlasMapForZone(zone)?.id ?? null;
+  }
+
+  protected zoneUrl(zone: string): string {
+    return wtcZoneUrl(zone, this.wtc.data()?.zones ?? []);
+  }
+
+  protected npcUrl(id: string): string {
+    return wtcNpcUrl(id);
   }
 }

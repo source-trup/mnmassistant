@@ -1,0 +1,118 @@
+:host {
+  display: block;
+  height: 100%;
+  /* The clock and counts grow with the panel when it's resized (cqw / cqh are % of the panel's width / height). */
+  container-type: size;
+}
+
+.card {
+  --accent: var(--named);
+  --face-clock: clamp(2.4rem, min(14cqw, 12cqh), 7rem);
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  &[data-status='running'] { --accent: var(--running); }
+  &[data-status='paused'] { --accent: var(--paused); }
+  &[data-status='done'] {
+    --accent: var(--done);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    background: var(--done-bg);
+    box-shadow: 0 0 22px rgb(255 107 107 / 0.35);
+  }
+}
+
+.stats {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.big {
+  font-size: clamp(1.8rem, min(11cqw, 9cqh), 6rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+
+  &.ph { color: var(--counter); }
+  &.named { color: var(--named); }
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.kills {
+  display: flex;
+  gap: 6px;
+}
+
+.kill {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 4px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.ph {
+    background: var(--counter-bg);
+    border-color: var(--counter);
+  }
+  &.named {
+    background: var(--named-bg);
+    border-color: var(--named);
+  }
+  .re {
+    opacity: 0.7;
+  }
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rate {
+  flex: 1;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.small {
+  padding: 2px 8px;
+  font-size: 0.8rem;
+}

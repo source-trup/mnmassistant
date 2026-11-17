@@ -6,8 +6,9 @@ import { ConfirmDialog } from './confirm-dialog';
 import { LootPrompt } from './loot/loot-prompt';
 import { ConfirmService } from './confirm.service';
 import { CounterCard } from './counter-card/counter-card';
+import { CampCard } from './camp-card/camp-card';
 import { GRID, maxX } from './layout';
-import { NoteItem } from './models';
+import { NamedPhCounter, NoteItem } from './models';
 import { NoteCard } from './note-card/note-card';
 import { LevelRangeCard } from './level-range/level-range-card';
 import { PlayerListCard } from './player-list/player-list-card';
@@ -17,12 +18,13 @@ import { MapCard } from './map/map-card';
 import { ClassesCard } from './classes/classes-card';
 import { PricesCard } from './prices/prices-card';
 import { WikiCard } from './community-wiki/wiki-card';
+import { WishlistCard } from './wishlist/wishlist-card';
 import { QuickGuide } from './quick-guide/quick-guide';
 import { HeaderClock } from './game-clock/header-clock';
 import { PopoutHost } from './popout/popout-host';
 import { PopoutService } from './popout/popout.service';
 import { THEMES, themeById } from './themes';
-import { parseDuration } from './time';
+import { formatDuration, parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
 import { PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
 
@@ -56,9 +58,17 @@ interface DragState {
   offY: number;
 }
 
+function wishCount(n: number): string {
+  return n ? `${n} on your list.` : '';
+}
+
+function playerCount(n: number): string {
+  return n ? `${n} on the list.` : 'No one on it yet.';
+}
+
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, CounterCard, CampCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, WishlistCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -70,51 +80,52 @@ export class App {
 
   protected readonly GRID = GRID;
   protected readonly quickMinutes = [5, 6, 8, 10];
-  protected readonly customError = signal(false);
+  /** Which custom-length box last had a bad entry ('timer' or 'camp'). */
+  protected readonly customError = signal<'timer' | 'camp' | null>(null);
 
-  /** The "＋ Add" menu: panels you can add as many of as you like. */
+  /**
+   * The tools, always in the toolbar: one-of-a-kind panels you show or hide with a click. Lookups first (most used),
+   * then the player lists.
+   */
+  protected readonly tools = computed(() => {
+    const s = this.store;
+    const lists = s.listPanels();
+    const players = s.players();
+    const tool = (icon: string, label: string, hint: string, shown: boolean, toggle: () => void, group: 'ref' | 'players' = 'ref') => ({
+      icon,
+      label,
+      hint,
+      shown,
+      toggle,
+      group,
+    });
+    return [
+      tool('📖', 'Wiki', 'Search the community wiki and read its pages right here.', s.wikiPanel().shown, () => s.toggleWiki()),
+      tool('🧭', 'Map', 'Zone maps from MnM Atlas. Zoom in, or find an NPC on any map.', s.mapPanel().shown, () => s.toggleMap()),
+      tool('💰', 'Price Checker', 'What an item sells for on Trem, what buyers offer and what a vendor pays.', s.pricePanel().shown, () => s.togglePrices()),
+      tool('⭐', 'Wishlist', `Items you're after, with their stats, who drops them and wiki links. ${wishCount(s.wishlistPanel().items.filter((i) => !i.got).length)}`, s.wishlistPanel().shown, () => s.toggleWishlist()),
+      tool('🗺️', 'Leveling Spots', 'Pick your class and level to see the zones and mobs that con right for you, solo or in a group (Worth the Camp).', s.levelingPanel().shown, () => s.toggleLeveling()),
+      tool('🪄', 'Spells', "Every spell by class and level, and what a level's spells cost.", s.spellPanel().shown, () => s.toggleSpells()),
+      tool('🛡️', 'Class Guides', 'How to play each class: builds, key abilities, leveling and gear.', s.classPanel().shown, () => s.toggleClasses()),
+      tool('📊', 'Group Range', 'Enter a level to see the lowest and highest levels it can group with.', s.levelPanel().shown, () => s.toggleLevels()),
+      ...PLAYER_LISTS.map((k) =>
+        k === 'naughty'
+          ? tool('😈', 'Naughty', `Players you'd rather avoid: check a name before you group. ${playerCount(players.naughty.length)}`, lists.naughty.shown, () => s.toggleList('naughty'), 'players')
+          : tool('😇', 'Nice', `Players you'd happily group with again. ${playerCount(players.nice.length)}`, lists.nice.shown, () => s.toggleList('nice'), 'players'),
+      ),
+    ];
+  });
+
+  /** The "＋ Add" menu's panels (besides the two kinds of timer): ones you can add as many of as you like. */
   protected readonly addItems = [
     { icon: '🔢', label: 'Count', hint: 'A plain counter', add: () => this.store.addCounter('standard') },
-    { icon: '👑', label: 'Named / PH', hint: 'Placeholder and named kills, with loot log', add: () => this.store.addCounter('namedPh') },
     { icon: '✨', label: 'Buff Tracker', hint: 'Buff timers with fade warnings', add: () => this.store.addBuffPanel() },
     { icon: '📝', label: 'Note', hint: 'Free text', add: () => this.store.addNote() },
     { icon: '☑️', label: 'Checklist', hint: 'Shopping list; paste a list or wiki table', add: () => this.store.addNote('checklist') },
   ];
 
-  /** The "Tools" menu: one-of-a-kind panels, shown or hidden. */
-  protected readonly toolGroups = computed(() => {
-    const s = this.store;
-    const lists = s.listPanels();
-    const players = s.players();
-    const tool = (icon: string, label: string, hint: string, shown: boolean, toggle: () => void) => ({ icon, label, hint, shown, toggle });
-    return [
-      {
-        title: 'Players',
-        tools: PLAYER_LISTS.map((k) =>
-          k === 'naughty'
-            ? tool('😈', 'Naughty list', `${players.naughty.length} players you'd rather avoid`, lists.naughty.shown, () => s.toggleList('naughty'))
-            : tool('😇', 'Nice list', `${players.nice.length} players you'd group with again`, lists.nice.shown, () => s.toggleList('nice')),
-        ),
-      },
-      {
-        title: 'Reference',
-        tools: [
-          tool('🛡️', 'Classes', 'How to play each class', s.classPanel().shown, () => s.toggleClasses()),
-          tool('💰', 'Prices', 'Trem market and vendor prices (MnMdb)', s.pricePanel().shown, () => s.togglePrices()),
-          tool('📖', 'Wiki', 'Search the community wiki', s.wikiPanel().shown, () => s.toggleWiki()),
-          tool('📊', 'Level range', 'Who a level can group with', s.levelPanel().shown, () => s.toggleLevels()),
-          tool('📖', 'Spells', 'By class and level, with costs', s.spellPanel().shown, () => s.toggleSpells()),
-          tool('🗺️', 'Leveling', 'Where to hunt for a level', s.levelingPanel().shown, () => s.toggleLeveling()),
-          tool('🧭', 'Map', 'Zone maps from MnM Atlas', s.mapPanel().shown, () => s.toggleMap()),
-        ],
-      },
-    ];
-  });
-
-  /** How many tool panels are showing (badge on the Tools button). */
-  protected readonly openTools = computed(() =>
-    this.toolGroups().reduce((n, g) => n + g.tools.filter((t) => t.shown).length, 0),
-  );
+  /** Put-away Named / PH timers and notes (badge on ＋ Add). */
+  protected readonly savedCount = computed(() => this.store.closedCamps().length + this.store.closedNotes().length);
 
   protected readonly drag = signal<DragState | null>(null);
 
@@ -126,36 +137,6 @@ export class App {
     const y = Math.max(0, Math.round(d.py / GRID));
     const rect = { x, y, w: d.w, h: d.h };
     return { ...rect, valid: this.store.canPlace(d.id, rect) };
-  });
-
-  /**
-   * While dragging a Named/PH panel over a timer (or a timer over a Named/PH panel): the pair that dropping would
-   * link. The panel under the pointer is the target.
-   */
-  protected readonly linkDrop = computed(() => {
-    const d = this.drag();
-    if (!d) return null;
-    const panels = this.store.panels();
-    const dragged = panels.find((p) => p.id === d.id);
-    if (!dragged) return null;
-    const pointerX = d.px + d.offX;
-    const pointerY = d.py + d.offY;
-    const target = panels.find(
-      (p) =>
-        p.id !== d.id &&
-        pointerX >= p.x * GRID &&
-        pointerX < (p.x + p.w - 1) * GRID &&
-        pointerY >= p.y * GRID &&
-        pointerY < (p.y + p.h - 1) * GRID,
-    );
-    if (!target) return null;
-    const isNph = (p: Panel) => p.kind === 'counter' && p.item.kind === 'namedPh';
-    let counter: Panel | undefined;
-    let timer: Panel | undefined;
-    if (isNph(dragged) && target.kind === 'timer') [counter, timer] = [dragged, target];
-    else if (dragged.kind === 'timer' && isNph(target)) [counter, timer] = [target, dragged];
-    if (!counter || !timer || counter.kind !== 'counter' || timer.kind !== 'timer') return null;
-    return { targetId: target.id, counter: counter.item, timer: timer.item };
   });
 
   protected readonly resize = signal<ResizeState | null>(null);
@@ -193,16 +174,49 @@ export class App {
 
   // ---------- toolbar ----------
 
-  protected addQuickTimer(minutes: number): void {
-    this.store.addTimer(minutes * 60_000);
+  /** Adds a plain timer or a Named / PH timer of this length, and closes the ＋ Add menu. */
+  protected addTimed(kind: 'timer' | 'camp', minutes: number, menu: HTMLElement): void {
+    this.addLength(kind, minutes * 60_000);
+    menu.hidePopover();
   }
 
-  protected addCustomTimer(input: HTMLInputElement): void {
+  /** The custom-length box (7:30, 90s, 1h30m or minutes) under either kind of timer. */
+  protected addCustom(kind: 'timer' | 'camp', input: HTMLInputElement, menu: HTMLElement): void {
     const ms = parseDuration(input.value);
-    this.customError.set(ms === null);
+    this.customError.set(ms === null ? kind : null);
     if (ms === null) return;
-    this.store.addTimer(ms);
+    this.addLength(kind, ms);
     input.value = '';
+    menu.hidePopover();
+  }
+
+  private addLength(kind: 'timer' | 'camp', ms: number): void {
+    if (kind === 'camp') this.store.addCamp(ms);
+    else this.store.addTimer(ms);
+  }
+
+  /** A saved Named / PH timer's line in the ＋ Add menu. */
+  protected campPreview(c: NamedPhCounter): string {
+    const t = this.store.campTimer(c);
+    return `👑 ${c.ph} PH · ${c.named} named${t ? ' · ' + formatDuration(t.durationMs) + ' respawn' : ''}`;
+  }
+
+  protected openCamp(id: string, menu: HTMLElement): void {
+    this.store.openCamp(id);
+    menu.hidePopover();
+  }
+
+  protected async deleteCamp(c: NamedPhCounter, e: MouseEvent): Promise<void> {
+    const npc = this.store.npcOf(c);
+    const kills = this.store.historyOf(c).length;
+    const extra = npc
+      ? ` Its kill history stays saved to "${npc}".`
+      : kills
+        ? ` Its ${kills} logged kill${kills === 1 ? '' : 's'} will be deleted too.`
+        : '';
+    if ((e.shiftKey && (npc || !kills)) || (await this.confirm.ask('Delete Named / PH timer?', `Permanently delete "${c.name}"?${extra}`))) {
+      this.store.removeCounter(c.id);
+    }
   }
 
   /** Close the ☰ menu after any of its buttons is used. */
@@ -350,34 +364,8 @@ export class App {
   protected onPointerUp(): void {
     const prev = this.preview();
     const d = this.drag();
-    const link = this.linkDrop();
     this.drag.set(null);
-    if (link) {
-      // Dropped onto a partner panel: the dragged panel goes back to its spot, and we offer to link the pair.
-      void this.confirmLink(link.counter.id, link.timer.id);
-      return;
-    }
     if (d && prev?.valid) this.store.movePanel(d.id, prev.x, prev.y);
-  }
-
-  /** Links a Named/PH counter to a timer after asking (always). */
-  private async confirmLink(counterId: string, timerId: string): Promise<void> {
-    const c = this.store.counters().find((x) => x.id === counterId);
-    const t = this.store.timers().find((x) => x.id === timerId);
-    if (!c || !t) return;
-    if (c.linkedTimerId === t.id) {
-      await this.confirm.ask('Already linked', `"${c.name}" already restarts "${t.name}".`, 'OK', 'primary');
-      return;
-    }
-    const current = c.linkedTimerId ? this.store.timers().find((x) => x.id === c.linkedTimerId) : undefined;
-    const replace = current ? ` It is currently linked to "${current.name}"; that link will be replaced.` : '';
-    const ok = await this.confirm.ask(
-      'Link to timer?',
-      `Link "${c.name}" to "${t.name}"? + PH and + Named will restart "${t.name}".${replace}`,
-      'Link',
-      'primary',
-    );
-    if (ok) this.store.updateCounter(c.id, { linkedTimerId: t.id });
   }
 
   protected onPointerCancel(): void {

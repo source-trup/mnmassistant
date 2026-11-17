@@ -1,33 +1,43 @@
-import { addPanel, dragBy, expect, savedState, test } from '../support/fixtures';
+import { addPanel, addTimer, dragBy, expect, savedState, test, toolButton } from '../support/fixtures';
 
 test.describe('board and toolbar', () => {
-  test('quick and custom timers are added and saved', async ({ page }) => {
-    await page.getByRole('button', { name: '5m', exact: true }).click();
+  test('quick and custom timers are added from ＋ Add and saved', async ({ page }) => {
+    await addTimer(page, 5);
+    await expect(page.locator('#add-menu')).not.toBeVisible();
+    await page.locator('.add-btn').click();
     const custom = page.getByLabel('Custom timer length');
+    await custom.fill('nonsense');
+    await custom.press('Enter');
+    await expect(custom).toHaveClass(/invalid/);
     await custom.fill('7:30');
     await custom.press('Enter');
     await expect(page.locator('app-timer-card')).toHaveCount(2);
     await expect(page.locator('app-timer-card .time').nth(1)).toHaveText('7:30');
 
-    await custom.fill('nonsense');
-    await custom.press('Enter');
-    await expect(custom).toHaveClass(/invalid/);
-    await expect(page.locator('app-timer-card')).toHaveCount(2);
+    // A Named / PH timer of any respawn, too.
+    await page.locator('.add-btn').click();
+    const respawn = page.getByLabel('Custom Named / PH respawn');
+    await respawn.fill('6:40');
+    await respawn.press('Enter');
+    await expect(page.locator('app-camp-card .time')).toHaveText('6:40');
 
     await page.reload();
     await expect(page.locator('app-timer-card')).toHaveCount(2);
+    await expect(page.locator('app-camp-card')).toHaveCount(1);
   });
 
   test('the Add menu adds every panel type', async ({ page }) => {
-    for (const name of ['Count', 'Named / PH', 'Buff Tracker', 'Note', 'Checklist']) await addPanel(page, name);
-    await expect(page.locator('app-counter-card')).toHaveCount(2);
+    for (const name of ['Timer', 'Named / PH timer', 'Count', 'Buff Tracker', 'Note', 'Checklist']) await addPanel(page, name);
+    await expect(page.locator('app-timer-card')).toHaveCount(1);
+    await expect(page.locator('app-camp-card')).toHaveCount(1);
+    await expect(page.locator('app-counter-card')).toHaveCount(1);
     await expect(page.locator('app-buff-card')).toHaveCount(1);
     await expect(page.locator('app-note-card')).toHaveCount(2);
     await expect(page.locator('#add-menu')).not.toBeVisible();
   });
 
   test('panels move by their title bar and resize from the corner', async ({ page }) => {
-    await page.getByRole('button', { name: '5m', exact: true }).click();
+    await addTimer(page, 5);
     const panel = page.locator('.panel', { has: page.locator('app-timer-card') });
     const before = (await panel.boundingBox())!;
 
@@ -42,25 +52,35 @@ test.describe('board and toolbar', () => {
   });
 
   test('Shift + click on ✕ deletes without asking', async ({ page }) => {
-    await page.getByRole('button', { name: '5m', exact: true }).click();
+    await addTimer(page, 5);
     await page.locator('app-timer-card').getByTitle(/^Delete/).click({ modifiers: ['Shift'] });
     await expect(page.locator('app-timer-card')).toHaveCount(0);
   });
 
-  test('Tools menu stays open while toggling and counts open tools', async ({ page }) => {
-    await page.locator('.tools-btn').click();
-    const menu = page.locator('#tools-menu');
-    await menu.locator('.item', { hasText: 'Level range' }).click();
-    await menu.locator('.item', { hasText: 'Naughty list' }).click();
-    await expect(menu).toBeVisible();
-    await expect(menu.locator('.item.on')).toHaveCount(2);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.tools-btn .badge')).toHaveText('2');
+  test('tools are one click in the toolbar: on, and off again', async ({ page }) => {
+    const levels = toolButton(page, 'Group Range');
+    // Pointing at a tool shows what it does straight away (a tooltip of the app's own, not the browser's slow one).
+    const tip = page.locator('nav.tools .tool-wrap', { has: page.locator('.tl', { hasText: /^Group Range$/ }) }).locator('.tool-tip');
+    await expect(tip).toBeHidden();
+    await levels.hover();
+    await expect(tip).toBeVisible({ timeout: 300 });
+    await expect(tip).toContainText('Enter a level to see the lowest and highest levels it can group with');
+    await expect(tip).toContainText('Click to show');
+    await expect(levels).toHaveAccessibleDescription(/Enter a level/);
+    await levels.click();
+    await expect(tip).toContainText('Showing · click to hide');
+    await toolButton(page, 'Naughty').click();
+    await expect(page.locator('nav.tools .tool.on')).toHaveCount(2);
+    await expect(levels).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('app-level-range-card')).toBeVisible();
+    await expect(page.locator('app-player-list-card')).toBeVisible();
+    await levels.click();
+    await expect(page.locator('app-level-range-card')).toHaveCount(0);
+    await expect(levels).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('a layout file round-trips through Save and Load', async ({ page }) => {
-    await page.getByRole('button', { name: '6m', exact: true }).click();
+    await addTimer(page, 6);
     const state = await savedState(page);
     expect(state.timers).toHaveLength(1);
     expect(state.version).toBe(5);

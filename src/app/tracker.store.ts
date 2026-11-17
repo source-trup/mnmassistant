@@ -26,6 +26,8 @@ import {
   ClassPanel,
   PricePanel,
   WikiPanel,
+  WishItem,
+  WishlistPanel,
   GameClockSettings,
   GameWindow,
   StandardCounter,
@@ -58,7 +60,8 @@ export type Panel =
   | ({ id: string; kind: 'map'; item: MapPanel } & Rect)
   | ({ id: string; kind: 'classes'; item: ClassPanel } & Rect)
   | ({ id: string; kind: 'prices'; item: PricePanel } & Rect)
-  | ({ id: string; kind: 'wiki'; item: WikiPanel } & Rect);
+  | ({ id: string; kind: 'wiki'; item: WikiPanel } & Rect)
+  | ({ id: string; kind: 'wishlist'; item: WishlistPanel } & Rect);
 
 /** Panel id of the single Spells panel, and the smallest it can be resized to (grid cells). */
 export const SPELL_PANEL_ID = 'spells';
@@ -82,6 +85,39 @@ export const PRICE_MIN = { w: 16, h: 14 };
 /** Panel id of the single Wiki panel, and the smallest it can be resized to. */
 export const WIKI_PANEL_ID = 'wiki';
 export const WIKI_MIN = { w: 16, h: 14 };
+
+/** Panel id of the single Wishlist panel, and the smallest it can be resized to. */
+export const WISHLIST_PANEL_ID = 'wishlist';
+export const WISHLIST_MIN = { w: 15, h: 12 };
+/** Most items kept on the wishlist. */
+const WISHLIST_MAX = 200;
+
+/** A link to an item page on monstersandmemories.wiki, or null if it isn't one. */
+export function wikiItemUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  try {
+    const u = new URL(raw.trim());
+    return u.protocol === 'https:' && u.hostname === 'monstersandmemories.wiki' && u.pathname.length > 1 ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * An item's page on monstersandmemories.wiki, built from its name the way the wiki names them
+ * ("Wyvern Hide Tunic" → /items/wyvern-hide-tunic). The site can't be asked whether the page exists, so this is a
+ * best guess: it may not have been written yet.
+ */
+export function wikiItemPageUrl(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/['’`]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return `https://monstersandmemories.wiki/items/${slug}`;
+}
 
 const CLASS_TABS: ClassPanel['tab'][] = ['overview', 'build', 'abilities', 'leveling', 'gear', 'more'];
 
@@ -146,7 +182,7 @@ function normalizeSpellPanel(raw: any): SpellPanel {
 }
 
 function defaultLevelingPanel(): LevelingPanel {
-  return { shown: false, ...PANEL_SIZE.leveling, from: null, to: null, region: null, raids: true, source: 'both', ...UNPLACED };
+  return { shown: false, ...PANEL_SIZE.leveling, cls: null, level: null, mode: 'solo', ...UNPLACED };
 }
 
 function normalizeLevelingPanel(raw: any): LevelingPanel {
@@ -160,11 +196,10 @@ function normalizeLevelingPanel(raw: any): LevelingPanel {
     shown: raw.shown === true,
     w: Math.max(LEVELING_MIN.w, Math.floor(Number(raw.w)) || base.w),
     h: Math.max(LEVELING_MIN.h, Math.floor(Number(raw.h)) || base.h),
-    from: lvl(raw.from),
-    to: lvl(raw.to),
-    region: typeof raw.region === 'string' && raw.region ? raw.region : null,
-    raids: raw.raids !== false,
-    source: raw.source === 'sheet' || raw.source === 'guide' ? raw.source : 'both',
+    cls: typeof raw.cls === 'string' && raw.cls ? raw.cls : null,
+    // Boards saved before Worth the Camp's data kept a level range ("from" / "to"): its low end becomes the level.
+    level: lvl(raw.level) ?? lvl(raw.from),
+    mode: raw.mode === 'group' ? 'group' : 'solo',
     x: raw.x ?? -1,
     y: raw.y ?? -1,
   };
@@ -243,6 +278,56 @@ function normalizeWikiPanel(raw: any): WikiPanel {
     x: raw.x ?? -1,
     y: raw.y ?? -1,
   };
+}
+
+function defaultWishlistPanel(): WishlistPanel {
+  return { shown: false, ...PANEL_SIZE.wishlist, items: [], hideGot: false, ...UNPLACED };
+}
+
+function normalizeWishItem(raw: any): WishItem | null {
+  if (!raw || typeof raw !== 'object' || typeof raw.name !== 'string' || !raw.name.trim()) return null;
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : newId(),
+    name: raw.name.trim().slice(0, 100),
+    from: typeof raw.from === 'string' ? raw.from.trim().slice(0, 300) : '',
+    wikiUrl: wikiItemUrl(raw.wikiUrl),
+    got: raw.got === true,
+    added: Number(raw.added) || Date.now(),
+  };
+}
+
+function normalizeWishlistPanel(raw: any): WishlistPanel {
+  const base = defaultWishlistPanel();
+  if (!raw || typeof raw !== 'object') return base;
+  const seen = new Set<string>();
+  const items = (Array.isArray(raw.items) ? raw.items : [])
+    .map(normalizeWishItem)
+    .filter((i: WishItem | null): i is WishItem => {
+      if (!i || seen.has(i.name.toLowerCase())) return false;
+      seen.add(i.name.toLowerCase());
+      return true;
+    })
+    .slice(0, WISHLIST_MAX);
+  return {
+    shown: raw.shown === true,
+    w: Math.max(WISHLIST_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(WISHLIST_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    items,
+    hideGot: raw.hideGot === true,
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
+}
+
+/** Adds a layout file's wishlist to yours (same name: yours is kept, the file's note, link or "got it" fill gaps). */
+function mergeWishes(mine: WishItem[], incoming: WishItem[]): WishItem[] {
+  const out = [...mine];
+  for (const w of incoming) {
+    const i = out.findIndex((m) => m.name.toLowerCase() === w.name.toLowerCase());
+    if (i < 0) out.push(w);
+    else out[i] = { ...out[i], from: out[i].from || w.from, wikiUrl: out[i].wikiUrl ?? w.wikiUrl, got: out[i].got || w.got };
+  }
+  return out.slice(0, WISHLIST_MAX);
 }
 
 function normalizeGameClock(raw: any): GameClockSettings {
@@ -324,18 +409,80 @@ function makeTimer(durationMs: number, name?: string): TimerItem {
   };
 }
 
-function makeCounter(kind: CounterKind, name?: string): CounterItem {
-  const base = { id: newId(), since: Date.now(), linkedTimerId: null, ...UNPLACED };
-  return kind === 'standard'
-    ? { ...base, kind, name: name ?? 'Counter', value: 0, step: 1, target: null }
-    : { ...base, kind, name: name ?? DEFAULT_NPH_NAME, ph: 0, named: 0, phSinceNamed: 0 };
+function makeStandardCounter(name = 'Counter'): StandardCounter {
+  return { id: newId(), since: Date.now(), ...UNPLACED, kind: 'standard', name, value: 0, step: 1, target: null };
 }
 
 const DEFAULT_NPH_NAME = 'Named / PH';
+/** Starting countdown of a new Named / PH timer. */
+const DEFAULT_CAMP_MS = 6 * 60_000;
 
-/** Name a Named/PH counter gets when linked to a timer you've named. */
-function campLogName(timerName: string): string {
-  return `${timerName}'s log`;
+/** Names the app gives a Named / PH timer: such a camp chimes and keeps its own log instead of an NPC's. */
+function isAutoCampName(name: string): boolean {
+  return name === DEFAULT_NPH_NAME || AUTO_TIMER_NAME.test(name);
+}
+
+/** A new Named / PH timer: the camp panel and its countdown (which lives in the timers list, never on its own). */
+function makeCamp(name = DEFAULT_NPH_NAME, durationMs = DEFAULT_CAMP_MS): { camp: NamedPhCounter; timer: TimerItem } {
+  const timer: TimerItem = { ...makeTimer(durationMs, name), autoNamed: isAutoCampName(name) };
+  const camp: NamedPhCounter = {
+    id: newId(),
+    since: Date.now(),
+    ...UNPLACED,
+    kind: 'namedPh',
+    name,
+    ph: 0,
+    named: 0,
+    phSinceNamed: 0,
+    timerId: timer.id,
+    closed: false,
+  };
+  return { camp, timer };
+}
+
+/**
+ * Before Named / PH timers, a camp counter could be linked to a separate timer panel. Each Named/PH counter now gets
+ * a countdown of its own: the timer it was linked to (the two panels become one), or a new one. Standard counters
+ * lose their link. Kill logs keep their keys: a camp tied to a timer you'd named still writes to that NPC's log.
+ */
+function migrateCamps(timers: TimerItem[], raw: any[]): { timers: TimerItem[]; counters: CounterItem[] } {
+  const byId = new Map(timers.map((t) => [t.id, t]));
+  const owned = new Map<string, TimerItem>();
+  const counters: CounterItem[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== 'object') continue;
+    const { linkedTimerId, history: _moved, timerId, ...rest } = r; // history now lives in campLogs
+    const pos = { x: r.x ?? -1, y: r.y ?? -1 };
+    if (r.kind !== 'namedPh') {
+      counters.push({ ...makeStandardCounter(), ...rest, kind: 'standard', ...pos });
+      continue;
+    }
+    const camp: NamedPhCounter = { ...makeCamp().camp, ...rest, kind: 'namedPh', closed: r.closed === true, ...pos };
+    let timer = typeof timerId === 'string' && !owned.has(timerId) ? byId.get(timerId) : undefined;
+    if (!timer) {
+      const linked = typeof linkedTimerId === 'string' ? byId.get(linkedTimerId) : undefined;
+      const free = linked && !owned.has(linked.id) ? linked : undefined;
+      // A timer you'd named names the camp; otherwise the camp keeps its own name (and its own log).
+      const oldAuto =
+        camp.name === DEFAULT_NPH_NAME || camp.name === 'Camp named / PH' || (!!linked && camp.name === `${linked.name}'s log`);
+      const npc = linked && !linked.autoNamed ? linked.name : null;
+      const name = npc ?? (oldAuto ? DEFAULT_NPH_NAME : camp.name);
+      timer = { ...(free ?? makeTimer(linked?.durationMs ?? DEFAULT_CAMP_MS)), name, autoNamed: npc === null };
+      camp.name = name;
+      // The new panel is bigger: drop any old size, and sit where the top one of the pair was.
+      delete camp.w;
+      delete camp.h;
+      if (free && free.x >= 0 && free.y >= 0 && (camp.x < 0 || free.y < camp.y || (free.y === camp.y && free.x < camp.x))) {
+        camp.x = free.x;
+        camp.y = free.y;
+      }
+    }
+    const { w: _w, h: _h, ...bare } = timer;
+    owned.set(timer.id, { ...bare, ...UNPLACED });
+    camp.timerId = timer.id;
+    counters.push(camp);
+  }
+  return { timers: [...timers.filter((t) => !owned.has(t.id)), ...owned.values()], counters };
 }
 
 function npcKey(npc: string): string {
@@ -343,8 +490,9 @@ function npcKey(npc: string): string {
 }
 
 /** Which log a Named/PH counter writes to: its named timer's NPC, or its own private log. */
-function logKeyFor(c: { id: string; linkedTimerId: string | null }, timers: TimerItem[]): string {
-  const t = c.linkedTimerId ? timers.find((x) => x.id === c.linkedTimerId) : undefined;
+function logKeyFor(c: { id: string; timerId?: string | null; linkedTimerId?: string | null }, timers: TimerItem[]): string {
+  const id = c.timerId ?? c.linkedTimerId;
+  const t = id ? timers.find((x) => x.id === id) : undefined;
   return t && !t.autoNamed && t.name.trim() ? npcKey(t.name) : 'counter:' + c.id;
 }
 
@@ -464,15 +612,13 @@ function clampFont(px: number): number {
 }
 
 function defaultState(): AppState {
-  const camp = makeTimer(6 * 60_000, 'Camp spawn');
-  const nph = makeCounter('namedPh', campLogName(camp.name)) as NamedPhCounter;
-  nph.linkedTimerId = camp.id;
+  const { camp, timer } = makeCamp();
   return {
     version: 5,
     soundOn: true,
     theme: DEFAULT_THEME,
-    timers: [camp],
-    counters: [nph, makeCounter('standard', 'Kills')],
+    timers: [timer],
+    counters: [camp, makeStandardCounter('Kills')],
     campLogs: [],
     lootLibrary: [],
     buffPanels: [],
@@ -487,6 +633,7 @@ function defaultState(): AppState {
     classPanel: defaultClassPanel(),
     pricePanel: defaultPricePanel(),
     wikiPanel: defaultWikiPanel(),
+    wishlistPanel: defaultWishlistPanel(),
     gameClock: { windows: [], offset: 0 },
   };
 }
@@ -504,20 +651,11 @@ function normalizeBuffSets(raw: unknown): BuffSet[] {
     }));
 }
 
-function normalizeCounter(raw: any): CounterItem {
-  const pos = { x: raw.x ?? -1, y: raw.y ?? -1 };
-  if (raw.kind === 'namedPh') {
-    const { history: _moved, ...rest } = raw; // history now lives in campLogs
-    return { ...makeCounter('namedPh'), ...rest, ...pos };
-  }
-  return { ...makeCounter('standard'), ...raw, kind: 'standard', ...pos };
-}
-
 /** Accepts state saved by any version of the app (or a layout file) and upgrades it. */
 function normalizeState(parsed: any): AppState | null {
   if (!parsed || ![1, 2, 3, 4, 5].includes(parsed.version)) return null;
   if (!Array.isArray(parsed.timers) || !Array.isArray(parsed.counters)) return null;
-  const timers: TimerItem[] = parsed.timers.map((t: any) => ({
+  const savedTimers: TimerItem[] = parsed.timers.map((t: any) => ({
     repeat: false,
     endsAt: null,
     pausedRemainingMs: null,
@@ -526,7 +664,8 @@ function normalizeState(parsed: any): AppState | null {
     x: t.x ?? -1,
     y: t.y ?? -1,
   }));
-  const campLogs = normalizeLogs(parsed, timers);
+  const campLogs = normalizeLogs(parsed, savedTimers);
+  const { timers, counters } = migrateCamps(savedTimers, parsed.counters);
   return {
     version: 5,
     campLogs,
@@ -543,10 +682,11 @@ function normalizeState(parsed: any): AppState | null {
     classPanel: normalizeClassPanel(parsed.classPanel),
     pricePanel: normalizePricePanel(parsed.pricePanel),
     wikiPanel: normalizeWikiPanel(parsed.wikiPanel),
+    wishlistPanel: normalizeWishlistPanel(parsed.wishlistPanel),
     gameClock: normalizeGameClock(parsed.gameClock),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
-    counters: parsed.counters.map(normalizeCounter),
+    counters,
     buffPanels: (parsed.buffPanels ?? []).map((p: any) => ({
       ...p,
       x: p.x ?? -1,
@@ -586,6 +726,7 @@ export class TrackerStore {
   readonly classPanel = signal<ClassPanel>(defaultClassPanel());
   readonly pricePanel = signal<PricePanel>(defaultPricePanel());
   readonly wikiPanel = signal<WikiPanel>(defaultWikiPanel());
+  readonly wishlistPanel = signal<WishlistPanel>(defaultWishlistPanel());
   /** The toolbar game clock: your spawn windows and any adjustment. */
   readonly gameClock = signal<GameClockSettings>({ windows: [], offset: 0 });
   /** A lookup another panel asked the Wiki panel to do (not saved). The counter makes repeat lookups fire again. */
@@ -600,9 +741,16 @@ export class TrackerStore {
   readonly cols = signal(Math.max(15, Math.floor((window.innerWidth - 32) / GRID)));
 
   /** Every panel on the board with its grid footprint. */
+  /** Countdowns that belong to a Named / PH timer (shown inside that panel, not on their own). */
+  readonly campTimerIds = computed(() => new Set(this.counters().flatMap((c) => (c.kind === 'namedPh' ? [c.timerId] : []))));
+
   readonly panels = computed<Panel[]>(() => [
-    ...this.timers().map((t) => ({ id: t.id, kind: 'timer' as const, item: t, x: t.x, y: t.y, ...sizeOf(t, PANEL_SIZE.timer) })),
-    ...this.counters().map((c) => ({ id: c.id, kind: 'counter' as const, item: c, x: c.x, y: c.y, ...sizeOf(c, PANEL_SIZE[c.kind]) })),
+    ...this.timers()
+      .filter((t) => !this.campTimerIds().has(t.id))
+      .map((t) => ({ id: t.id, kind: 'timer' as const, item: t, x: t.x, y: t.y, ...sizeOf(t, PANEL_SIZE.timer) })),
+    ...this.counters()
+      .filter((c) => !(c.kind === 'namedPh' && c.closed))
+      .map((c) => ({ id: c.id, kind: 'counter' as const, item: c, x: c.x, y: c.y, ...sizeOf(c, PANEL_SIZE[c.kind]) })),
     ...this.buffPanels().map((b) => ({ id: b.id, kind: 'buffs' as const, item: b, x: b.x, y: b.y, ...sizeOf(b, PANEL_SIZE.buffs) })),
     ...this.notes()
       .filter((n) => !n.closed)
@@ -631,7 +779,13 @@ export class TrackerStore {
     ...[this.wikiPanel()]
       .filter((p) => p.shown)
       .map((p) => ({ id: WIKI_PANEL_ID, kind: 'wiki' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
+    ...[this.wishlistPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: WISHLIST_PANEL_ID, kind: 'wishlist' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
   ]);
+
+  /** Named / PH timers that have been put away, in the order they were created. */
+  readonly closedCamps = computed(() => this.counters().filter((c): c is NamedPhCounter => c.kind === 'namedPh' && c.closed));
 
   /** Notes that have been put away, in the order they were created. */
   readonly closedNotes = computed(() => this.notes().filter((n) => n.closed));
@@ -676,6 +830,7 @@ export class TrackerStore {
 
   constructor() {
     this.load();
+    this.settleCamps();
     this.placeUnplaced();
     this.repairOverlaps();
     this.primeAlerts();
@@ -703,6 +858,7 @@ export class TrackerStore {
     else if (id === CLASS_PANEL_ID) this.updateClassPanel({ x, y });
     else if (id === PRICE_PANEL_ID) this.updatePricePanel({ x, y });
     else if (id === WIKI_PANEL_ID) this.updateWikiPanel({ x, y });
+    else if (id === WISHLIST_PANEL_ID) this.updateWishlistPanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -716,8 +872,8 @@ export class TrackerStore {
       placed.push({ ...spot, w: p.w, h: p.h });
       pos.set(p.id, spot);
     }
-    this.timers.update((list) => list.map((t) => ({ ...t, ...pos.get(t.id)! })));
-    this.counters.update((list) => list.map((c) => ({ ...c, ...pos.get(c.id)! })) as CounterItem[]);
+    this.timers.update((list) => list.map((t) => ({ ...t, ...pos.get(t.id) }))); // camp countdowns aren't in `pos`
+    this.counters.update((list) => list.map((c) => ({ ...c, ...pos.get(c.id) })) as CounterItem[]); // put-away camps aren't in `pos`
     this.buffPanels.update((list) => list.map((b) => ({ ...b, ...pos.get(b.id)! })));
     this.notes.update((list) => list.map((n) => ({ ...n, ...pos.get(n.id) }))); // closed notes aren't in `pos`
     for (const k of PLAYER_LISTS) {
@@ -738,6 +894,22 @@ export class TrackerStore {
     if (priceSpot) this.updatePricePanel(priceSpot);
     const wikiSpot = pos.get(WIKI_PANEL_ID);
     if (wikiSpot) this.updateWikiPanel(wikiSpot);
+    const wishSpot = pos.get(WISHLIST_PANEL_ID);
+    if (wishSpot) this.updateWishlistPanel(wishSpot);
+  }
+
+  /**
+   * A Named / PH timer made from an old camp + timer pair is bigger than either was; if it now overlaps another
+   * panel it moves to the first free spot instead of the whole board being re-tidied.
+   */
+  private settleCamps(): void {
+    const ps = this.panels().filter((p) => p.x >= 0 && p.y >= 0);
+    const moving = new Set<string>();
+    for (const p of ps) {
+      if (p.kind !== 'counter' || p.item.kind !== 'namedPh') continue;
+      if (ps.some((o) => o.id !== p.id && !moving.has(o.id) && overlaps(o, p))) moving.add(p.id);
+    }
+    if (moving.size) this.counters.update((list) => list.map((c) => (moving.has(c.id) ? { ...c, ...UNPLACED } : c)));
   }
 
   /** Panels saved with older (narrower) sizes may now overlap; if any do, tidy the board once. */
@@ -756,8 +928,9 @@ export class TrackerStore {
       placed.push({ ...spot, ...size });
       return { ...item, ...spot };
     };
-    this.timers.update((list) => list.map((t) => place(t, sizeOf(t, PANEL_SIZE.timer))));
-    this.counters.update((list) => list.map((c) => place(c, sizeOf(c, PANEL_SIZE[c.kind]))));
+    const campTimers = this.campTimerIds();
+    this.timers.update((list) => list.map((t) => (campTimers.has(t.id) ? t : place(t, sizeOf(t, PANEL_SIZE.timer)))));
+    this.counters.update((list) => list.map((c) => (c.kind === 'namedPh' && c.closed ? c : place(c, sizeOf(c, PANEL_SIZE[c.kind])))));
     this.buffPanels.update((list) => list.map((b) => place(b, sizeOf(b, PANEL_SIZE.buffs))));
     this.notes.update((list) => list.map((n) => (n.closed ? n : place(n, n))));
     this.listPanels.update((lp) => {
@@ -772,6 +945,7 @@ export class TrackerStore {
     this.classPanel.update((p) => (p.shown ? place(p, p) : p));
     this.pricePanel.update((p) => (p.shown ? place(p, p) : p));
     this.wikiPanel.update((p) => (p.shown ? place(p, p) : p));
+    this.wishlistPanel.update((p) => (p.shown ? place(p, p) : p));
   }
 
   // ---------- timers ----------
@@ -782,10 +956,8 @@ export class TrackerStore {
   }
 
   removeTimer(id: string): void {
+    if (this.campTimerIds().has(id)) return; // a camp's countdown goes with its panel
     this.timers.update((list) => list.filter((t) => t.id !== id));
-    this.counters.update(
-      (list) => list.map((c) => (c.linkedTimerId === id ? { ...c, linkedTimerId: null } : c)) as CounterItem[],
-    );
     this.timerAlerted.delete(id);
   }
 
@@ -794,18 +966,11 @@ export class TrackerStore {
   }
 
   renameTimer(id: string, name: string): void {
-    const old = this.timers().find((t) => t.id === id);
-    if (!old) return;
-    const autoNamed = AUTO_TIMER_NAME.test(name);
-    this.updateTimer(id, { name, autoNamed });
-    // Linked Named/PH counters still using a generated name follow the timer ("Grimfang's log").
-    this.counters.update(
-      (list) =>
-        list.map((c) => {
-          if (c.kind !== 'namedPh' || c.linkedTimerId !== id || !this.isAutoCampName(c.name, old.name)) return c;
-          return { ...c, name: autoNamed ? DEFAULT_NPH_NAME : campLogName(name) };
-        }) as CounterItem[],
-    );
+    if (!this.timers().some((t) => t.id === id)) return;
+    const camp = this.counters().find((c) => c.kind === 'namedPh' && c.timerId === id);
+    this.updateTimer(id, { name, autoNamed: camp ? isAutoCampName(name) : AUTO_TIMER_NAME.test(name) });
+    // A Named / PH timer's name is the camp's name (and, once it's your own, the NPC whose log it keeps).
+    if (camp) this.counters.update((list) => list.map((c) => (c.id === camp.id ? { ...c, name } : c)));
     this.adoptPrivateLogs();
   }
 
@@ -813,7 +978,8 @@ export class TrackerStore {
   setTimerDuration(id: string, durationMs: number): void {
     const t = this.timers().find((x) => x.id === id);
     if (!t) return;
-    this.updateTimer(id, { durationMs, ...(t.autoNamed ? { name: autoTimerName(durationMs) } : {}) });
+    const camp = this.campTimerIds().has(id); // a camp keeps its name
+    this.updateTimer(id, { durationMs, ...(t.autoNamed && !camp ? { name: autoTimerName(durationMs) } : {}) });
   }
 
   /** Start from the full duration (also used as "restart"). */
@@ -885,38 +1051,67 @@ export class TrackerStore {
   // ---------- counters ----------
 
   addCounter(kind: CounterKind): void {
-    this.counters.update((list) => [...list, makeCounter(kind)]);
+    if (kind === 'namedPh') {
+      this.addCamp();
+      return;
+    }
+    this.counters.update((list) => [...list, makeStandardCounter()]);
     this.placeUnplaced();
   }
 
-  /** Deletes the counter. A named NPC's history is kept; a camp's private (un-named) log goes with it. */
+  /** Adds a Named / PH timer with this respawn countdown. */
+  addCamp(durationMs = DEFAULT_CAMP_MS): void {
+    const { camp, timer } = makeCamp(DEFAULT_NPH_NAME, durationMs);
+    this.timers.update((list) => [...list, timer]);
+    this.counters.update((list) => [...list, camp]);
+    this.placeUnplaced();
+  }
+
+  /** Deletes the counter (and a Named / PH timer's countdown). A named NPC's history is kept; a camp's own log goes with it. */
   removeCounter(id: string): void {
-    this.counters.update((list) => list.filter((c) => c.id !== id));
+    const c = this.counters().find((x) => x.id === id);
+    this.counters.update((list) => list.filter((x) => x.id !== id));
+    if (c?.kind === 'namedPh') {
+      this.timers.update((list) => list.filter((t) => t.id !== c.timerId));
+      this.timerAlerted.delete(c.timerId);
+    }
     this.campLogs.update((logs) => logs.filter((l) => l.key !== 'counter:' + id));
     this.lootQueue.update((q) => q.filter((r) => r.counterId !== id));
   }
 
   updateCounter(id: string, patch: Partial<StandardCounter> | Partial<NamedPhCounter>): void {
-    const before = this.counters().find((c) => c.id === id);
-    if (before?.kind === 'namedPh' && patch.linkedTimerId !== undefined && patch.name === undefined) {
-      // Linking a Named/PH counter names it after the timer ("Grimfang's log") unless you've named it yourself.
-      const prev = this.timers().find((t) => t.id === before.linkedTimerId);
-      const next = this.timers().find((t) => t.id === patch.linkedTimerId);
-      if (this.isAutoCampName(before.name, prev?.name)) {
-        patch = { ...patch, name: next && !next.autoNamed ? campLogName(next.name) : DEFAULT_NPH_NAME };
-      }
+    const c = this.counters().find((x) => x.id === id);
+    // A Named / PH timer's name lives on its countdown too.
+    if (c?.kind === 'namedPh' && patch.name !== undefined && patch.name !== c.name) {
+      const { name, ...others } = patch;
+      this.renameTimer(c.timerId, name);
+      patch = others;
     }
-    this.counters.update((list) => list.map((c) => (c.id === id ? ({ ...c, ...patch } as CounterItem) : c)));
-    if (patch.linkedTimerId !== undefined) this.adoptPrivateLogs();
+    this.counters.update((list) => list.map((x) => (x.id === id ? ({ ...x, ...patch } as CounterItem) : x)));
   }
 
-  /** True for names the app gave a Named/PH counter (so it may rename it). */
-  private isAutoCampName(name: string, linkedTimerName?: string): boolean {
-    return (
-      name === DEFAULT_NPH_NAME ||
-      name === 'Camp named / PH' ||
-      (linkedTimerName !== undefined && name === campLogName(linkedTimerName))
-    );
+  /** Takes a Named / PH timer off the board (its countdown stops); counts and kill log are kept. */
+  closeCamp(id: string): void {
+    const c = this.counters().find((x) => x.id === id);
+    if (c?.kind !== 'namedPh' || c.closed) return;
+    this.resetTimer(c.timerId);
+    this.lootQueue.update((q) => q.filter((r) => r.counterId !== id));
+    this.updateCounter(id, { closed: true });
+  }
+
+  /** Puts a saved Named / PH timer back on the board: in its old spot if that's still free, otherwise the first free spot. */
+  openCamp(id: string): void {
+    const c = this.counters().find((x) => x.id === id);
+    if (c?.kind !== 'namedPh' || !c.closed) return;
+    const size = sizeOf(c, PANEL_SIZE.namedPh);
+    const fits = c.x >= 0 && c.y >= 0 && this.canPlace(id, { x: c.x, y: c.y, ...size });
+    this.updateCounter(id, { closed: false, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** A Named / PH timer's countdown. */
+  campTimer(c: NamedPhCounter): TimerItem | undefined {
+    return this.timers().find((t) => t.id === c.timerId);
   }
 
   private updateNph(id: string, fn: (c: NamedPhCounter) => NamedPhCounter): void {
@@ -936,11 +1131,10 @@ export class TrackerStore {
     return this.campLogs().find((l) => l.key === key)?.history ?? [];
   }
 
-  /** The NPC whose history a counter shows, or null when it isn't linked to a timer you've named. */
+  /** The NPC whose history a Named / PH timer shows, or null while the camp has no name of your own. */
   npcOf(c: CounterItem): string | null {
-    const key = this.logKeyOf(c);
-    if (!key.startsWith('npc:')) return null;
-    return this.timers().find((t) => t.id === c.linkedTimerId)?.name ?? null;
+    if (c.kind !== 'namedPh' || !this.logKeyOf(c).startsWith('npc:')) return null;
+    return this.campTimer(c)?.name ?? null;
   }
 
   /** Finds a logged kill anywhere. */
@@ -977,7 +1171,7 @@ export class TrackerStore {
   }
 
   /**
-   * When a camp gets tied to a named NPC (linked to, or renaming, a timer), kills it logged before that move into
+   * When a camp gets a name of your own (an NPC), kills it logged before that move into
    * the NPC's history so nothing is left behind.
    */
   private adoptPrivateLogs(): void {
@@ -1008,7 +1202,7 @@ export class TrackerStore {
     return [...counts.values()].sort((a, b) => b.count - a.count || a.item.name.localeCompare(b.item.name));
   }
 
-  /** Forgets a named NPC and its whole kill history (counters linked to it start a fresh log). */
+  /** Forgets a named NPC and its whole kill history (camps with that name start a fresh log). */
   forgetNpc(name: string): void {
     const key = npcKey(name);
     this.campLogs.update((logs) => logs.filter((l) => l.key !== key));
@@ -1019,30 +1213,29 @@ export class TrackerStore {
     return this.campLogs().find((l) => l.key === key);
   }
 
-  /** Standard counter +/-. Incrementing also restarts the linked timer, if any. */
+  /** Standard counter +/-. */
   bump(id: string, direction: 1 | -1): void {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'standard') return;
     this.updateCounter(id, { value: c.value + direction * c.step });
-    if (direction > 0) this.restartLinked(c);
   }
 
-  /** Placeholder killed: +1 PH, log it, and restart the linked timer. */
+  /** Placeholder killed: +1 PH, log it, and restart the camp's countdown. */
   phKill(id: string): void {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'namedPh') return;
-    this.restartLinked(c);
+    this.startTimer(c.timerId);
     this.autoSession(c);
     const event: CampEvent = { id: newId(), t: Date.now(), type: 'ph', loot: [] };
     this.updateNph(id, (n) => ({ ...n, ph: n.ph + 1, phSinceNamed: n.phSinceNamed + 1 }));
     this.updateLog(this.logKeyOf(c), this.logNameFor(c), (h) => [...h, event].slice(-MAX_HISTORY));
   }
 
-  /** Named killed: +1 named, log it, restart the linked timer, then offer loot entry. */
+  /** Named killed: +1 named, log it, restart the camp's countdown, then offer loot entry. */
   namedKill(id: string): void {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'namedPh') return;
-    this.restartLinked(c);
+    this.startTimer(c.timerId);
     this.autoSession(c);
     const event: CampEvent = { id: newId(), t: Date.now(), type: 'named', loot: [] };
     this.updateNph(id, (n) => ({ ...n, named: n.named + 1, phSinceNamed: 0 }));
@@ -1140,10 +1333,6 @@ export class TrackerStore {
 
   resetAllCounters(): void {
     for (const c of this.counters()) this.resetCounter(c.id);
-  }
-
-  private restartLinked(c: CounterItem): void {
-    if (c.linkedTimerId) this.startTimer(c.linkedTimerId);
   }
 
   // ---------- buffs ----------
@@ -1385,7 +1574,7 @@ export class TrackerStore {
     this.levelingPanel.update((p) => ({ ...p, ...patch }));
   }
 
-  /** Shows or hides the Leveling panel (it comes back in its old spot if that's still free). */
+  /** Shows or hides the Leveling Spots panel (it comes back in its old spot if that's still free). */
   toggleLeveling(): void {
     const p = this.levelingPanel();
     if (p.shown) {
@@ -1393,9 +1582,9 @@ export class TrackerStore {
       return;
     }
     const fits = p.x >= 0 && p.y >= 0 && this.canPlace(LEVELING_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
-    // First time: start from the level typed into the Level range panel, if any.
-    const from = p.from ?? this.levelPanel().level;
-    this.updateLevelingPanel({ shown: true, from, ...(fits ? {} : UNPLACED) });
+    // First time: start from the level typed into the Group Range panel, if any.
+    const level = p.level ?? this.levelPanel().level;
+    this.updateLevelingPanel({ shown: true, level, ...(fits ? {} : UNPLACED) });
     this.placeUnplaced();
   }
 
@@ -1520,6 +1709,50 @@ export class TrackerStore {
     this.placeUnplaced();
   }
 
+  // ---------- wishlist ----------
+
+  updateWishlistPanel(patch: Partial<WishlistPanel>): void {
+    this.wishlistPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Wishlist panel (it comes back in its old spot and size). */
+  toggleWishlist(): void {
+    const p = this.wishlistPanel();
+    if (p.shown) {
+      this.updateWishlistPanel({ shown: false });
+      return;
+    }
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(WISHLIST_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
+    this.updateWishlistPanel({ shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** Adds an item to the wishlist (or returns the one already there with that name). */
+  addWish(name: string, wikiUrl: string | null = null): WishItem | null {
+    const n = name.trim().slice(0, 100);
+    if (!n) return null;
+    const url = wikiItemUrl(wikiUrl);
+    const had = this.wishlistPanel().items.find((i) => i.name.toLowerCase() === n.toLowerCase());
+    if (had) {
+      if (url && !had.wikiUrl) this.updateWish(had.id, { wikiUrl: url });
+      return had;
+    }
+    const item = normalizeWishItem({ name: n, wikiUrl: url, added: Date.now() })!;
+    this.updateWishlistPanel({ items: [item, ...this.wishlistPanel().items].slice(0, WISHLIST_MAX) });
+    return item;
+  }
+
+  updateWish(id: string, patch: Partial<Pick<WishItem, 'from' | 'got' | 'wikiUrl'>>): void {
+    const clean: Partial<WishItem> = { ...patch };
+    if (patch.from !== undefined) clean.from = patch.from.trim().slice(0, 300);
+    if (patch.wikiUrl !== undefined) clean.wikiUrl = wikiItemUrl(patch.wikiUrl);
+    this.updateWishlistPanel({ items: this.wishlistPanel().items.map((i) => (i.id === id ? { ...i, ...clean } : i)) });
+  }
+
+  removeWish(id: string): void {
+    this.updateWishlistPanel({ items: this.wishlistPanel().items.filter((i) => i.id !== id) });
+  }
+
   /** Marks a spell as bought, or unmarks it (bought spells aren't counted in the Spells panel's costs). */
   toggleSpellBought(key: string): void {
     const bought = this.spellPanel().bought;
@@ -1536,9 +1769,9 @@ export class TrackerStore {
     if (!this.spellPanel().shown) this.toggleSpells();
   }
 
-  /** Shows the Leveling panel (if hidden) on a level range, e.g. from a class's leveling path. */
-  showLevelingFor(from: number, to: number | null): void {
-    this.updateLevelingPanel({ from, to: to !== null && to !== from ? to : null });
+  /** Shows the Leveling Spots panel (if hidden) for a level, and a class if given (e.g. from a class's leveling path). */
+  showLevelingFor(level: number, cls?: string): void {
+    this.updateLevelingPanel({ level, ...(cls ? { cls } : {}) });
     if (!this.levelingPanel().shown) this.toggleLeveling();
   }
 
@@ -1559,6 +1792,8 @@ export class TrackerStore {
         return PRICE_MIN;
       case 'wiki':
         return WIKI_MIN;
+      case 'wishlist':
+        return WISHLIST_MIN;
       case 'counter':
         return PANEL_MIN[p.item.kind];
       default:
@@ -1609,6 +1844,9 @@ export class TrackerStore {
         break;
       case 'wiki':
         this.updateWikiPanel(size);
+        break;
+      case 'wishlist':
+        this.updateWishlistPanel(size);
         break;
     }
     return true;
@@ -1779,14 +2017,18 @@ export class TrackerStore {
     this.classPanel.set(state.classPanel);
     this.pricePanel.set(state.pricePanel);
     this.wikiPanel.set(state.wikiPanel);
+    // The wishlist is kept across layouts: the file's items are added to yours.
+    this.wishlistPanel.set({ ...state.wishlistPanel, items: mergeWishes(this.wishlistPanel().items, state.wishlistPanel.items) });
     this.gameClock.set(state.gameClock);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
     this.buffSets.update((mine) => [...mine.filter((s) => !incoming.has(s.name.toLowerCase())), ...state.buffSets]);
     this.soundOn.set(state.soundOn);
     this.theme.set(state.theme);
+    this.settleCamps();
     this.placeUnplaced();
     this.repairOverlaps();
+    this.adoptPrivateLogs();
     return true;
   }
 
@@ -1881,6 +2123,7 @@ export class TrackerStore {
       classPanel: this.classPanel(),
       pricePanel: this.pricePanel(),
       wikiPanel: this.wikiPanel(),
+      wishlistPanel: this.wishlistPanel(),
       gameClock: this.gameClock(),
       soundOn: this.soundOn(),
       theme: this.theme(),
@@ -1914,6 +2157,7 @@ export class TrackerStore {
     this.classPanel.set(state.classPanel);
     this.pricePanel.set(state.pricePanel);
     this.wikiPanel.set(state.wikiPanel);
+    this.wishlistPanel.set(state.wishlistPanel);
     this.gameClock.set(state.gameClock);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);

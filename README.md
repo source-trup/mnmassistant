@@ -1,37 +1,43 @@
 # MnM Assistant
 
-*Dalgrimm's spirit ledger.* A companion app for **Monsters & Memories** that lives on your second monitor and keeps
-track of the things you'd otherwise scribble on paper: spawn timers, placeholder and named counts, what dropped, and
-when your buffs are about to fade.
+*Dalgrimm's spirit ledger.* A companion app for **Monsters & Memories** that lives on your second monitor. Its
+**tools** put the community wiki, zone maps, Trem prices, your wishlist, leveling spots, spells and class guides one
+click away, and it keeps track of the things you'd otherwise scribble on paper: spawn timers, placeholder and named
+kills, what dropped, and when your buffs are about to fade.
 
-It runs locally in your browser. Nothing is sent anywhere. The one exception is optional item search against the
-Monsters and Memories Wiki.
+It runs in your browser, and everything you enter stays there. The tools read public data (the community wiki,
+MnMdb, Worth the Camp, MnM Atlas), but nothing about you is sent anywhere.
 
 ---
 
 ## Contents
 
 - [Quick start](#quick-start)
+- [The toolbar](#the-toolbar)
+- **The tools:**
+  - [Wiki](#wiki)
+  - [Map](#map)
+  - [Prices](#prices)
+  - [Wishlist](#wishlist)
+  - [Leveling](#leveling)
+  - [Spells](#spells)
+  - [Classes](#classes)
+  - [Level range](#level-range)
+  - [Naughty and Nice lists](#naughty-and-nice-lists)
 - [The board](#the-board)
 - [Timers](#timers)
+- [Named / PH timers](#named--ph-timers)
 - [Counters](#counters)
 - [Camp history and loot](#camp-history-and-loot)
 - [Buff Tracker](#buff-tracker)
 - [Notes](#notes)
-- [Naughty and Nice lists](#naughty-and-nice-lists)
-- [Classes](#classes)
-- [Prices](#prices)
-- [Wiki](#wiki)
 - [Game time](#game-time)
-- [Level range](#level-range)
-- [Spells](#spells)
-- [Leveling](#leveling)
-- [Map](#map)
 - [Pop-out window](#pop-out-window)
 - [Alerts: chimes and voice](#alerts-chimes-and-voice)
 - [Saving, loading and backups](#saving-loading-and-backups)
 - [Themes](#themes)
-- [Wiki item search (optional)](#wiki-item-search-optional)
+- [Item suggestions when recording loot](#item-suggestions-when-recording-loot)
+  - [Wiki item search (optional, local only)](#wiki-item-search-optional-local-only)
 - [Entering times](#entering-times)
 - [Tips and known limits](#tips-and-known-limits)
 - [For developers](#for-developers)
@@ -63,9 +69,279 @@ site and `localhost` keep separate boards. To move a board between them, use ☰
 
 ---
 
+## The toolbar
+
+Across the top of the page, left to right:
+
+| Part | What it does |
+| --- | --- |
+| **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
+| **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers and notes you've put away; click one to bring it back. The number on the button is how many are saved. |
+| **🕰️ Game time** | The [game clock](#game-time), with how long until 6 PM and 6 AM; click it for more. |
+| **?** | The quick guide. |
+| **🔔 / 🔕** | Mutes all alerts. |
+| **☰** | Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters, [Theme](#themes) picker, Test sound & voice, Quick guide. |
+
+**Quick guide:** **?** in the toolbar (or **☰ → Quick guide**) opens a short "How to use" guide. It starts with the
+tools, then the rest of the toolbar, panels, timers, Named / PH timers, buffs and notes, and saving. It opens by itself
+the first time someone uses the app, and when it's closed the [theme](#themes) picker follows, so a new user can pick a
+look for their class.
+---
+
+## Wiki
+
+The community [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) inside the app.
+**📖 Wiki** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and size, on the page
+you last read).
+
+| Action | How |
+| --- | --- |
+| Search | Type an NPC, item, quest, zone… and press Enter. A page with exactly that name comes first, then pages that mention it. |
+| Read | Click a result to read the page here, restyled to match the app. Links to other wiki pages open in the panel; **←** goes back. Images, categories and other sites open in a new tab. |
+| On the wiki | **↗** in the header opens the page (or search) on the wiki itself. |
+
+**📖 buttons** around the app look things up here: the NPC in a Named / PH timer's [history](#history-view-) (once
+it's named after the NPC) and each loot item there; the item in [Prices](#prices); an open spell in
+[Spells](#spells); the class in [Classes](#classes); each zone in [Leveling](#leveling) (and each camp, on hover); the
+zone in [Map](#map). If the wiki has no page with that name, you get the pages that mention it instead.
+
+It reads the wiki live through its public API, one request at a time when you search or open a page (results are
+remembered until you reload), so it needs an internet connection. Pages are shown through Angular's HTML sanitizer,
+which removes scripts and styles.
+
+*Wiki content: the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) contributors,
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).*
+
+---
+
+## Map
+
+The illustrated zone maps from [MnM Atlas](https://www.mnmatlas.com/), an unofficial fan atlas, shown with the atlas's
+own [embed](https://www.mnmatlas.com/embed/) (its compact mode, so the scroll wheel zooms as soon as you hover). **🧭 Map** in the toolbar shows or hides the panel (there's only one; it comes
+back in the same spot and size). Drag its bottom-right corner to resize it: maps are easiest to use big.
+
+| Action | How |
+| --- | --- |
+| Pick a map | Click the map box for the World map and every zone A–Z, or **type to find one**: zones starting with what you type come first, then a word inside the name (`weald` → Evershade Weald), then anywhere in it. Floor names count too: `ossuary` offers the Tomb's *Ossuary and bone construct* floor and opens straight onto it. ↑ / ↓ and Enter pick; Esc puts the box back. |
+| Pick a floor | Zones with levels or floors (the Tomb, Tel Ekir, Fallen Pass, Fallen Watch…) get a second box. **Default view** is how the atlas opens the map. |
+| Find something | Type an NPC, a place or e.g. `enchanter trainer` in the find box and press Enter. The atlas searches every map and opens the right one on that marker. **✕** (or Esc) goes back to the chosen map. |
+| Use the map | Drag, scroll to zoom (just hover; no click needed), switch floors and open marker popups inside it. The atlas's own bar at the top of the map also has a map picker, a search menu and sign-in for suggesting edits. While the mouse is over the map the wheel zooms it; move off the map to scroll the board. |
+| Full atlas | **↗** in the header opens what you're looking at in MnM Atlas in a new tab. |
+
+The map loads live from mnmatlas.com, so it needs an internet connection and always shows the atlas's latest
+version. The zone list lives in `src/app/map/atlas-maps.ts`; add new maps there when the atlas adds them.
+
+*Maps: [MnM Atlas](https://www.mnmatlas.com/) and the community map authors credited on each map.*
+
+---
+
+## Prices
+
+A price checker for the **Trem** server. **💰 Price Checker** in the toolbar shows or hides the panel (there's only one; it comes
+back in the same spot and size).
+
+| Action | How |
+| --- | --- |
+| Check an item | Start typing a name; pick from the list (↑ / ↓ and Enter, or click). Items most often for sale come first. Your last 8 checks stay as chips under the box; **✕** on a chip removes it. |
+| Trem market | **Typical ask** is the median price per item among sellers, with the cheapest and highest. Below it: how many sellers, how recent the newest listing is, and what buyers offer (WTB). Switch between the last **7 days** and **30 days**. Fewer than 3 sellers is flagged as a rough guide. |
+| Vendor | What an NPC merchant pays for it, and how the player price compares ("players ask 30× the vendor price"). |
+| Listings | **For sale** (cheapest first) and **Wanted** (highest offer first): price each, as listed (e.g. `3s / 20` for a stack), the player and when it was last seen. |
+| Item | Slot, AC, stats, classes, which mobs drop it (with drop rates where enough kills are logged), whether it's gathered, which tradeskills use it and which merchants sell it. **🧭** opens a zone in the [Map](#map) panel. **MnMdb ↗** opens the item on mnm-db.com. |
+| Refresh | **↻** in the header reloads the latest data. |
+
+**💰** next to an item in a Named / PH counter's loot summary ([history](#history-view-)) opens it here, so you can
+see what a drop is worth.
+
+The data comes live from [MnMdb](https://mnm-db.com/) (an open-source community economy database), the first time
+you open the panel: Trem auction-channel listings (asking prices, not completed sales; roughly the last 30 days),
+vendor sale prices and drops players have logged, and merchant lists from the wiki. Nothing is copied into this app,
+so it needs an internet connection and shows whatever MnMdb has now (it updates through the day).
+
+*Prices: [MnMdb](https://mnm-db.com/) ([source](https://github.com/Boisteroux/mnm-tools), MIT).*
+
+---
+
+## Wishlist
+
+**⭐ Wishlist** in the toolbar keeps a list of items you're after.
+
+- **Add** an item by typing its name and pressing Enter. Suggestions come from MnMdb's item list (and the
+  monstersandmemories.wiki item search when running locally with a key, see below). Any name works, even one no site
+  knows yet.
+- Each row shows **where it drops**: the first MnMdb drop source with its rate, or your own note. On the right is the
+  typical Trem asking price.
+- **Click a row** for the details:
+  - **Stats** (slot, AC, damage/delay, attributes, HP, mana, resists, flags such as MAGIC or UNIQUE), classes and
+    races, and any effect.
+  - **Where it comes from:** who drops it (and how often, once enough corpses were seen), harvesting, tradeskills,
+    vendors, and the zones, with **🧭** buttons that open them in the Map panel.
+  - **Where it drops (your note):** your own words, for items the sites don't know or anything to add (camp, quest,
+    who has one). A new item MnMdb knows nothing about opens here straight away.
+  - **Links:**
+    - **📖 Wiki** reads it in the Wiki panel, and **Miraheze ↗** opens it on the Miraheze wiki. These show only when
+      the page exists: the app checks the wiki live for a page with the item's name.
+    - **.wiki ↗** opens it on monstersandmemories.wiki, at the address the wiki uses for item pages
+      (`/items/wyvern-hide-tunic` for Wyvern Hide Tunic). The app can't check whether that page exists, so it's always
+      shown, and leads nowhere when nobody has written the page yet. Running locally with the partner key, the wiki's
+      item search supplies the exact address instead. If the address is wrong, **✎ .wiki link** lets you paste the
+      right one (clear the box to go back to the built one).
+    - **MnMdb ↗** and **💰 Price** (the Prices panel), when MnMdb has the item.
+- **☐** marks an item as got: it's struck through and moves to the bottom. **◉ / ◌** in the header hides or shows
+  the items you've got. **✕** removes an item (Shift + click skips the question).
+
+The list is saved with everything else. Hiding the panel keeps it. Loading a layout file adds the file's items to
+yours instead of replacing them.
+
+---
+
+## Leveling
+
+Where to hunt for your class and level, from [Worth the Camp](https://worththecamp.com/)'s NPC data. **🗺️ Leveling
+Spots** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and size). Drag its
+bottom-right corner to resize it.
+
+| Action | How |
+| --- | --- |
+| Pick your class | The **Class** list. Until you pick one it follows your [theme](#themes)'s class. |
+| Pick your level | Type it, or use **−** / **+**. The first time you open the panel it starts from the level in the [Group Range](#level-range) panel, if you've entered one there. 🗺️ on a leveling path step in [Class Guides](#classes) opens it on that level and class. |
+| Solo or group | **Solo** aims at or below your level, lower for classes that find soloing hard. **Group** aims 2–3 levels above you. |
+| See it on Worth the Camp | **Worth the Camp ↗** in the header opens their own leveling page with the same class, level and mode. |
+
+Under the choices, **Aim for mobs 17–19, named 15–17** says what suits you, and a strip of levels shows each one in its
+con colour with your target outlined (the named target dashed). Hover a level for its colour's meaning.
+
+Then the zones, best first. Each lists its mobs in your range: the regular mobs lowest first, then the named. Each
+mob shows its con colour (judged at its highest level, to stay on the safe side), **Named**, its level or level range
+and how many items it's known to drop; click a name for its page on Worth the Camp. A zone shows the first six, with
+**+N more** for the rest. In the zone heading: how many mobs fit and the zone's level range, **🧭** to open it in the
+[Map](#map) panel, **📖** to look it up in the [Wiki](#wiki) panel, and **↗** for its Worth the Camp page (every NPC
+and what it drops).
+
+How it picks (following [Worth the Camp's rules](https://worththecamp.com/leveling)):
+
+- **Solo target by class:** each class's community solo tier (from Worth the Camp's
+  [class meta](https://worththecamp.com/meta)) sets the range: S −3 to your level, A −3 to −1, B −4 to −2, C −5 to
+  −3, D −6 to −4.
+- **Named mobs** (anything not called "a …" or "an …") hit harder than the regulars around them, so they're matched
+  against the target moved 2 levels lower.
+- **A mob counts** when its known level range overlaps the target. Raid bosses and mobs with no known level are left
+  out.
+- **Ranking:** zones with more mobs in range come first. Cities and hubs (Night Harbor, Ail'Vorith, Faelindral, and
+  any zone whose mobs span 30 levels or more, marked **hub**) count for a little less, since they have mobs of every
+  level. Worth the Camp doesn't publish its exact formula, so the order can differ slightly from their page.
+- **Con colours** (relative to you): red 3+ above, yellow 1–2 above, white even, blue 1–3 below, light blue 4 below,
+  green 5 below, grey further down.
+
+**The data:** the panel downloads Worth the Camp's `npcs.json`, `zones.json` and `meta.json` from their free
+[Data API](https://worththecamp.com/api) (no key needed) at most once a day, as they ask, and keeps a trimmed copy in
+this browser, so it opens instantly and still works if their site is down. Their item, NPC and zone data is adapted
+from the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the panel credits both, and what's built from it here
+is shared under the same license. The site is fan-made and still in testing, so levels can be missing or change.
+
+**The previous data, kept for later:** before Worth the Camp, the panel used the community
+[leveling sheet](https://docs.google.com/spreadsheets/d/1z3O-QkdgvAwUXrCVF3fRQRBGxXxDq6FcoipuA52sdl0/edit?gid=1120375141#gid=1120375141)
+(`data/leveling.csv`) and the wiki's
+[Per-Level Hunting Guide](https://monstersandmemories.miraheze.org/wiki/Per-Level_Hunting_Guide)
+(`data/hunting-guide.json`, CC BY-SA 4.0). Both files are still here, and `npm run leveling` still builds them into
+`src/app/leveling/archive/leveling-data.ts`, but nothing in the app uses that file right now.
+
+---
+
+## Spells
+
+Every class spell and ability with its kind, level, school, mana, vendor price, classes and effect.
+**🪄 Spells** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and
+size). Drag its bottom-right corner to resize it.
+
+| Action | How |
+| --- | --- |
+| Pick a class | The class box (starts on Shaman). **All classes** shows everything, with each spell's classes beside its name. |
+| Pick a level | The level box lists the levels at which that class gets something. **‹ ›** step to the previous / next such level. **All levels** groups the list by level, each with its cost; click a level heading to jump to it. |
+| What a level costs | The line under the search box: the number of spells and their **total vendor price** at the chosen level, plus the running total for **levels 1 to that level**. Spells with no price listed are counted separately and left out of the total. |
+| Search | Type part of a name. Searches of 3+ letters also look in the effect text (try `underwater`). Search covers every level of the chosen class and offers the matches in other classes. Esc clears it. |
+| Spell details | Click a spell: kind(s), level, school, mana, price, classes and the full effect text. Click again to close. |
+| Mark as bought | **Right-click** a spell (or open it and press **✓ Mark as bought**). Bought spells are struck through with a ✓ and left out of every total: the level, the level headings, and levels 1 to N. Right-click again to unmark. **⚙ → Clear bought spells** unmarks them all (it asks first). |
+
+The colored dots on each row are the spell's kinds (damage, heal, buff, debuff, crowd control, defense, pet, cure,
+threat, utility); hover one to see which. Prices use 100c = 1s and 100s = 1g. The class and level you picked are
+remembered.
+
+The list is only downloaded the first time you open the panel. It lives in `data/spells.txt`; after editing that
+file run `npm run spells` to rebuild `public/spells.json`.
+
+*Spell data from the Monsters and Memories Wiki — https://monstersandmemories.wiki/spells*
+
+---
+
+## Classes
+
+How to play each of the 18 classes. **🛡️ Class Guides** in the toolbar shows or hides the panel (there's only one; it comes back in
+the same spot and size). It starts on your [theme](#themes)'s class (Shaman by default) and remembers the class and
+tab you last looked at.
+
+**Snapshot** (always at the top): the class's role, armor, key stats, how well it solos, how much groups want it,
+how hard it is, and its primary and secondary attributes. Pick a class from the box, or narrow the box with the
+**Tank / Healer / DPS / Support / Hybrid** buttons.
+
+| Tab | What's in it |
+| --- | --- |
+| **Overview** | How to play and four quick tips, strengths and weaknesses, and links to every section of the full guide. |
+| **Build** | Each race's starting stats (the best in each column highlighted) and where it starts, and the recommended traits with alternatives. |
+| **Abilities** | Key spells or abilities by level, and each ability line with when it starts and how it progresses. **📖 All … spells & abilities** opens the [Spells](#spells) panel on the class. |
+| **Leveling** | The class's leveling path. **🗺️** opens those levels in the [Leveling](#leveling) panel; **🧭** opens the zone in the [Map](#map) panel. |
+| **Gear** | Early gear and later upgrades: slot, stats and where to get it. |
+| **More** | Class-specific tables (pet families, seasons, glyphs, instruments, known skill caps) and links to the guide's class-specific sections. |
+
+The class facts, lists and tables come from [Stories of Monsters & Memories](https://storiesofmnm.com/classes/) and its
+class guides; each class links to its full guide, which explains the reasoning (why each race or trait, tactics,
+common mistakes, FAQ). The one-line summaries, "How to play" text and tips are written for this app, in
+`data/class-notes.json`. To refresh the data, run `npm run classes -- --fetch` (downloads the 36 pages, 2 seconds
+apart, into the git-ignored `data/.cache/`), or `npm run classes` to rebuild from the pages already downloaded.
+
+*Class data: [Stories of Monsters & Memories](https://storiesofmnm.com/), an unofficial fan site.*
+
+---
+
+## Level range
+
+Who can group with whom. **📊 Group Range** in the toolbar shows or hides the panel (there's only one, and it
+comes back in the same spot).
+
+- Type a level (or use **−** / **+**) and the panel immediately shows the **lowest** and **highest** levels it can
+  group with, e.g. level 18 → 13 to 26.
+- The chart below lists, for each lowest level in a group, how many levels above it the group can reach and the
+  highest level that can join. Levels 1–13 reach 5 levels up; from 14 on it's half the level minus one, up to the
+  level cap of 60.
+- The entered level's row and its lowest partner's row are highlighted, and the rows between them are tinted. Click
+  any row to look up that level.
+- The last level you entered is remembered.
+
+---
+
+## Naughty and Nice lists
+
+Two lists of players: the **😈 Naughty list** for people you'd rather not group with again, and the **😇 Nice
+list** for people you'd happily group with again. Each list has one panel. **😈 Naughty** / **😇 Nice** in the
+toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in the same spot.
+
+| Action | How |
+| --- | --- |
+| Check a name | Type it in either list's box. The list filters as you type, and a line under the box says whether that exact name is on **this** list, on the **other** list (highlighted, with its note), or on neither. |
+| Add | Type the name and press **Enter** (or **＋**). Names match regardless of capitals, and duplicates aren't added. |
+| Move between lists | Type a name that's on the other list and click **Move here**. Its note comes along. |
+| Note | Click a name to add or edit a reason, e.g. *"ninja-looted the FBSS"*. |
+| Remove | **✕** next to the name. **Undo** appears for a few seconds. |
+
+The lists are saved with everything else and included in layout files. Loading a layout file adds its names to
+yours rather than replacing them.
+
+---
+
 ## The board
 
-The page is a free-form board of panels. There are four panel types: **timers**, **counters**, **Buff Trackers** and **notes**.
+The page is a free-form board of panels: the [tools](#the-toolbar) you've opened, and the timers, Named / PH timers,
+counters, Buff Trackers and notes you've added.
 
 | Action | How |
 | --- | --- |
@@ -79,22 +355,6 @@ The page is a free-form board of panels. There are four panel types: **timers**,
 
 New panels start 280px wide, and every panel snaps to a 20px grid with a built-in gutter, so panels placed side by
 side are always evenly spaced. Sizes are saved with the layout, and a hidden tool panel comes back at its last size. (Boards saved when panels were narrower are tidied automatically if anything would overlap.)
-
-### Toolbar
-
-| Section | What it does |
-| --- | --- |
-| **⏱ Timers** | `5m` `6m` `8m` `10m` (common placeholder respawns) add a timer in one click. For any other length, type it in the box (`7:30`, `90s`, `1h30m`) and press Enter. |
-| **＋ Add ▾** | Adds a panel: Count (standard counter), Named / PH (camp counter), Buff Tracker, Note or Checklist. Below them are your [saved notes](#notes); the number on the button is how many are put away. |
-| **Tools ▾** | Shows or hides the one-of-a-kind panels, each ticked when it's showing. **Players:** [Naughty and Nice lists](#naughty-and-nice-lists). **Reference:** [Classes](#classes), [Prices](#prices), [Wiki](#wiki), [Level range](#level-range), [Spells](#spells), [Leveling](#leveling), [Map](#map). The menu stays open so you can switch several at once (click outside or Esc to close); the number on the button is how many are showing. |
-| Right side | The [game clock](#game-time) (🕰️ time, with how long until 6 PM and 6 AM; click it for more), **?** opens the quick guide, 🔔 / 🔕 mutes all alerts, ☰ menu |
-
-**Quick guide:** **?** in the toolbar (or **☰ → Quick guide**) opens a short "How to use" guide covering the
-toolbar, panels, timers, camps, buffs and notes, the tools, and saving. It opens by itself the first time someone
-uses the app, and when it's closed the [theme](#themes) picker follows, so a new user can pick a look for their class.
-
-**☰ menu:** Tidy panels, Save layout to file, Load layout from file, Reset all timers, Reset all counters,
-[Theme](#themes) picker, Test sound & voice, Quick guide.
 
 ---
 
@@ -116,82 +376,75 @@ a minute ago".
 
 **Settings (⚙):** name, duration, **auto-repeat** (starts over by itself at zero).
 
-**Name camp timers after the named NPC** (e.g. *Grimfang*). That's what ties [kill history](#history-is-saved-per-named-npc)
-to the NPC. When you rename a timer (right-click the title, or click the Name box in ⚙), a list of every NPC you've
-tracked opens, with kills and nameds for each. Type to narrow it, use ↑/↓ and Enter, or click one. **✕** on a row
-forgets that NPC and its history, after asking.
+**Give timers real names** (right-click the title, or the Name box in ⚙) so you hear *which* one is up. A list of every
+NPC you've tracked opens as you rename, with kills and nameds for each; **✕** on a row forgets that NPC and its
+history, after asking. A ↻ in the header means auto-repeat is on.
 
-A 🔗 in the header means a counter restarts this timer (see [linking](#linking-a-counter-to-a-timer)). A ↻ means
-auto-repeat is on.
+To count placeholder and named kills too, use a [Named / PH timer](#named--ph-timers) instead: the same countdown with
+the camp's counts built in.
+
+---
+
+## Named / PH timers
+
+Built for camping a named mob and its placeholders: one panel with the camp's **respawn countdown** on top and its
+**placeholder and named kills** below. Add one from **＋ Add → Named / PH timer** (6 minutes, a quick length, or any
+respawn typed in the box).
+
+| Button | Does |
+| --- | --- |
+| **+ PH** | +1 placeholder, logs the kill, restarts the countdown |
+| **+ Named** | +1 named, logs the kill, restarts the countdown, then opens the [loot drawer](#recording-loot) |
+| **−PH / −N** | Undo a mis-click. Removes the latest kill of that type (the countdown isn't touched). |
+| **Reset counts** | Zeroes the counts (asks first). The kill log is **kept**. |
+| **📜** | Opens the [camp history](#camp-history-and-loot) |
+| **—** | Puts it away: it leaves the board (its countdown stops) but keeps its counts, respawn and history. **＋ Add** lists it under **Saved**; click it to bring it back, in its old spot if that's still free. **✕** there deletes it. |
+
+The countdown works like a [timer](#timers): click the clock to start or restart it, right-click it to set the time left,
+**−1m / +1m**, Pause and Reset. The restart happens **the instant you click** + PH or + Named; it never waits for loot
+entry or anything else. Below the counts are **PH since the last named**, **how long ago the last named died**, and
+the kill rate; hover the "named … ago" text for the named odds.
+
+**⚙ settings:** name, respawn length, auto-repeat, and the PH, named and PH-streak counts.
+
+**Name it after the named NPC** (right-click the title, e.g. *Grimfang*). Its kills and loot are then saved to
+[Grimfang's history](#history-is-saved-per-named-npc), and when the countdown ends it says "Grimfang is up" (a camp
+with the default name chimes). A list of NPCs you've tracked opens as you rename.
+
+### Respawn estimate
+
+Once the camp has a few respawns logged (four kills), a line under the clock shows **⟳ est. respawn 6:02**: the
+estimated time between spawns, worked out from the camp's kill log (the last 40 kills). It isn't a plain average of
+the gaps between kills, which every late press, missed spawn or break would throw off:
+
+- **Double clicks** (a few seconds apart) count once.
+- **Missed spawns:** each gap is read as a whole number of respawns, so 12 minutes on a 6 minute camp is two respawns,
+  one of them not logged. The first guess at the respawn is the gap that explains the most other gaps this way, so
+  even a log where most spawns were missed finds the real one.
+- **Breaks and odd gaps are left out:** a gap that's halfway between (9 minutes on a 6 minute camp) or longer than
+  three respawns splits the log into separate runs.
+- **Late presses barely count:** within each run, every pair of kills gives an estimate (time apart ÷ respawns apart),
+  and the middle of all of them wins. Kills far apart outweigh neighbours, and a press a minute late is one point
+  among many, so it hardly moves the result. The estimate is then refined once more from its own result.
+
+Hover the line to see how many respawns it's based on, how many odd gaps were left out or discounted, and how far a
+single respawn usually is from the estimate. The pop-out window's compact panel shows the same line, and the camp's 📜
+history shows the same **Est. respawn**.
+
+**Boards from before Named / PH timers:** a Named/PH counter that was linked to a timer becomes one Named / PH timer
+(the timer's name, length and position, the counter's counts and history). An unlinked one gets its own 6 minute
+countdown. Links from standard counters are dropped.
 
 ---
 
 ## Counters
 
-### Standard counter (`Count`)
-
-A single number starting at 0.
+A single number starting at 0 (**＋ Add → Count**).
 
 - **+** or clicking the number adds one step. **−** subtracts.
 - Shows a **per-hour rate** since the last reset.
 - **Settings:** name, value, step size, optional **goal**. A goal displays as `12 / 20` and the counter turns
   highlighted when reached.
-
-### Named / PH counter (`Named / PH`)
-
-Built for camping a named mob and its placeholders.
-
-| Button | Does |
-| --- | --- |
-| **+ PH** | +1 placeholder, logs the kill, restarts the linked timer |
-| **+ Named** | +1 named, logs the kill, restarts the linked timer, then opens the [loot drawer](#recording-loot) |
-| **−PH / −N** | Undo a mis-click. Removes the latest kill of that type (the timer isn't touched). |
-| **📜** | Opens the [camp history](#camp-history-and-loot) |
-| **Reset** | Zeroes the counts (asks first). The kill log is **kept**. |
-
-The panel also shows **PH since the last named**, **how long ago the last named died**, and the kill rate. Hover the
-"named … ago" text for the named odds.
-
-### Linking a counter to a timer
-
-In a counter's **⚙ settings**, choose a timer under **Timer**. Or, for a Named/PH counter, **drag it onto the
-timer** (or the timer onto it). The target lights up with **🔗 Link**, and dropping asks you to confirm before
-linking. The dragged panel goes back to where it was. If the counter was linked to a different timer, the prompt
-says so before replacing that link. From then on:
-
-- **Named/PH counter:** **+ PH** and **+ Named** each restart that timer at full time, even mid-countdown. A **↻** on
-  the buttons shows the link is active.
-- **Standard counter:** **+** restarts the timer.
-
-The timer restarts **the instant you click**. It never waits for loot entry or anything else.
-
-#### Respawn estimate
-
-Once a Named/PH camp linked to a timer has a few respawns logged (four kills), the timer shows a line under the
-clock:
-
-- **⟳ avg 6:00**: the camp's typical respawn time, from its kill log (the last 40 kills).
-- **next ≈ 2:41:10 PM**: when the next spawn is expected, in your local time. Once it's passed it reads
-  *(1:30 ago)*: the mob should be up.
-- **1:12 before timer** (or *after timer*, or *matches timer*): how that compares with when the timer will end.
-
-It isn't a plain average of the gaps between kills:
-
-- **Missed spawns:** a gap close to two or three respawns counts as that many (12 minutes on a 6 minute camp is two
-  6 minute respawns, one of them not logged).
-- **Outliers are left out:** gaps that aren't close to a whole number of respawns (within 20%), such as a late
-  press (8 minutes on a 6 minute camp), an in-between 9 minutes, or a break. A double click counts once.
-- **The typical gap:** what's left gives the middle (median) respawn time, so a stray gap can't drag it.
-- **Late presses:** if you press **+ PH** a minute or two late, the timer runs from your press, but **next ≈** stays
-  on the camp's rhythm. It's projected from each of the last few kills, and the earliest projection wins, since a
-  late press can only make a kill look later.
-
-After a long break, **next ≈** waits for the next kill. Hover the line to see how many respawns it's based on and how
-many gaps were left out. The pop-out window's combined panel shows the same line, and the camp's 📜 history shows the same
-**Average respawn**.
-
-Linking a Named/PH counter to a timer you've named also **names the counter after it**: *Grimfang's log*. If you
-rename the timer, the counter follows. A name you gave the counter yourself is never changed.
 
 ---
 
@@ -215,11 +468,11 @@ After **+ Named**, a **"Named down!"** drawer slides in on the right. It doesn't
 Toggle between **Session** and **All time**. The Session view shows when the current session started.
 
 - **New session** (asks first) sets the counts back to 0 and starts session stats from now. The kill log is kept.
-  **Reset** on the panel does the same.
+  **Reset counts** on the panel does the same.
 - A new session also starts **automatically**: a + PH / + Named logged more than an hour after the camp's previous
   kill opens a fresh session before it's counted.
 
-- **Stats:** placeholders, named, named odds ("1 in 7.0"), last named, average respawn (the same estimate the linked timer shows),
+- **Stats:** placeholders, named, named odds ("1 in 7.0"), last named, estimated respawn (the same estimate the Named / PH timer shows),
   last respawn, longest PH streak, kills/hr, named/hr.
 - **Loot summary:** every item with its count and drop rate per named kill.
 - **Kill log:** newest first, with timestamps.
@@ -232,17 +485,16 @@ The log keeps up to 5,000 kills per NPC.
 
 ### History is saved per named NPC
 
-When a Named/PH counter is linked to a timer you've named (e.g. *Grimfang*), its kills are saved to **Grimfang's
-history**, not to the counter:
+When a Named / PH timer has a name of your own (e.g. *Grimfang*), its kills are saved to **Grimfang's history**, not
+to the panel:
 
-- The NPC is remembered as soon as the counter is linked, even before any kills.
-- Delete the timer and counter, and later create a new timer: *Grimfang* is in the name list. Pick it, link a
-  Named/PH counter, and all of Grimfang's past kills and loot are back.
-- Kills logged before you linked the counter move into the NPC's history.
-- Rename the timer to a different NPC and the counter switches to that NPC's history. Each NPC keeps its own.
-- A counter that isn't linked (or is linked to a timer with a generated name like `6:00 spawn`) keeps a history of its
-  own, which is deleted with the counter. Deleting such a counter always asks first and says how many kills would be
-  lost, even with Shift + click.
+- The NPC is remembered as soon as you name it, even before any kills.
+- Delete the panel, and later add a new Named / PH timer: *Grimfang* is in the name list. Pick it, and all of
+  Grimfang's past kills and loot are back.
+- Kills logged before you named it move into the NPC's history.
+- Rename it to a different NPC and it switches to that NPC's history. Each NPC keeps its own.
+- One with the default name (*Named / PH*) keeps a history of its own, which is deleted with it. Deleting one always
+  asks first and says how many kills would be lost, even with Shift + click; put it away (**—**) instead to keep it.
 
 The 📜 dialog's title shows whose history you're looking at. **Clear history** erases that NPC's whole log.
 
@@ -290,11 +542,11 @@ A free-text panel for camp notes, quest steps, who to group with, and so on.
 | Text size | **A−** / **A+** in the header (10px to 32px, 2px per click) |
 | Rename | Right-click the title, or **⚙** (or double-click the title) |
 | Put away | **—** in the header (or **Put away** in ⚙). The note leaves the board but keeps its text. |
-| Bring it back | **＋ Add** in the toolbar lists saved notes (and checklists) under **Saved notes**, with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
+| Bring it back | **＋ Add** in the toolbar lists saved notes (and checklists) under **Saved**, with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
 | Resize | Drag the bottom-right corner. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. |
 
 The text area takes up the whole panel and scrolls if the note gets long. The number on **＋ Add** shows how many notes
-are put away.
+and Named / PH timers are put away.
 
 ### Checklists
 
@@ -315,106 +567,6 @@ for a tradeskill run. It has the same title, text size, put away and resize cont
 
 Adding an item that's already on the list adds to its count and unchecks it, so pasting two recipes' materials
 gives you the totals.
-
----
-
-## Naughty and Nice lists
-
-Two lists of players: the **😈 Naughty list** for people you'd rather not group with again, and the **😇 Nice
-list** for people you'd happily group with again. Each list has one panel. **Tools → Naughty list / Nice list** in the
-toolbar shows or hides it. Hiding a panel keeps its names, and it comes back in the same spot.
-
-| Action | How |
-| --- | --- |
-| Check a name | Type it in either list's box. The list filters as you type, and a line under the box says whether that exact name is on **this** list, on the **other** list (highlighted, with its note), or on neither. |
-| Add | Type the name and press **Enter** (or **＋**). Names match regardless of capitals, and duplicates aren't added. |
-| Move between lists | Type a name that's on the other list and click **Move here**. Its note comes along. |
-| Note | Click a name to add or edit a reason, e.g. *"ninja-looted the FBSS"*. |
-| Remove | **✕** next to the name. **Undo** appears for a few seconds. |
-
-The lists are saved with everything else and included in layout files. Loading a layout file adds its names to
-yours rather than replacing them.
-
----
-
-## Classes
-
-How to play each of the 18 classes. **Tools → Classes** shows or hides the panel (there's only one; it comes back in
-the same spot and size). It starts on your [theme](#themes)'s class (Shaman by default) and remembers the class and
-tab you last looked at.
-
-**Snapshot** (always at the top): the class's role, armor, key stats, how well it solos, how much groups want it,
-how hard it is, and its primary and secondary attributes. Pick a class from the box, or narrow the box with the
-**Tank / Healer / DPS / Support / Hybrid** buttons.
-
-| Tab | What's in it |
-| --- | --- |
-| **Overview** | How to play and four quick tips, strengths and weaknesses, and links to every section of the full guide. |
-| **Build** | Each race's starting stats (the best in each column highlighted) and where it starts, and the recommended traits with alternatives. |
-| **Abilities** | Key spells or abilities by level, and each ability line with when it starts and how it progresses. **📖 All … spells & abilities** opens the [Spells](#spells) panel on the class. |
-| **Leveling** | The class's leveling path. **🗺️** opens those levels in the [Leveling](#leveling) panel; **🧭** opens the zone in the [Map](#map) panel. |
-| **Gear** | Early gear and later upgrades: slot, stats and where to get it. |
-| **More** | Class-specific tables (pet families, seasons, glyphs, instruments, known skill caps) and links to the guide's class-specific sections. |
-
-The class facts, lists and tables come from [Stories of Monsters & Memories](https://storiesofmnm.com/classes/) and its
-class guides; each class links to its full guide, which explains the reasoning (why each race or trait, tactics,
-common mistakes, FAQ). The one-line summaries, "How to play" text and tips are written for this app, in
-`data/class-notes.json`. To refresh the data, run `npm run classes -- --fetch` (downloads the 36 pages, 2 seconds
-apart, into the git-ignored `data/.cache/`), or `npm run classes` to rebuild from the pages already downloaded.
-
-*Class data: [Stories of Monsters & Memories](https://storiesofmnm.com/), an unofficial fan site.*
-
----
-
-## Prices
-
-A price checker for the **Trem** server. **Tools → Prices** shows or hides the panel (there's only one; it comes
-back in the same spot and size).
-
-| Action | How |
-| --- | --- |
-| Check an item | Start typing a name; pick from the list (↑ / ↓ and Enter, or click). Items most often for sale come first. Your last 8 checks stay as chips under the box; **✕** on a chip removes it. |
-| Trem market | **Typical ask** is the median price per item among sellers, with the cheapest and highest. Below it: how many sellers, how recent the newest listing is, and what buyers offer (WTB). Switch between the last **7 days** and **30 days**. Fewer than 3 sellers is flagged as a rough guide. |
-| Vendor | What an NPC merchant pays for it, and how the player price compares ("players ask 30× the vendor price"). |
-| Listings | **For sale** (cheapest first) and **Wanted** (highest offer first): price each, as listed (e.g. `3s / 20` for a stack), the player and when it was last seen. |
-| Item | Slot, AC, stats, classes, which mobs drop it (with drop rates where enough kills are logged), whether it's gathered, which tradeskills use it and which merchants sell it. **🧭** opens a zone in the [Map](#map) panel. **MnMdb ↗** opens the item on mnm-db.com. |
-| Refresh | **↻** in the header reloads the latest data. |
-
-**💰** next to an item in a Named / PH counter's loot summary ([history](#history-view-)) opens it here, so you can
-see what a drop is worth.
-
-The data comes live from [MnMdb](https://mnm-db.com/) (an open-source community economy database), the first time
-you open the panel: Trem auction-channel listings (asking prices, not completed sales; roughly the last 30 days),
-vendor sale prices and drops players have logged, and merchant lists from the wiki. Nothing is copied into this app,
-so it needs an internet connection and shows whatever MnMdb has now (it updates through the day).
-
-*Prices: [MnMdb](https://mnm-db.com/) ([source](https://github.com/Boisteroux/mnm-tools), MIT).*
-
----
-
-## Wiki
-
-The community [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) inside the app.
-**Tools → Wiki** shows or hides the panel (there's only one; it comes back in the same spot and size, on the page
-you last read).
-
-| Action | How |
-| --- | --- |
-| Search | Type an NPC, item, quest, zone… and press Enter. A page with exactly that name comes first, then pages that mention it. |
-| Read | Click a result to read the page here, restyled to match the app. Links to other wiki pages open in the panel; **←** goes back. Images, categories and other sites open in a new tab. |
-| On the wiki | **↗** in the header opens the page (or search) on the wiki itself. |
-
-**📖 buttons** around the app look things up here: the NPC in a Named / PH camp's [history](#history-view-) (for a
-camp linked to a timer named after the NPC) and each loot item there; the item in [Prices](#prices); an open spell in
-[Spells](#spells); the class in [Classes](#classes); each zone in [Leveling](#leveling) (and each camp, on hover); the
-zone in [Map](#map). If the wiki has no page with that name, you get the pages that mention it instead.
-
-It reads the wiki live through its public API, one request at a time when you search or open a page (results are
-remembered until you reload), so it needs an internet connection. Pages are shown through Angular's HTML sanitizer,
-which removes scripts and styles.
-
-*Wiki content: the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) contributors,
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).*
 
 ---
 
@@ -440,113 +592,17 @@ speed, the app follows it and says so; if the wiki can't be reached, it uses the
 
 ---
 
-## Level range
-
-Who can group with whom. **Tools → Level range** in the toolbar shows or hides the panel (there's only one, and it
-comes back in the same spot).
-
-- Type a level (or use **−** / **+**) and the panel immediately shows the **lowest** and **highest** levels it can
-  group with, e.g. level 18 → 13 to 26.
-- The chart below lists, for each lowest level in a group, how many levels above it the group can reach and the
-  highest level that can join. Levels 1–13 reach 5 levels up; from 14 on it's half the level minus one, up to the
-  level cap of 60.
-- The entered level's row and its lowest partner's row are highlighted, and the rows between them are tinted. Click
-  any row to look up that level.
-- The last level you entered is remembered.
-
----
-
-## Spells
-
-Every class spell and ability with its kind, level, school, mana, vendor price, classes and effect.
-**Tools → Spells** in the toolbar shows or hides the panel (there's only one; it comes back in the same spot and
-size). Drag its bottom-right corner to resize it.
-
-| Action | How |
-| --- | --- |
-| Pick a class | The class box (starts on Shaman). **All classes** shows everything, with each spell's classes beside its name. |
-| Pick a level | The level box lists the levels at which that class gets something. **‹ ›** step to the previous / next such level. **All levels** groups the list by level, each with its cost; click a level heading to jump to it. |
-| What a level costs | The line under the search box: the number of spells and their **total vendor price** at the chosen level, plus the running total for **levels 1 to that level**. Spells with no price listed are counted separately and left out of the total. |
-| Search | Type part of a name. Searches of 3+ letters also look in the effect text (try `underwater`). Search covers every level of the chosen class and offers the matches in other classes. Esc clears it. |
-| Spell details | Click a spell: kind(s), level, school, mana, price, classes and the full effect text. Click again to close. |
-| Mark as bought | **Right-click** a spell (or open it and press **✓ Mark as bought**). Bought spells are struck through with a ✓ and left out of every total: the level, the level headings, and levels 1 to N. Right-click again to unmark. **⚙ → Clear bought spells** unmarks them all (it asks first). |
-
-The colored dots on each row are the spell's kinds (damage, heal, buff, debuff, crowd control, defense, pet, cure,
-threat, utility); hover one to see which. Prices use 100c = 1s and 100s = 1g. The class and level you picked are
-remembered.
-
-The list is only downloaded the first time you open the panel. It lives in `data/spells.txt`; after editing that
-file run `npm run spells` to rebuild `public/spells.json`.
-
-*Spell data from the Monsters and Memories Wiki — https://monstersandmemories.wiki/spells*
-
----
-
-## Leveling
-
-Where to hunt for a given level. **Tools → Leveling** in the toolbar shows or hides the panel (there's only one;
-it comes back in the same spot and size). Drag its bottom-right corner to resize it.
-
-| Action | How |
-| --- | --- |
-| Pick a level | Type it in the **Level** box, or use **−** / **+**. The first time you open the panel it starts from the level in the [Level range](#level-range) panel, if you've entered one there. |
-| Pick a range | Also fill the **to** box (e.g. 15 to 24). **−** / **+** then slide the whole range. **✕** goes back to a single level. |
-| Pick a bracket | The **1 5 10 … 60** buttons pick that column of the leveling sheet (e.g. **15** = levels 15–19). |
-| Filter | **Region** (Szuur / Calafrey), **Source** (sheet camps, hunting guide, or both), and **Raids** to include or hide raid encounters. |
-
-Results are grouped by zone, with each camp's level range on the right and raid encounters marked **Raid**. **🧭**
-on a zone heading opens that zone in the [Map](#map) panel (opening the panel if it's hidden). Hunting
-guide spots (marked **Guide**) show the area, the guide's own solo and group levels, the monsters there and any notes.
-
-The data comes from two places:
-
-- **Camps:** the community [leveling sheet](https://docs.google.com/spreadsheets/d/1z3O-QkdgvAwUXrCVF3fRQRBGxXxDq6FcoipuA52sdl0/edit?gid=1120375141#gid=1120375141),
-  saved as `data/leveling.csv`. A camp listed under the sheet's **15** column counts as levels 15–19; one listed
-  under both **15** and **20** counts as 15–24. The levels are rough group levels.
-- **Guide spots:** the [Per-Level Hunting Guide](https://monstersandmemories.miraheze.org/wiki/Per-Level_Hunting_Guide)
-  on the Monsters and Memories Wiki (Miraheze), saved as `data/hunting-guide.json`. Its level text is free-form, so
-  "17+" is read as 17–22 and "12?" as 12. A spot with no usable level ("Most Can't", blank) uses the page section it's
-  under. That page's content is licensed
-  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the guide data in this project is shared under
-  the same license.
-
-After editing either file, run `npm run leveling` to rebuild `src/app/leveling/leveling-data.ts`.
-
----
-
-## Map
-
-The illustrated zone maps from [MnM Atlas](https://www.mnmatlas.com/), an unofficial fan atlas, shown with the atlas's
-own [embed](https://www.mnmatlas.com/embed/) (its compact mode, so the scroll wheel zooms as soon as you hover). **Tools → Map** shows or hides the panel (there's only one; it comes
-back in the same spot and size). Drag its bottom-right corner to resize it: maps are easiest to use big.
-
-| Action | How |
-| --- | --- |
-| Pick a map | Click the map box for the World map and every zone A–Z, or **type to find one**: zones starting with what you type come first, then a word inside the name (`weald` → Evershade Weald), then anywhere in it. Floor names count too: `ossuary` offers the Tomb's *Ossuary and bone construct* floor and opens straight onto it. ↑ / ↓ and Enter pick; Esc puts the box back. |
-| Pick a floor | Zones with levels or floors (the Tomb, Tel Ekir, Fallen Pass, Fallen Watch…) get a second box. **Default view** is how the atlas opens the map. |
-| Find something | Type an NPC, a place or e.g. `enchanter trainer` in the find box and press Enter. The atlas searches every map and opens the right one on that marker. **✕** (or Esc) goes back to the chosen map. |
-| Use the map | Drag, scroll to zoom (just hover; no click needed), switch floors and open marker popups inside it. The atlas's own bar at the top of the map also has a map picker, a search menu and sign-in for suggesting edits. While the mouse is over the map the wheel zooms it; move off the map to scroll the board. |
-| Full atlas | **↗** in the header opens what you're looking at in MnM Atlas in a new tab. |
-
-The map loads live from mnmatlas.com, so it needs an internet connection and always shows the atlas's latest
-version. The zone list lives in `src/app/map/atlas-maps.ts`; add new maps there when the atlas adds them.
-
-*Maps: [MnM Atlas](https://www.mnmatlas.com/) and the community map authors credited on each map.*
-
----
-
 ## Pop-out window
 
-Keep a timer, a Named / PH camp or a Buff Tracker in a small window of its own, on top of the game.
+Keep a timer, a Named / PH timer, a counter or a Buff Tracker in a small window of its own, on top of the game.
 
 - Click **⧉** on the panel's title bar. The panel moves into the pop-out window; its spot on the board shows
   *In the pop-out window* with a **⤓ Bring back** button.
 - Pop out more panels and they stack in the same window.
-- **Linked timer and camp:** popping out either one brings the other along (a timer brings every counter linked to
-  it). In the window they're combined into one compact panel: the countdown and a pause button on top, then a row per
-  camp with its PH and named counts and **+ PH** / **+ Named** (which restart the timer, as on the board). Click the
-  time to start or restart the timer on its own. **⤓** puts them all back; history, settings and undo are on the
-  full panels on the board.
+- **Named / PH timer:** in the window it's a compact panel: the countdown and a pause button on top, the estimated
+  respawn, then its PH and named counts and **+ PH** / **+ Named** (which restart the countdown, as on the board).
+  Click the time to start or restart the countdown on its own. History, settings and undo are on the full panel on
+  the board.
 - It's the same panel, not a copy: clicks, kills, loot and history all go to the same place. A named kill's loot
   question and any "are you sure?" open in whichever window you clicked in.
 - **⤓** on a popped-out panel, or closing the window, puts panels back on the board. Reloading or closing the main
@@ -677,8 +733,7 @@ Anywhere you type a duration (custom timer, timer and buff settings):
 - **Clicks only, no hotkeys.** While the game window is focused, the browser can't see your keypresses. Global
   hotkeys would need the app wrapped in a desktop shell such as Electron.
 - **Give camp timers real names** ("Goblin PH") so you hear *which* one is up when several are running.
-- Set a timer's length once and click the clock (or + PH / + Named on a linked counter) on every kill. That one click
-  is the whole workflow.
+- Set a Named / PH timer's respawn once and click + PH or + Named on every kill. That one click is the whole workflow.
 - Wiki search relies on the dev server's proxy, so it only works via `npm start`, not from a static build.
 
 ---
@@ -699,8 +754,11 @@ src/
     alerts.service.ts       Web Audio chimes and speech
     wiki.service.ts         Wiki partner API item search (via dev-server proxy)
     confirm.service.ts      In-app confirmation dialogs (+ confirm-dialog.ts)
-    timer-card/             Timer panel
-    counter-card/           Standard and Named/PH panels, camp-history dialog
+    leveling/               Leveling Spots panel, Worth the Camp data and rules (archive/: the old leveling data)
+    timer-card/             Timer panel, the countdown face it shares with Named / PH timers, respawn line
+    camp-card/              Named / PH timer panel (countdown + PH / named kills)
+    counter-card/           Standard counter panel, camp-history dialog, respawn estimate
+    popout/                 Pop-out window (and the compact Named / PH timer shown there)
     buff-card/              Buff Tracker panel
     note-card/              Note panel
     player-list/            Naughty / Nice list panel

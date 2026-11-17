@@ -323,3 +323,190 @@ dialog {
     cursor: default;
   }
 }
+
+/* The theme picker dialog (in the app shell). */
+.themes-dlg {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+/* Each tile previews its own theme's colors (set as --t-* on the tile). */
+.theme-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--t-accent) 30%, transparent);
+  border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 30%, var(--t-surface), var(--t-bg));
+  color: var(--t-bone);
+
+  svg {
+    width: 38px;
+    height: 38px;
+    stroke: var(--t-accent);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--t-accent) 60%, transparent));
+  }
+  &:hover {
+    filter: none;
+    border-color: var(--t-accent);
+  }
+  &.on {
+    border: 2px solid var(--t-accent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--t-accent) 45%, transparent);
+  }
+  .t-name {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .t-dots {
+    display: flex;
+    gap: 4px;
+
+    i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+    .d1 { background: var(--t-accent); }
+    .d2 { background: var(--t-accent2); }
+    .d3 { background: var(--t-named); }
+  }
+}
+
+.theme-blurb {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---- Toolbar tool buttons (app shell header) ---- */
+/* The tools: one click shows or hides each one. They sit beside the brand on a wide screen and get a row of their
+   own (under it) when there isn't room. */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 16px;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  border: 1px solid var(--border);
+
+  .ic {
+    font-size: 1rem;
+    line-height: 1;
+  }
+  &:hover {
+    border-color: var(--spirit-line);
+    filter: none;
+  }
+  &.on {
+    color: var(--bone);
+    font-weight: 600;
+    background: var(--spirit-soft);
+    border-color: var(--spirit);
+    box-shadow: 0 0 10px var(--spirit-line);
+  }
+}
+
+/* A little room between the lookups and the player lists. */
+.tool-wrap:not(.players) + .tool-wrap.players {
+  margin-left: 10px;
+}
+
+/* Each tool's tooltip: shows the moment you point at the button (no browser delay), under it. */
+.tool-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tool-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: max-content;
+  max-width: 250px;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  white-space: normal;
+  color: var(--text);
+  background: var(--dialog-bg);
+  border: 1px solid var(--spirit-line);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+
+  b {
+    color: var(--bone);
+  }
+  small {
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+  /* The little arrow pointing up at the button. */
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border: 6px solid transparent;
+    border-bottom-color: var(--spirit-line);
+  }
+}
+
+.tool-wrap:hover .tool-tip,
+.tool:focus-visible + .tool-tip {
+  display: flex;
+}
+
+/* Keep the first and last tooltips on screen. */
+.tool-wrap:first-child .tool-tip {
+  left: 0;
+  transform: none;
+  &::before { left: 22px; }
+}
+.tool-wrap:last-child .tool-tip {
+  left: auto;
+  right: 0;
+  transform: none;
+  &::before { left: auto; right: 16px; }
+}
+
+@media (max-width: 1800px) {
+  .tools {
+    order: 10;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .tool .tl {
+    display: none;
+  }
+}

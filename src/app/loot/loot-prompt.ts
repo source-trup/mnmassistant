@@ -7,7 +7,7 @@ import { ItemSearch } from './item-search';
 
 /**
  * Non-modal drawer on the right that appears after a named kill so you can (optionally) record what
- * dropped. The linked timer has already restarted by the time this shows; nothing here blocks it.
+ * dropped. The countdown has already restarted by the time this shows; nothing here blocks it.
  */
 @Component({
   selector: 'app-loot-prompt',

@@ -6,10 +6,10 @@
     }
     <span class="owner">
       @if (npc()) {
-        Saved to {{ npc() }}: kept even if this counter is deleted, and shown by any camp linked to a timer named
+        Saved to {{ npc() }}: kept even if this Named / PH timer is deleted, and shown by any Named / PH timer named
         “{{ npc() }}”.
       } @else {
-        Link this counter to a timer named after the NPC to keep its history with that NPC.
+        Name this Named / PH timer after the NPC to keep its history with that NPC.
       }
     </span>
   </h3>
@@ -30,7 +30,7 @@
   <div><span class="k">Named</span><span class="v named">{{ stats().named }}</span></div>
   <div><span class="k">Named odds</span><span class="v">{{ stats().odds }}</span></div>
   <div><span class="k">Last named</span><span class="v">{{ stats().lastNamed }}</span></div>
-  <div><span class="k">Average respawn</span><span class="v" title="Average time between spawns; late presses, kills not logged and breaks are allowed for">{{ stats().median }}</span></div>
+  <div><span class="k">Est. respawn</span><span class="v" title="Estimated time between spawns, fitted across runs of kills: late presses, kills not logged and breaks are allowed for">{{ stats().median }}</span></div>
   <div><span class="k">Last respawn</span><span class="v">{{ stats().last }}</span></div>
   <div><span class="k">Longest PH streak</span><span class="v">{{ stats().longest }}</span></div>
   <div><span class="k">Kills / hr</span><span class="v">{{ stats().killsPerHour }}</span></div>

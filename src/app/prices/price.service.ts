@@ -68,6 +68,42 @@ export function slotName(slot: string): string {
     .join(' / ');
 }
 
+/** An item's stat lines ("Chest", "AC 22", "STR +2", "HP +10"…). */
+export function itemStatLines(i: ItemInfo | null | undefined): string[] {
+  if (!i) return [];
+  const out: string[] = [];
+  if (i.slot) out.push(slotName(i.slot));
+  if (i.ac) out.push(`AC ${i.ac}`);
+  if (i.dmg && i.delay) out.push(`${i.dmg}/${i.delay} dmg/delay`);
+  for (const [k, v] of Object.entries(i.stats)) out.push(`${k} ${v > 0 ? '+' : ''}${v}`);
+  if (i.hp) out.push(`HP +${i.hp}`);
+  if (i.mana) out.push(`Mana +${i.mana}`);
+  if (i.haste) out.push(`Haste ${i.haste}%`);
+  for (const [k, v] of Object.entries(i.resists)) out.push(`${k} resist +${v}`);
+  return out;
+}
+
+/** Who drops an item (with the drop rate once enough corpses were seen) and the zones it comes from. */
+export function itemSources(it: PriceItem | null | undefined): { drops: { mob: string; rate: number | null }[]; zones: string[] } {
+  if (!it) return { drops: [], zones: [] };
+  const drops = it.droppedBy.length
+    ? it.droppedBy.slice(0, 6).map((d) => ({ mob: d.mob, rate: d.corpses >= 5 ? d.rate : null }))
+    : (it.info?.from ?? []).slice(0, 6).map((mob) => ({ mob, rate: null }));
+  // MnMdb's two files spell zones differently ("Fallen Pass" / "Fallenpass"): keep one of each, preferring the spaced one.
+  const byKey = new Map<string, string>();
+  for (const z of [...(it.info?.zones ?? []), ...it.zones]) {
+    const key = z.toLowerCase().replace(/[^a-z]/g, '');
+    const had = byKey.get(key);
+    if (!had || (z.includes(' ') && !had.includes(' '))) byKey.set(key, z);
+  }
+  return { drops, zones: [...byKey.values()] };
+}
+
+/** An item's page on MnMdb. */
+export function mnmdbItemUrl(it: PriceItem): string {
+  return `${MNMDB_URL}#/item/${encodeURIComponent(it.id)}`;
+}
+
 export function median(xs: number[]): number | null {
   if (!xs.length) return null;
   const s = [...xs].sort((a, b) => a - b);

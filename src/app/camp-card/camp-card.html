@@ -1,0 +1,110 @@
+<div class="card" [attr.data-status]="status()">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <app-panel-title
+      [name]="camp().name"
+      [suggestions]="store.npcs()"
+      [forgettable]="true"
+      (renamed)="store.renameTimer(camp().timerId, $event)"
+      (forget)="forgetNpc($event)"
+    />
+    @if (timer()?.repeat) {
+      <span class="tag" title="Repeats automatically">↻</span>
+    }
+    <button class="icon" (click)="openHistory()" title="Camp history & loot">📜</button>
+    <button
+      class="icon pop"
+      (click)="popout.toggle(camp().id)"
+      [title]="popout.isPopped(camp().id) ? 'Put back on the board' : 'Pop out into its own window (stays on top)'"
+    >{{ popout.isPopped(camp().id) ? '⤓' : '⧉' }}</button>
+    <button class="icon" (click)="store.closeCamp(camp().id)" title="Put away: it's saved (counts and kill log); bring it back from ＋ Add">—</button>
+    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+  </div>
+
+  @if (timer(); as t) {
+    <app-timer-face [timer]="t">
+      <app-respawn-info [camp]="camp()" />
+    </app-timer-face>
+  }
+
+  <div class="stats">
+    <div class="stat">
+      <span class="label">Placeholder</span>
+      <span class="big ph">{{ camp().ph }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Named</span>
+      <span class="big named">{{ camp().named }}</span>
+    </div>
+  </div>
+  <div class="info">
+    <span title="Placeholders since the last named">{{ camp().phSinceNamed }} PH since named</span>
+    <span [title]="'Named odds this session: ' + namedOdds()">{{ lastNamedText() }}</span>
+  </div>
+  <div class="kills">
+    <button class="kill ph" (click)="store.phKill(camp().id)" title="+1 PH and restart the countdown">+ PH <span class="re">↻</span></button>
+    <button class="kill named" (click)="store.namedKill(camp().id)" title="+1 named and restart the countdown">+ Named <span class="re">↻</span></button>
+  </div>
+
+  <div class="foot">
+    <button class="small" (click)="store.undo(camp().id, 'ph')" title="Undo one PH">−PH</button>
+    <button class="small" (click)="store.undo(camp().id, 'named')" title="Undo one named">−N</button>
+    <span class="rate">
+      @if (perHour(); as rate) { {{ rate }}/hr }
+    </span>
+    <button class="small" (click)="resetCounts()" title="Set PH and named back to 0 (the kill log is kept)">Reset counts</button>
+  </div>
+</div>
+
+<dialog #hist class="wide" (close)="historyOpen.set(false)">
+  @if (historyOpen()) {
+    <app-camp-history [counter]="camp()" (closed)="closeHistory()" />
+  }
+</dialog>
+
+<dialog #dlg>
+  <h3>Named / PH timer settings</h3>
+  <div class="edit">
+    <label>
+      Name
+      <app-name-input
+        [value]="camp().name"
+        [suggestions]="store.npcs()"
+        [forgettable]="true"
+        placeholder="NPC name, e.g. Grimfang"
+        (committed)="rename($event)"
+        (forget)="forgetNpc($event)"
+      />
+    </label>
+    <label>
+      Respawn
+      <input
+        [value]="durationText()"
+        (change)="setDuration($event)"
+        [class.invalid]="durationError()"
+        placeholder="6:40, 90s, 1h30m, 5"
+      />
+    </label>
+    <label class="check">
+      <input type="checkbox" [checked]="timer()?.repeat ?? false" (change)="setRepeat($event)" /> Auto-repeat when it reaches zero
+    </label>
+    <label>PH <input type="number" min="0" [value]="camp().ph" (change)="setNumber('ph', $event)" /></label>
+    <label>Named <input type="number" min="0" [value]="camp().named" (change)="setNumber('named', $event)" /></label>
+    <label>PH streak <input type="number" min="0" [value]="camp().phSinceNamed" (change)="setNumber('phSinceNamed', $event)" /></label>
+    <p class="hint">
+      “+ PH” and “+ Named” restart the countdown.
+      @if (npc(); as n) {
+        Kills are saved to {{ n }}'s history, and it will say “{{ n }} is up”.
+      } @else {
+        Name it after the named NPC to keep its kill history under that name and have it spoken (“Grimfang is up”).
+      }
+    </p>
+  </div>
+  <div class="dialog-actions">
+    <button class="danger" (click)="remove($event)">Delete</button>
+    <button (click)="closeEdit(); store.closeCamp(camp().id)" title="Save it off the board; bring it back from ＋ Add">Put away</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeEdit()">Done</button>
+  </div>
+</dialog>

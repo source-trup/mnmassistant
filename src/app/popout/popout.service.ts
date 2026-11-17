@@ -1,23 +1,19 @@
 import { ApplicationRef, Injectable, Injector, computed, effect, inject, signal } from '@angular/core';
 import { ConfirmService } from '../confirm.service';
 import { GRID } from '../layout';
-import { CounterItem, TimerItem } from '../models';
+import { NamedPhCounter } from '../models';
 import { Panel, TrackerStore } from '../tracker.store';
 
 /** Panel kinds that can go into the pop-out window. */
 export type PoppablePanel = Extract<Panel, { kind: 'timer' | 'counter' | 'buffs' }>;
 
-/**
- * What the pop-out window shows: a panel as it is, or a timer and the counters linked to it, combined into one
- * compact panel.
- */
+/** What the pop-out window shows: a panel as it is, or a Named / PH timer in a compact layout. */
 export type PopoutUnit =
   | { kind: 'single'; id: string; panel: PoppablePanel; width: number; height: number }
-  | { kind: 'linked'; id: string; timer: TimerItem; counters: CounterItem[]; width: number; height: number };
+  | { kind: 'camp'; id: string; camp: NamedPhCounter; width: number; height: number };
 
-/** Rough height of a combined panel (it sizes itself; this is for sizing the window). */
-const LINKED_BASE = 104;
-const LINKED_ROW = 44;
+/** Rough height of a compact Named / PH timer (it sizes itself; this is for sizing the window). */
+const CAMP_POP_H = 150;
 
 /** 'pip': Edge/Chrome's always-on-top Document Picture-in-Picture window. 'window': a plain pop-up (Firefox, Waterfox…). */
 export type PopoutMode = 'pip' | 'window';
@@ -99,10 +95,9 @@ export class PopoutService {
     else void this.popOut(id);
   }
 
-  /** Puts a panel back on the board (with its linked timer or counters). */
+  /** Puts a panel back on the board. */
   dock(id: string): void {
-    const group = this.group(id);
-    this.ids.update((ids) => ids.filter((x) => !group.includes(x)));
+    this.ids.update((ids) => ids.filter((x) => x !== id));
   }
 
   /** Puts every panel back and closes the window. */
@@ -110,72 +105,27 @@ export class PopoutService {
     this.close();
   }
 
-  /** Pops a panel out, along with its linked timer or counters. */
+  /** Pops a panel out. */
   async popOut(id: string): Promise<void> {
-    const adding = this.group(id).filter((x) => !this.isPopped(x));
-    if (!adding.length || !this.store.panels().some((p) => p.id === id && isPoppable(p))) return;
+    if (this.isPopped(id) || !this.store.panels().some((p) => p.id === id && isPoppable(p))) return;
     if (!this.win) {
       // Must run straight from the click: both kinds of window need the user's gesture.
-      const ok = await this.open(this.sizeFor(this.unitsFor([...this.ids(), ...adding])));
+      const ok = await this.open(this.sizeFor(this.unitsFor([...this.ids(), id])));
       if (!ok) return;
     }
-    this.ids.update((ids) => [...ids, ...adding]);
+    this.ids.update((ids) => [...ids, id]);
     this.win!.requestAnimationFrame(() => this.growToFit());
-  }
-
-  /**
-   * A panel and the panels linked with it: a timer and every counter that restarts it. Anything else is just
-   * itself.
-   */
-  group(id: string): string[] {
-    const timers = this.store.timers();
-    const counters = this.store.counters();
-    const counter = counters.find((c) => c.id === id);
-    const timerId = timers.some((t) => t.id === id)
-      ? id
-      : counter?.linkedTimerId && timers.some((t) => t.id === counter.linkedTimerId)
-        ? counter.linkedTimerId
-        : null;
-    if (!timerId) return [id];
-    const linked = counters.filter((c) => c.linkedTimerId === timerId).map((c) => c.id);
-    return linked.length ? [timerId, ...linked] : [id];
-  }
-
-  /** True when popping this panel out also brings linked panels. */
-  isLinked(id: string): boolean {
-    return this.group(id).length > 1;
   }
 
   private unitsFor(ids: string[]): PopoutUnit[] {
     const byId = new Map(this.store.panels().map((p) => [p.id, p]));
-    const used = new Set<string>();
     const units: PopoutUnit[] = [];
     for (const id of ids) {
-      if (used.has(id)) continue;
       const p = byId.get(id);
       if (!p || !isPoppable(p)) continue;
-      const group = this.group(id).filter((x) => ids.includes(x) && byId.has(x));
-      if (group.length > 1) {
-        group.forEach((x) => used.add(x));
-        const timer = byId.get(group[0])!;
-        const counters = group
-          .slice(1)
-          .map((x) => byId.get(x)!)
-          .flatMap((c) => (c.kind === 'counter' ? [c.item] : []));
-        if (timer.kind === 'timer') {
-          units.push({
-            kind: 'linked',
-            id: timer.id,
-            timer: timer.item,
-            counters,
-            width: (timer.w - 1) * GRID,
-            height: LINKED_BASE + LINKED_ROW * counters.length,
-          });
-          continue;
-        }
-      }
-      used.add(id);
-      units.push({ kind: 'single', id, panel: p, width: (p.w - 1) * GRID, height: (p.h - 1) * GRID });
+      const width = (p.w - 1) * GRID;
+      if (p.kind === 'counter' && p.item.kind === 'namedPh') units.push({ kind: 'camp', id, camp: p.item, width, height: CAMP_POP_H });
+      else units.push({ kind: 'single', id, panel: p, width, height: (p.h - 1) * GRID });
     }
     return units;
   }

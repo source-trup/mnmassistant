@@ -109,7 +109,7 @@ export class ClassesCard {
     this.store.showSpellsFor(c.name);
   }
 
-  /** "1–5" / "12-16" / "30+" -> the Leveling panel on that range. */
+  /** "1–5" / "12-16" / "30+" -> the levels it covers (the Leveling Spots panel opens on the first). */
   protected levelRange(levels: string): { from: number; to: number | null } | null {
     const m = levels.match(/(\d+)\s*[–-]\s*(\d+)/);
     if (m) return { from: +m[1], to: +m[2] };
@@ -119,7 +119,7 @@ export class ClassesCard {
 
   protected showLeveling(levels: string): void {
     const r = this.levelRange(levels);
-    if (r) this.store.showLevelingFor(r.from, r.to);
+    if (r) this.store.showLevelingFor(r.from, this.cls()?.name);
   }
 
   /** The first atlas map named in a "Where" cell ("Night Harbor newbie yards" -> night-harbor). */

@@ -1,8 +1,8 @@
-import { HOUR, MINUTE, addPanel, dragBy, expect, loadState, savedState, test } from '../support/fixtures';
+import { HOUR, MINUTE, addPanel, addTimer, dragBy, expect, loadState, openTool, savedState, test } from '../support/fixtures';
 
 test.describe('timers', () => {
   test('click starts, right-click sets the time left', async ({ page }) => {
-    await page.getByRole('button', { name: '10m', exact: true }).click();
+    await addTimer(page, 10);
     const timer = page.locator('app-timer-card');
     await timer.locator('.clock').click();
     await expect(timer.locator('.card')).toHaveAttribute('data-status', 'running');
@@ -16,10 +16,10 @@ test.describe('timers', () => {
   });
 });
 
-test.describe('Named / PH camps', () => {
+test.describe('Named / PH timers', () => {
   test('kills count up, named loot is logged, history shows them', async ({ page }) => {
-    await addPanel(page, 'Named / PH');
-    const camp = page.locator('app-counter-card');
+    await addPanel(page, 'Named / PH timer');
+    const camp = page.locator('app-camp-card');
     await camp.getByRole('button', { name: /\+ PH/ }).click();
     await camp.getByRole('button', { name: /\+ PH/ }).click();
     await camp.getByRole('button', { name: /\+ Named/ }).click();
@@ -39,8 +39,8 @@ test.describe('Named / PH camps', () => {
   });
 
   test('loot autocomplete suggests MnMdb items with slot or price', async ({ page }) => {
-    await addPanel(page, 'Named / PH');
-    await page.locator('app-counter-card').getByRole('button', { name: /\+ Named/ }).click();
+    await addPanel(page, 'Named / PH timer');
+    await page.locator('app-camp-card').getByRole('button', { name: /\+ Named/ }).click();
     const drawer = page.locator('app-loot-prompt');
     const box = drawer.locator('input').first();
 
@@ -59,8 +59,8 @@ test.describe('Named / PH camps', () => {
   });
 
   test('New session (after confirming) resets the counts and keeps the log', async ({ page }) => {
-    await addPanel(page, 'Named / PH');
-    const camp = page.locator('app-counter-card');
+    await addPanel(page, 'Named / PH timer');
+    const camp = page.locator('app-camp-card');
     await camp.getByRole('button', { name: /\+ PH/ }).click();
     await camp.getByTitle('Camp history & loot').click();
     const hist = page.locator('app-camp-history');
@@ -74,8 +74,8 @@ test.describe('Named / PH camps', () => {
   });
 
   test('a kill over an hour after the last one starts a new session', async ({ page }) => {
-    await addPanel(page, 'Named / PH');
-    const camp = page.locator('app-counter-card');
+    await addPanel(page, 'Named / PH timer');
+    const camp = page.locator('app-camp-card');
     await camp.getByRole('button', { name: /\+ PH/ }).click();
     await camp.getByRole('button', { name: /\+ PH/ }).click();
     // Move everything two hours into the past.
@@ -87,24 +87,74 @@ test.describe('Named / PH camps', () => {
     await expect(camp.locator('.big.ph')).toHaveText('1');
   });
 
-  test('dragging a camp onto a timer links them after confirming', async ({ page }) => {
-    await page.getByRole('button', { name: '6m', exact: true }).click();
-    // Name the timer after an NPC: linking then names the camp "<NPC>'s log".
-    await page.locator('app-timer-card app-panel-title').click({ button: 'right' });
-    await page.locator('app-timer-card app-panel-title input').fill('Night Terror');
-    await page.locator('app-timer-card app-panel-title input').press('Enter');
-    await addPanel(page, 'Named / PH');
-    const timerBox = (await page.locator('.panel', { has: page.locator('app-timer-card') }).boundingBox())!;
-    const campHead = page.locator('.panel', { has: page.locator('app-counter-card') }).locator('.head');
-    const hb = (await campHead.boundingBox())!;
-    await page.mouse.move(hb.x + 30, hb.y + 10);
-    await page.mouse.down();
-    await page.mouse.move(timerBox.x + timerBox.width / 2, timerBox.y + timerBox.height / 2, { steps: 10 });
-    await page.mouse.up();
-    await page.locator('app-confirm-dialog').getByRole('button', { name: 'Link' }).click();
+  test('one panel: + PH restarts its countdown; an NPC name keeps the history under that NPC', async ({ page }) => {
+    await addPanel(page, 'Named / PH timer');
+    const camp = page.locator('app-camp-card');
+    await expect(page.locator('app-timer-card')).toHaveCount(0); // no separate timer panel
+    await expect(camp.locator('.time')).toHaveText('6:00');
+    await camp.getByRole('button', { name: /\+ PH/ }).click();
+    await expect(camp.locator('.card')).toHaveAttribute('data-status', 'running');
+
+    await camp.locator('app-panel-title').click({ button: 'right' });
+    await camp.locator('app-panel-title input').fill('Night Terror');
+    await camp.locator('app-panel-title input').press('Enter');
+    await camp.getByRole('button', { name: /\+ PH/ }).click();
     const s = await savedState(page);
-    expect(s.counters[0].linkedTimerId).toBe(s.timers[0].id);
-    expect(s.counters[0].name).toBe("Night Terror's log");
+    expect(s.counters[0].name).toBe('Night Terror');
+    expect(s.timers.find((t: any) => t.id === s.counters[0].timerId).name).toBe('Night Terror');
+    // Both kills (the one from before it was named, too) are Night Terror's now.
+    const log = s.campLogs.find((l: any) => l.key === 'npc:night terror');
+    expect(log.history).toHaveLength(2);
+  });
+
+  test('put away and brought back from ＋ Add, counts and countdown kept', async ({ page }) => {
+    await addPanel(page, 'Named / PH timer');
+    const camp = page.locator('app-camp-card');
+    await camp.getByRole('button', { name: /\+ PH/ }).click();
+    await camp.getByTitle(/^Put away/).click();
+    await expect(camp).toHaveCount(0);
+    await expect(page.locator('.add-btn .badge')).toHaveText('1');
+
+    await page.locator('.add-btn').click();
+    const saved = page.locator('#add-menu .saved-note', { hasText: 'Named / PH' });
+    await expect(saved).toContainText('1 PH · 0 named · 6:00 respawn');
+    await saved.locator('.open').click();
+    await expect(camp.locator('.big.ph')).toHaveText('1');
+    await expect(camp.locator('.card')).toHaveAttribute('data-status', 'idle'); // its countdown stopped when put away
+    await expect(page.locator('.add-btn .badge')).toHaveCount(0);
+  });
+
+  test('an old board: a camp linked to a timer becomes one Named / PH timer', async ({ page }) => {
+    const timer = { id: 't1', name: 'Grimfang', autoNamed: false, durationMs: 8 * MINUTE, endsAt: null, pausedRemainingMs: null, repeat: false, x: 0, y: 0 };
+    const plain = { id: 't2', name: '5:00 spawn', autoNamed: true, durationMs: 5 * MINUTE, endsAt: null, pausedRemainingMs: null, repeat: false, x: 16, y: 0 };
+    const linked = { id: 'c1', kind: 'namedPh', name: "Grimfang's log", since: 0, linkedTimerId: 't1', ph: 4, named: 1, phSinceNamed: 2, x: 0, y: 10 };
+    const alone = { id: 'c2', kind: 'namedPh', name: 'Bandit camp', since: 0, linkedTimerId: null, ph: 3, named: 0, phSinceNamed: 3, x: 32, y: 0 };
+    const count = { id: 'c3', kind: 'standard', name: 'Kills', since: 0, linkedTimerId: 't2', value: 7, step: 1, target: null, x: 48, y: 0 };
+    const history = [{ id: 'e1', t: Date.now() - HOUR, type: 'ph', loot: [] }];
+    await loadState(page, {
+      timers: [timer, plain],
+      counters: [linked, alone, count],
+      campLogs: [
+        { key: 'npc:grimfang', name: 'Grimfang', history },
+        { key: 'counter:c2', name: 'Bandit camp', history },
+      ],
+    });
+
+    const camps = page.locator('app-camp-card');
+    await expect(camps).toHaveCount(2);
+    await expect(page.locator('app-timer-card')).toHaveCount(1); // only the plain timer is left as its own panel
+    const grim = camps.filter({ has: page.locator('app-panel-title', { hasText: 'Grimfang' }) });
+    await expect(grim.locator('.time')).toHaveText('8:00');
+    await expect(grim.locator('.big.ph')).toHaveText('4');
+    await expect(camps.filter({ has: page.locator('app-panel-title', { hasText: 'Bandit camp' }) }).locator('.time')).toHaveText('6:00');
+
+    const s = await savedState(page);
+    const byId = (id: string) => s.counters.find((c: any) => c.id === id);
+    expect(byId('c1').timerId).toBe('t1');
+    expect(byId('c1')).not.toHaveProperty('linkedTimerId');
+    expect(byId('c3')).not.toHaveProperty('linkedTimerId');
+    // Kill logs stay where they were.
+    expect(s.campLogs.map((l: any) => l.key).sort()).toEqual(['counter:c2', 'npc:grimfang']);
   });
 });
 
@@ -124,10 +174,8 @@ test.describe('buffs', () => {
 
 test.describe('player lists', () => {
   test('add, find across lists, move', async ({ page }) => {
-    await page.locator('.tools-btn').click();
-    await page.locator('#tools-menu .item', { hasText: 'Naughty list' }).click();
-    await page.locator('#tools-menu .item', { hasText: 'Nice list' }).click();
-    await page.keyboard.press('Escape');
+    await openTool(page, 'Naughty list');
+    await openTool(page, 'Nice list');
     const naughty = page.locator('app-player-list-card').filter({ has: page.locator('[data-kind=naughty]') });
     const nice = page.locator('app-player-list-card').filter({ has: page.locator('[data-kind=nice]') });
     await naughty.locator('.search input').fill('Ninjalooter');
@@ -143,8 +191,8 @@ test.describe('player lists', () => {
 
 test.describe('dragging', () => {
   test('a panel dropped on another springs back', async ({ page }) => {
-    await page.getByRole('button', { name: '5m', exact: true }).click();
-    await page.getByRole('button', { name: '6m', exact: true }).click();
+    await addTimer(page, 5);
+    await addTimer(page, 6);
     const panels = page.locator('.panel');
     const first = (await panels.nth(0).boundingBox())!;
     const second = (await panels.nth(1).boundingBox())!;
@@ -153,57 +201,35 @@ test.describe('dragging', () => {
   });
 });
 
-test.describe('respawn estimate on a linked timer', () => {
-  test('average respawn, next spawn in local time, and the gap to the timer', async ({ page }) => {
-    await page.getByRole('button', { name: '10m', exact: true }).click();
-    await addPanel(page, 'Named / PH');
+test.describe('respawn estimate on a Named / PH timer', () => {
+  test('shows the estimated time between spawns, here and in the history', async ({ page }) => {
+    await addPanel(page, 'Named / PH timer');
     const s = await savedState(page);
     const camp = s.counters[0];
-    camp.linkedTimerId = s.timers[0].id;
-    // Kills every 10 minutes; the latest really died 2 minutes ago, but the button wasn't pressed yet.
-    const died = Date.now() - 2 * MINUTE;
+    // Kills every 10 minutes, pressed a little late now and then, and one spawn never logged (the 20 minute gap).
+    const at = [0, 10, 20.5, 30, 50, 60.2, 70];
     s.campLogs = [
       {
         key: 'counter:' + camp.id,
         name: camp.name,
-        history: [40, 30, 20, 10].map((m, i) => ({ id: 'k' + i, t: died - m * MINUTE, type: 'ph', loot: [] })),
+        history: at.map((m, i) => ({ id: 'k' + i, t: Date.now() - (80 - m) * MINUTE, type: 'ph', loot: [] })),
       },
     ];
     await loadState(page, s);
 
-    const timer = page.locator('app-timer-card');
-    // Before the press: the spawn was due about 2 minutes ago.
-    await expect(timer.locator('app-respawn-info .avg')).toHaveText('⟳ avg 10:00');
-    await expect(timer.locator('app-respawn-info .next')).toContainText(/\(2:0\d ago\)/);
+    const info = page.locator('app-camp-card app-respawn-info');
+    await expect(info).toHaveText('⟳ est. respawn 10:00');
+    await expect(info.locator('.respawn')).toHaveAttribute('title', /from 7 respawns/);
 
-    // The late press: the timer runs 10:00 from now, but the rhythm says the next spawn is in about 8 minutes.
-    await page.locator('app-counter-card').getByRole('button', { name: /\+ PH/ }).click();
-    const info = timer.locator('app-respawn-info');
-    await expect(info.locator('.avg')).toHaveText('⟳ avg 10:00');
-    const expected = await page.evaluate(
-      (t) => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }),
-      died + 10 * MINUTE,
-    );
-    // Allow a second either way for the time between the evaluate and the click.
-    await expect(info.locator('.next')).toContainText('next ≈ ');
-    const shown = (await info.locator('.next').innerText()).replace('next ≈ ', '');
-    const toSec = (x: string) => {
-      const [h, m, rest] = x.split(':');
-      return (+h % 12) * 3600 + +m * 60 + parseInt(rest);
-    };
-    expect(Math.abs(toSec(shown) - toSec(expected))).toBeLessThanOrEqual(1);
-    // About 2 minutes (plus the few seconds the test took between setting up and pressing).
-    await expect(info.locator('.diff')).toHaveText(/^2:0\d before timer$/);
-    await expect(info.locator('.diff')).toHaveAttribute('data-dir', 'early');
-
-    // The history dialog shows the same average.
-    await page.locator('app-counter-card').getByTitle('Camp history & loot').click();
+    await page.locator('app-camp-card').getByTitle('Camp history & loot').click();
     await page.locator('app-camp-history').getByRole('button', { name: 'All time' }).click();
-    await expect(page.locator('app-camp-history')).toContainText('Average respawn');
+    await expect(page.locator('app-camp-history')).toContainText(/Est\. respawn\s*10:00/);
   });
 
-  test('nothing shows without a linked camp or enough kills', async ({ page }) => {
-    await page.getByRole('button', { name: '10m', exact: true }).click();
-    await expect(page.locator('app-timer-card .respawn')).toHaveCount(0);
+  test('nothing shows until a few respawns are logged', async ({ page }) => {
+    await addPanel(page, 'Named / PH timer');
+    const camp = page.locator('app-camp-card');
+    await camp.getByRole('button', { name: /\+ PH/ }).click();
+    await expect(camp.locator('.respawn')).toHaveCount(0);
   });
 });

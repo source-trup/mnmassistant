@@ -98,16 +98,7 @@ h1 {
   gap: 6px;
 }
 
-.timers .lbl {
-  font-size: 1.05rem;
-  opacity: 0.8;
-}
-
-.custom {
-  width: 64px;
-}
-
-/* "＋ Add ▾" and "Tools ▾": buttons that open a dropdown anchored under them. */
+/* "＋ Add ▾": opens a dropdown anchored under it. */
 .menu-btn {
   display: inline-flex;
   align-items: center;
@@ -130,7 +121,6 @@ h1 {
   }
 }
 .add-btn { anchor-name: --add-btn; }
-.tools-btn { anchor-name: --tools-btn; }
 
 /* ☰ dropdown (native popover: closes on outside click / Esc). */
 .menu {
@@ -169,71 +159,7 @@ h1 {
   }
 }
 
-/* ---- Theme picker ---- */
-.themes-dlg {
-  width: min(720px, calc(100vw - 32px));
-}
-
-.theme-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-  gap: 8px;
-}
-
-/* Each tile previews its own theme's colors (set as --t-* on the tile). */
-.theme-tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 6px 8px;
-  border: 1px solid color-mix(in srgb, var(--t-accent) 30%, transparent);
-  border-radius: 8px;
-  background: radial-gradient(ellipse at 50% 30%, var(--t-surface), var(--t-bg));
-  color: var(--t-bone);
-
-  svg {
-    width: 38px;
-    height: 38px;
-    stroke: var(--t-accent);
-    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--t-accent) 60%, transparent));
-  }
-  &:hover {
-    filter: none;
-    border-color: var(--t-accent);
-  }
-  &.on {
-    border: 2px solid var(--t-accent);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--t-accent) 45%, transparent);
-  }
-  .t-name {
-    font-family: var(--font-display);
-    font-size: 0.8rem;
-    font-weight: 700;
-  }
-  .t-dots {
-    display: flex;
-    gap: 4px;
-
-    i {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-    }
-    .d1 { background: var(--t-accent); }
-    .d2 { background: var(--t-accent2); }
-    .d3 { background: var(--t-named); }
-  }
-}
-
-.theme-blurb {
-  margin: 12px 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-/* Add / Tools dropdowns: rows with an icon, a name and a one-line hint. */
+/* The ＋ Add dropdown: rows with an icon, a name and a one-line hint. */
 .anchored {
   right: auto;
   left: 16px;
@@ -313,8 +239,41 @@ h1 {
     color: var(--muted);
   }
 }
-.add-menu { position-anchor: --add-btn; }
-.tools-menu { position-anchor: --tools-btn; }
+/* ＋ Add sits on the right, so its menu lines up with the button's right edge. */
+.add-menu {
+  position-anchor: --add-btn;
+  left: auto;
+  right: 16px;
+  width: 330px;
+
+  @supports (position-anchor: --a) {
+    left: auto;
+    right: anchor(right);
+  }
+
+  /* Timer / Named / PH timer: the item adds a 6 minute one; the lengths under it add others. */
+  .timed {
+    display: flex;
+    flex-direction: column;
+  }
+  .lens {
+    display: flex;
+    gap: 4px;
+    padding: 0 8px 6px 40px;
+
+    button {
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      text-align: center;
+      border-color: var(--border);
+    }
+    input {
+      width: 62px;
+      padding: 2px 6px;
+      font-size: 0.8rem;
+    }
+  }
+}
 
 .board-wrap {
   position: relative;
@@ -355,35 +314,6 @@ h1 {
     transition: none;
     opacity: 0.9;
     filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.5));
-  }
-  &.lifted.linking {
-    opacity: 0.45;
-  }
-
-  /* Dropping the dragged panel here would link a Named/PH counter and a timer. */
-  &.link-target {
-    z-index: 11; /* above the dragged panel, so the target and its badge read clearly */
-    border-radius: 8px;
-    outline: 2px dashed var(--spirit);
-    outline-offset: 3px;
-    box-shadow: 0 0 24px var(--spirit-line);
-
-    &::after {
-      content: '🔗 Link';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 6px 14px;
-      border: 1px solid var(--spirit-line);
-      border-radius: 16px;
-      font-weight: 700;
-      color: var(--text);
-      background: var(--dialog-bg);
-      box-shadow: 0 4px 14px rgb(0 0 0 / 0.5);
-      pointer-events: none;
-      z-index: 5;
-    }
   }
 }
 

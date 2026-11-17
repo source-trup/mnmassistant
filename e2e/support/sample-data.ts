@@ -78,6 +78,9 @@ export const mnmdbVendors = { vendors: [{ name: 'A miner', sells: ['Iron Ore'], 
 // ---------- The community wiki (MediaWiki API) ----------
 
 const PAGES: Record<string, { html: string }> = {
+  'Silver Comb of House Torvald': {
+    html: '<div class="mw-parser-output"><p>A silver comb carried by Handmaiden Mira.</p></div>',
+  },
   'Night Terror': {
     html:
       '<div class="mw-parser-output"><style>.x{color:red}</style><p onclick="alert(1)">A rare <b>bat</b> that only comes out at night.</p>' +
@@ -134,3 +137,58 @@ export function wikiApi(q: URLSearchParams): unknown {
 export function atlasPage(url: string): string {
   return `<!doctype html><title>Atlas</title><body><p id="where">${url}</p></body>`;
 }
+
+// ---------- Worth the Camp (Data API) ----------
+
+const WTC_ATTRIBUTION =
+  'Item, NPC and zone data adapted from the Monsters & Memories community wiki (https://monstersandmemories.miraheze.org/) by Worth the Camp (https://worththecamp.com/). Credit both, link the license, and share adaptations under CC BY-SA 4.0.';
+
+const npc = (id: string, name: string, zone: string, lo: number | null, hi: number | null, drops = 0, raid = false) => ({
+  id,
+  name,
+  url: `https://worththecamp.com/npc/${id}`,
+  zone,
+  level_min: lo,
+  level_max: hi,
+  raid,
+  item_ids: Array.from({ length: drops }, (_, i) => i + 1),
+  source_url: null,
+});
+
+/** A Shaman (solo tier A) at level 20 aims for mobs 17–19, named 15–17. */
+export const wtcNpcs = {
+  api_version: 1,
+  attribution: WTC_ATTRIBUTION,
+  npcs: [
+    npc('a-mud-gnoll', 'A mud gnoll', 'Blind Midden', 17, 18, 3),
+    npc('a-gnoll-digger', 'A gnoll digger', 'Blind Midden', 18, 19, 1),
+    npc('ferg-the-filthy', 'Ferg the Filthy', 'Blind Midden', 15, 15, 3),
+    npc('a-gnoll-pup', 'A gnoll pup', 'Blind Midden', 5, 6),
+    npc('a-lawbreaker', 'A lawbreaker', 'Night Harbor', 17, 17, 16),
+    npc('a-river-pirate', 'A river pirate', 'Night Harbor', 19, 19, 21),
+    npc('a-scrawny-rat', 'A scrawny rat', 'Night Harbor', 1, 2),
+    npc('a-harbor-guard', 'A harbor guard', 'Night Harbor', 40, 40),
+    npc('a-bloodynose-stabber', 'A Bloodynose stabber', 'Tel Ekir', 16, 18, 2),
+    npc('the-tyrant', 'The Tyrant', 'Tel Ekir', 18, 18, 9, true),
+    npc('a-mystery-mob', 'A mystery mob', 'Tel Ekir', null, null),
+    npc('a-shallows-basilisk', 'A shallows basilisk', 'Great Cavern Sea', 30, 31, 1),
+  ],
+};
+
+export const wtcZones = {
+  api_version: 1,
+  attribution: WTC_ATTRIBUTION,
+  zones: [
+    { id: 'blind-midden', name: 'Blind Midden', url: 'https://worththecamp.com/npcs/blind-midden', level_min: 7, level_max: 25, npc_ids: [] },
+    { id: 'night-harbor', name: 'Night Harbor', url: 'https://worththecamp.com/npcs/night-harbor', level_min: 1, level_max: 50, npc_ids: [] },
+  ],
+};
+
+export const wtcMeta = {
+  api_version: 1,
+  classes: [
+    { class: 'Shaman', solo: { grade: 'A' } },
+    { class: 'Fighter', solo: { grade: 'D' } },
+    { class: 'Druid', solo: { grade: 'S' } },
+  ],
+};

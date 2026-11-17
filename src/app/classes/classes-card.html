@@ -199,7 +199,7 @@
                       <span class="lv">{{ p.levels }}</span>
                       <span class="where">{{ p.where }}</span>
                       @if (levelRange(p.levels)) {
-                        <button class="icon" (click)="showLeveling(p.levels)" [title]="'Camps for levels ' + p.levels + ' in the Leveling panel'">🗺️</button>
+                        <button class="icon" (click)="showLeveling(p.levels)" [title]="'Where to level at ' + p.levels + ' in the Leveling Spots panel'">🗺️</button>
                       }
                       @if (mapFor(p.where); as m) {
                         <button class="icon" (click)="showMap(m)" title="Show this zone on the Map panel">🧭</button>

@@ -1,7 +1,7 @@
 /** Size of one grid cell in pixels. */
 export const GRID = 20;
 
-export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes' | 'prices' | 'wiki';
+export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes' | 'prices' | 'wiki' | 'wishlist';
 
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
@@ -12,7 +12,7 @@ export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' 
 export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   timer: { w: 15, h: 10 }, // 280 x 180
   standard: { w: 15, h: 9 }, // 280 x 160
-  namedPh: { w: 15, h: 12 }, // 280 x 220
+  namedPh: { w: 15, h: 18 }, // 280 x 340: the Named / PH timer (countdown and camp)
   buffs: { w: 15, h: 14 }, // 280 x 260
   note: { w: 15, h: 12 }, // 280 x 220 (notes can be resized; this is the starting size)
   checklist: { w: 15, h: 20 }, // 280 x 380
@@ -22,6 +22,7 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   classes: { w: 25, h: 33 }, // 480 x 640 (resizable)
   prices: { w: 23, h: 31 }, // 440 x 600 (resizable)
   wiki: { w: 24, h: 31 }, // 460 x 600 (resizable)
+  wishlist: { w: 22, h: 28 }, // 420 x 540 (resizable)
   map: { w: 27, h: 30 }, // 520 x 580 (resizable)
   spells: { w: 22, h: 28 }, // 420 x 540 (resizable; this is the starting size)
 };
@@ -33,7 +34,7 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
 export const PANEL_MIN: Record<'timer' | 'standard' | 'namedPh' | 'buffs' | 'players' | 'levels', { w: number; h: number }> = {
   timer: { w: 13, h: 9 },
   standard: { w: 12, h: 8 },
-  namedPh: { w: 14, h: 12 },
+  namedPh: { w: 14, h: 18 },
   buffs: { w: 13, h: 9 },
   players: { w: 13, h: 10 },
   levels: { w: 14, h: 15 },

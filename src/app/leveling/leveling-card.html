@@ -1,143 +1,124 @@
 <div class="card">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
-    <span class="name">🗺️ Leveling</span>
+    <span class="name">🗺️ Leveling Spots</span>
+    <a class="wtc-link" [href]="wtcPageUrl()" target="_blank" rel="noopener" title="Open these choices on Worth the Camp's own leveling page">Worth the Camp ↗</a>
     <button class="icon" (click)="store.toggleLeveling()" title="Hide (show it again from the toolbar)">✕</button>
   </div>
 
   <div class="entry">
-    <label for="lvlg-from">Level</label>
-    <button class="small" (click)="step(-1)" [disabled]="range()?.lo === 1" title="One level lower">−</button>
-    <input
-      id="lvlg-from"
-      #fromBox
-      type="number"
-      min="1"
-      [max]="CAP"
-      inputmode="numeric"
-      [value]="panel().from ?? ''"
-      (input)="setFrom(fromBox)"
-      (focus)="fromBox.select()"
-      placeholder="1–{{ CAP }}"
-    />
-    <span class="to">to</span>
-    <input
-      #toBox
-      type="number"
-      min="1"
-      [max]="CAP"
-      inputmode="numeric"
-      aria-label="Up to level (optional)"
-      title="Optional: the top of a level range"
-      [value]="panel().to ?? ''"
-      (input)="setTo(toBox)"
-      (focus)="toBox.select()"
-      placeholder="—"
-    />
-    <button class="small" (click)="step(1)" [disabled]="range()?.hi === CAP" title="One level higher">+</button>
-    @if (panel().to !== null) {
-      <button class="small" (click)="store.updateLevelingPanel({ to: null })" title="Just one level">✕</button>
-    }
-  </div>
-
-  <div class="cols" role="group" aria-label="Level brackets">
-    @for (c of columns; track c) {
-      <button class="small" [class.on]="isColumn(c)" (click)="pickColumn(c)" [title]="'Camps for the ' + c + (c === CAP ? '' : '+') + ' bracket'">{{ c }}</button>
-    }
-  </div>
-
-  <div class="filters">
-    <select #regionSel (change)="setRegion(regionSel.value)" aria-label="Region">
-      <option value="" [selected]="!panel().region">All regions</option>
-      @for (r of regions; track r) {
-        <option [value]="r" [selected]="r === panel().region">{{ r }}</option>
+    <select #clsSel (change)="setClass(clsSel.value)" aria-label="Class" title="Your class: how well it solos sets which mobs suit you">
+      <option value="" [selected]="!cls()">{{ classes().length ? 'Class…' : 'Classes loading…' }}</option>
+      @for (c of classes(); track c.name) {
+        <option [value]="c.name" [selected]="c.name === cls()?.name">{{ c.name }}</option>
       }
     </select>
-    <select #srcSel (change)="setSource(srcSel.value)" aria-label="Source" title="Which data to show">
-      <option value="both" [selected]="panel().source === 'both'">Sheet + guide</option>
-      <option value="sheet" [selected]="panel().source === 'sheet'">Sheet camps</option>
-      <option value="guide" [selected]="panel().source === 'guide'">Hunting guide</option>
-    </select>
-    <label class="check" title="Include raid encounters">
-      <input type="checkbox" [checked]="panel().raids" (change)="store.updateLevelingPanel({ raids: !panel().raids })" />
-      Raids
-    </label>
+
+    <span class="lvl">
+      <button class="small" (click)="step(-1)" [disabled]="level() === 1" title="One level lower">−</button>
+      <input
+        #lvlBox
+        type="number"
+        min="1"
+        [max]="CAP"
+        inputmode="numeric"
+        aria-label="Your level"
+        [value]="level() ?? ''"
+        (input)="setLevel(lvlBox)"
+        (focus)="lvlBox.select()"
+        placeholder="Level"
+      />
+      <button class="small" (click)="step(1)" [disabled]="level() === CAP" title="One level higher">+</button>
+    </span>
+
+    <span class="seg" role="group" aria-label="Solo or group">
+      <button [class.on]="mode() === 'solo'" (click)="setMode('solo')" title="Hunting alone: mobs at or below your level, lower for classes that find soloing hard">Solo</button>
+      <button [class.on]="mode() === 'group'" (click)="setMode('group')" title="With a group: mobs 2–3 levels above you">Group</button>
+    </span>
   </div>
 
-  @if (range()) {
-    <div class="summary" aria-live="polite">
-      <b>{{ label() }}</b> ·
-      @if (panel().source !== 'guide') {
-        {{ campCount() }} camp{{ campCount() === 1 ? '' : 's' }}
-      }
-      @if (panel().source === 'both') {
-        +
-      }
-      @if (panel().source !== 'sheet') {
-        {{ spotCount() }} guide spot{{ spotCount() === 1 ? '' : 's' }}
-      }
-      in {{ matches().length }} zone{{ matches().length === 1 ? '' : 's' }}
+  @if (target(); as t) {
+    <div class="aim">
+      <p>
+        Aim for mobs <b>{{ levels(t.lo, t.hi) }}</b>, named <b>{{ levels(t.namedLo, t.namedHi) }}</b>{{ ' ' }}<span class="why" title="Named mobs hit harder than the regulars around them, so they're matched 2 levels lower">(they hit harder)</span>.
+        @if (mode() === 'solo' && tierText()) {
+          <span class="tier">{{ tierText() }}.</span>
+        }
+      </p>
+      <div class="strip" aria-hidden="true">
+        @for (s of strip(); track s.level) {
+          <span
+            class="cell con-{{ s.con }}"
+            [class.target]="s.target"
+            [class.named]="s.named && !s.target"
+            [class.you]="s.level === level()"
+            [title]="s.level + ': ' + conLabel[s.con] + (s.target ? ' · your target' : s.named ? ' · named target' : '')"
+          >{{ s.level }}</span>
+        }
+      </div>
     </div>
   }
 
   <div class="list">
-    @if (!range()) {
-      <p class="hint">Type a level (or a range, e.g. 15 to 24), or pick a bracket above, to see where to hunt.</p>
+    @if (wtc.status() === 'error' && !wtc.data()) {
+      <p class="hint">
+        Couldn't reach Worth the Camp. <button class="small" (click)="wtc.load()">Try again</button> or open
+        <a [href]="wtcPageUrl()" target="_blank" rel="noopener">their leveling page ↗</a>.
+      </p>
+    } @else if (!wtc.data()) {
+      <p class="hint">Loading Worth the Camp's NPC data…</p>
+    } @else if (level() === null) {
+      <p class="hint">Type your level{{ cls() ? '' : ' and pick your class' }} to see where to hunt.</p>
+    } @else if (!target()) {
+      <p class="hint">Pick your class: how well it solos sets which mobs suit you. (Or switch to Group.)</p>
     } @else {
-      @for (m of matches(); track m.zone.name) {
-        <div class="zone">
-          <span class="zn">{{ m.zone.name }}</span>
-          @if (m.zone.abbr) {
-            <span class="za">{{ m.zone.abbr }}</span>
-          }
-          <span class="zr">{{ m.zone.region }}</span>
-          <button class="icon map" (click)="store.showWiki(m.zone.name)" [title]="'Look up ' + m.zone.name + ' on the wiki'">📖</button>
-          @if (atlasId(m.zone); as id) {
-            <button class="icon map" (click)="store.showMap({ map: id, level: null, find: null })" [title]="'Show ' + m.zone.name + ' on the Map panel'">🧭</button>
-          }
-        </div>
-        @if (m.camps.length) {
-        <ul>
-          @for (c of m.camps; track c.name) {
-            <li [class.raid]="c.raid">
-              <span class="cn">{{ c.name }}</span>
-              <button class="icon wk" (click)="store.showWiki(c.name)" [title]="'Look up ' + c.name + ' on the wiki'">📖</button>
-              @if (c.raid) {
-                <span class="badge" title="Raid encounter">Raid</span>
-              }
-              <span class="lv" [title]="'Suits levels ' + bracket(c)">{{ bracket(c) }}</span>
-            </li>
-          }
-        </ul>
-        }
-        @if (m.spots.length) {
-          <ul class="spots">
-            @for (s of m.spots; track $index) {
-              <li class="spot">
-                <div class="top">
-                  <span class="tag" title="From the wiki's Per-Level Hunting Guide">Guide</span>
-                  <span class="area">{{ s.area }}</span>
-                </div>
-                <div class="lvls">{{ spotLevels(s) }}</div>
-                @if (s.monsters) {
-                  <div class="mobs">{{ s.monsters }}</div>
+      <p class="summary" aria-live="polite">{{ mobCount() }} mob{{ mobCount() === 1 ? '' : 's' }} in {{ zones().length }} zone{{ zones().length === 1 ? '' : 's' }}, best first</p>
+      @for (z of zones(); track z.zone) {
+        <section class="zone">
+          <div class="zh">
+            <span class="zn">{{ z.zone }}</span>
+            @if (z.hub) {
+              <span class="hub" title="A city or hub: it has mobs of every level, so it ranks a little lower">hub</span>
+            }
+            <span class="zc" [title]="z.npcs.length + ' in your range; the zone has mobs of levels ' + levels(z.zoneLo, z.zoneHi)">{{ z.npcs.length }} mob{{ z.npcs.length === 1 ? '' : 's' }} · zone {{ levels(z.zoneLo, z.zoneHi) }}</span>
+            @if (atlasId(z.zone); as id) {
+              <button class="icon" (click)="store.showMap({ map: id, level: null, find: null })" [title]="'Show ' + z.zone + ' on the Map panel'">🧭</button>
+            }
+            <button class="icon" (click)="store.showWiki(z.zone)" [title]="'Look up ' + z.zone + ' on the wiki'">📖</button>
+            <a class="icon" [href]="zoneUrl(z.zone)" target="_blank" rel="noopener" [title]="z.zone + ' on Worth the Camp: every NPC and what it drops'">↗</a>
+          </div>
+          <ul>
+            @for (n of isExpanded(z.zone) ? z.npcs : z.npcs.slice(0, SHOWN); track n.id) {
+              <li>
+                <span class="dot con-{{ n.con }}" [title]="conLabel[n.con] + ' (at its highest level)'"></span>
+                <a class="nn" [href]="npcUrl(n.id)" target="_blank" rel="noopener" [title]="n.name + ' on Worth the Camp'">{{ n.name }}</a>
+                @if (n.named) {
+                  <span class="named" title="Named: matched 2 levels lower">Named</span>
                 }
-                @if (s.notes) {
-                  <div class="notes">{{ s.notes }}</div>
+                <span class="nl con-{{ n.con }}">{{ levels(n.lo, n.hi) }}</span>
+                @if (n.drops) {
+                  <span class="nd" [title]="n.drops + ' item' + (n.drops === 1 ? '' : 's') + ' known to drop'">{{ n.drops }} drop{{ n.drops === 1 ? '' : 's' }}</span>
                 }
               </li>
             }
           </ul>
-        }
+          @if (z.npcs.length > SHOWN) {
+            <button class="more" (click)="toggleZone(z.zone)">{{ isExpanded(z.zone) ? 'Show fewer' : '+' + (z.npcs.length - SHOWN) + ' more' }}</button>
+          }
+        </section>
       } @empty {
-        <p class="hint">Nothing listed for {{ label().toLowerCase() }}{{ panel().region ? ' in ' + panel().region : '' }}.</p>
+        <p class="hint">No mobs with known levels fit {{ levels(target()!.lo, target()!.hi) }} yet.</p>
       }
     }
   </div>
 
   <p class="credit">
-    Camps: community <a [href]="SHEET" target="_blank" rel="noopener">leveling sheet</a>. Guide:
-    <a [href]="GUIDE" target="_blank" rel="noopener">Per-Level Hunting Guide</a>, Monsters and Memories Wiki,
-    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+    NPC data: <a [href]="WTC" target="_blank" rel="noopener">Worth the Camp</a>, adapted from the
+    <a href="https://monstersandmemories.miraheze.org/" target="_blank" rel="noopener">Monsters and Memories Wiki</a>,
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Solo tiers:
+    <a href="https://worththecamp.com/meta" target="_blank" rel="noopener">community rankings</a> via Worth the Camp.
+    @if (updated()) {
+      Updated {{ updated() }} ago.
+    }
   </p>
 </div>

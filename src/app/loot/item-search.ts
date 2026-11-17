@@ -30,7 +30,7 @@ export interface KnownDrop {
         [value]="query()"
         (input)="onInput($event)"
         (keydown)="onKey($event)"
-        placeholder="Item name… (Enter to add)"
+        [placeholder]="placeholder()"
         autocomplete="off"
         spellcheck="false"
       />
@@ -90,6 +90,9 @@ export class ItemSearch {
   readonly picked = output<LootItem>();
   /** What this NPC has dropped before: listed before you type, and ranked first while you type. */
   readonly drops = input<KnownDrop[]>([]);
+  /** Focus the box when it appears (the loot drawer); off for a box that's always on screen. */
+  readonly autofocus = input(true);
+  readonly placeholder = input('Item name… (Enter to add)');
 
   protected readonly store = inject(TrackerStore);
   protected readonly wiki = inject(WikiService);
@@ -153,7 +156,7 @@ export class ItemSearch {
   }
 
   constructor() {
-    afterNextRender(() => this.box().nativeElement.focus({ preventScroll: true }));
+    afterNextRender(() => this.autofocus() && this.box().nativeElement.focus({ preventScroll: true }));
   }
 
   protected onInput(e: Event): void {

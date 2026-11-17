@@ -1,5 +1,5 @@
 import { Page, expect, test as base } from '@playwright/test';
-import { atlasPage, mnmdbAuctions, mnmdbEa, mnmdbVendors, wikiApi } from './sample-data';
+import { atlasPage, mnmdbAuctions, mnmdbEa, mnmdbVendors, wikiApi, wtcMeta, wtcNpcs, wtcZones } from './sample-data';
 
 export { expect };
 
@@ -8,7 +8,7 @@ export const STORAGE_KEY = 'mnm-assistant.state.v1';
 /**
  * Every app test gets a page that:
  *  - starts on an empty board (a returning visitor, so the quick guide stays closed), and
- *  - never reaches the real internet: MnMdb, the wiki API and MnM Atlas answer with sample data; anything else
+ *  - never reaches the real internet: MnMdb, the wiki API, Worth the Camp and MnM Atlas answer with sample data; anything else
  *    outside the app (fonts, images) gets an empty reply.
  * Use `freshVisit` instead when a test needs the very first visit.
  */
@@ -51,6 +51,11 @@ async function mockOutside(page: Page): Promise<void> {
   await page.route('https://monstersandmemories.miraheze.org/w/api.php**', (route) =>
     route.fulfill(json(wikiApi(new URL(route.request().url()).searchParams))),
   );
+  await page.route('https://worththecamp.com/api/v1/*.json', (route) => {
+    const file = new URL(route.request().url()).pathname.split('/').pop();
+    const body = file === 'npcs.json' ? wtcNpcs : file === 'zones.json' ? wtcZones : file === 'meta.json' ? wtcMeta : null;
+    return body ? route.fulfill(json(body)) : route.fulfill({ status: 404 });
+  });
   await page.route('https://www.mnmatlas.com/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: atlasPage(route.request().url()) }),
   );
@@ -76,17 +81,28 @@ export async function loadState(page: Page, state: Record<string, unknown>): Pro
   await page.locator('app-root header').waitFor();
 }
 
-/** Opens a panel from Tools (and closes the menu). */
-export async function openTool(page: Page, name: string): Promise<void> {
-  await page.locator('.tools-btn').click();
-  await page.locator('#tools-menu .item').filter({ has: page.locator('.nm', { hasText: new RegExp(`^${name}$`) }) }).click();
-  await page.keyboard.press('Escape');
+/** A tool's button in the toolbar ("Naughty list" and "Nice list" are labelled Naughty and Nice). */
+export function toolButton(page: Page, name: string) {
+  const label = name.replace(/ list$/, '');
+  return page.locator('nav.tools .tool').filter({ has: page.locator('.tl', { hasText: new RegExp(`^${label}$`) }) });
 }
 
-/** Adds a panel from the "＋ Add" menu. */
+/** Shows (or hides) a tool panel with its toolbar button. */
+export async function openTool(page: Page, name: string): Promise<void> {
+  await toolButton(page, name).click();
+}
+
+/** Adds a panel from the "＋ Add" menu (a "Timer" or "Named / PH timer" gets the 6 minute default). */
 export async function addPanel(page: Page, name: string): Promise<void> {
   await page.locator('.add-btn').click();
   await page.locator('#add-menu .item').filter({ has: page.locator('.nm', { hasText: new RegExp(`^${name}$`) }) }).click();
+}
+
+/** Adds a plain timer (or a Named / PH timer) of a quick length from the "＋ Add" menu. */
+export async function addTimer(page: Page, minutes: 5 | 6 | 8 | 10, kind: 'timer' | 'camp' = 'timer'): Promise<void> {
+  await page.locator('.add-btn').click();
+  const title = kind === 'camp' ? `Add a Named / PH timer with a ${minutes} minute respawn` : `Add a ${minutes} minute timer`;
+  await page.locator('#add-menu .lens button').and(page.getByTitle(title, { exact: true })).click();
 }
 
 /** Drags with the mouse from the centre of one element by (dx, dy). */

@@ -9,32 +9,87 @@
     </div>
   </div>
 
-  <div class="group timers" role="group" aria-label="Add a timer">
-    <span class="lbl" title="Add a timer" aria-hidden="true">⏱</span>
-    @for (m of quickMinutes; track m) {
-      <button class="primary" (click)="addQuickTimer(m)" [title]="'Add a ' + m + ' minute timer'">{{ m }}m</button>
+  <nav class="tools" aria-label="Tools">
+    @for (t of tools(); track t.label; let i = $index) {
+      <span class="tool-wrap" [class.players]="t.group === 'players'">
+        <button
+          class="tool"
+          [class.on]="t.shown"
+          [attr.aria-pressed]="t.shown"
+          [attr.aria-describedby]="'tool-tip-' + i"
+          (click)="t.toggle()"
+        >
+          <span class="ic" aria-hidden="true">{{ t.icon }}</span>
+          <span class="tl">{{ t.label }}</span>
+        </button>
+        <span class="tool-tip" role="tooltip" [id]="'tool-tip-' + i">
+          <b>{{ t.icon }} {{ t.label }}</b>
+          <span>{{ t.hint }}</span>
+          <small>{{ t.shown ? 'Showing · click to hide' : 'Click to show' }}</small>
+        </span>
+      </span>
     }
-    <input
-      #custom
-      class="custom"
-      placeholder="7:30"
-      aria-label="Custom timer length"
-      title="Custom timer: type a length (7:30, 90s, 1h30m, or minutes) and press Enter"
-      [class.invalid]="customError()"
-      (input)="customError.set(false)"
-      (keydown.enter)="addCustomTimer(custom)"
-    />
-  </div>
+  </nav>
 
-  <button class="primary menu-btn add-btn" popovertarget="add-menu" title="Add a panel, or bring back a saved note">
+  <span class="spacer"></span>
+
+  <button class="primary menu-btn add-btn" popovertarget="add-menu" title="Add a timer, a Named / PH timer or another panel, or bring back a saved one">
     ＋ Add <span class="caret">▾</span>
-    @if (store.closedNotes().length) {
-      <span class="badge" [title]="store.closedNotes().length + ' saved notes'">{{ store.closedNotes().length }}</span>
+    @if (savedCount()) {
+      <span class="badge" [title]="savedCount() + ' saved'">{{ savedCount() }}</span>
     }
   </button>
 
   <div #addMenu id="add-menu" class="menu anchored add-menu" popover>
-    <span class="menu-title">Add a panel</span>
+    <span class="menu-title">Timers</span>
+    <div class="timed">
+      <button class="item" (click)="addTimed('timer', 6, addMenu)" title="Add a 6 minute timer">
+        <span class="ic" aria-hidden="true">⏱</span>
+        <span class="txt">
+          <span class="nm">Timer</span>
+          <span class="sub">A countdown that alerts at zero</span>
+        </span>
+      </button>
+      <div class="lens">
+        @for (m of quickMinutes; track m) {
+          <button (click)="addTimed('timer', m, addMenu)" [title]="'Add a ' + m + ' minute timer'">{{ m }}m</button>
+        }
+        <input
+          #customTimer
+          placeholder="7:30"
+          aria-label="Custom timer length"
+          title="Any length: 7:30, 90s, 1h30m, or minutes; Enter to add"
+          [class.invalid]="customError() === 'timer'"
+          (input)="customError.set(null)"
+          (keydown.enter)="$event.preventDefault(); addCustom('timer', customTimer, addMenu)"
+        />
+      </div>
+    </div>
+    <div class="timed">
+      <button class="item" (click)="addTimed('camp', 6, addMenu)" title="Add a Named / PH timer with a 6 minute respawn">
+        <span class="ic" aria-hidden="true">👑</span>
+        <span class="txt">
+          <span class="nm">Named / PH timer</span>
+          <span class="sub">Respawn countdown, PH and named kills, loot log</span>
+        </span>
+      </button>
+      <div class="lens">
+        @for (m of quickMinutes; track m) {
+          <button (click)="addTimed('camp', m, addMenu)" [title]="'Add a Named / PH timer with a ' + m + ' minute respawn'">{{ m }}m</button>
+        }
+        <input
+          #customCamp
+          placeholder="7:30"
+          aria-label="Custom Named / PH respawn"
+          title="Any respawn: 7:30, 90s, 1h30m, or minutes; Enter to add"
+          [class.invalid]="customError() === 'camp'"
+          (input)="customError.set(null)"
+          (keydown.enter)="$event.preventDefault(); addCustom('camp', customCamp, addMenu)"
+        />
+      </div>
+    </div>
+    <hr />
+    <span class="menu-title">Panels</span>
     @for (a of addItems; track a.label) {
       <button class="item" (click)="a.add(); addMenu.hidePopover()">
         <span class="ic" aria-hidden="true">{{ a.icon }}</span>
@@ -45,7 +100,16 @@
       </button>
     }
     <hr />
-    <span class="menu-title">Saved notes</span>
+    <span class="menu-title">Saved</span>
+    @for (c of store.closedCamps(); track c.id) {
+      <div class="saved-note">
+        <button class="open" (click)="openCamp(c.id, addMenu)" title="Put this Named / PH timer back on the board">
+          <span class="nm">{{ c.name }}</span>
+          <span class="sub">{{ campPreview(c) }}</span>
+        </button>
+        <button class="del" (click)="deleteCamp(c, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+      </div>
+    }
     @for (n of store.closedNotes(); track n.id) {
       <div class="saved-note">
         <button class="open" (click)="openNote(n.id, addMenu)" title="Put this note back on the board">
@@ -54,42 +118,11 @@
         </button>
         <button class="del" (click)="deleteNote(n, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
       </div>
-    } @empty {
-      <p class="menu-empty">None. Click <b>—</b> on a note to put it away here; its text is kept.</p>
+    }
+    @if (!savedCount()) {
+      <p class="menu-empty">None. Click <b>—</b> on a note or a Named / PH timer to put it away here; everything on it is kept.</p>
     }
   </div>
-
-  <button class="menu-btn tools-btn" popovertarget="tools-menu" title="Show or hide tool panels">
-    Tools <span class="caret">▾</span>
-    @if (openTools()) {
-      <span class="badge" [title]="openTools() + ' open'">{{ openTools() }}</span>
-    }
-  </button>
-
-  <div id="tools-menu" class="menu anchored tools-menu" popover>
-    @for (g of toolGroups(); track g.title) {
-      <span class="menu-title">{{ g.title }}</span>
-      @for (t of g.tools; track t.label) {
-        <button
-          class="item"
-          role="menuitemcheckbox"
-          [class.on]="t.shown"
-          [attr.aria-checked]="t.shown"
-          (click)="t.toggle()"
-          [title]="(t.shown ? 'Hide ' : 'Show ') + t.label"
-        >
-          <span class="ic" aria-hidden="true">{{ t.icon }}</span>
-          <span class="txt">
-            <span class="nm">{{ t.label }}</span>
-            <span class="sub">{{ t.hint }}</span>
-          </span>
-          <span class="check" aria-hidden="true">{{ t.shown ? '✓' : '' }}</span>
-        </button>
-      }
-    }
-  </div>
-
-  <span class="spacer"></span>
 
   <app-header-clock />
 
@@ -128,7 +161,6 @@
     @if (ghost(); as g) {
       <div
         class="ghost"
-        [class.hidden]="linkDrop()"
         [class.invalid]="!g.valid"
         [style.left.px]="g.x * GRID"
         [style.top.px]="g.y * GRID"
@@ -141,8 +173,6 @@
       <div
         class="panel"
         [class.lifted]="drag()?.id === p.id"
-        [class.link-target]="linkDrop()?.targetId === p.id"
-        [class.linking]="drag()?.id === p.id && !!linkDrop()"
         [style.left.px]="left(p)"
         [style.top.px]="top(p)"
         [class.resizing]="resize()?.id === p.id"
@@ -165,7 +195,11 @@
             <app-timer-card [timer]="p.item" />
           }
           @case ('counter') {
-            <app-counter-card [counter]="p.item" />
+            @if (p.item.kind === 'namedPh') {
+              <app-camp-card [camp]="p.item" />
+            } @else {
+              <app-counter-card [counter]="p.item" />
+            }
           }
           @case ('buffs') {
             <app-buff-card [panel]="p.item" />
@@ -222,6 +256,13 @@
               <div class="panel-loading"></div>
             }
           }
+          @case ('wishlist') {
+            @defer (on immediate) {
+              <app-wishlist-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
+          }
           @case ('wiki') {
             @defer (on immediate) {
               <app-wiki-card [panel]="p.item" />
@@ -241,7 +282,7 @@
         ></div>
       </div>
     } @empty {
-      <p class="empty">The spirits are quiet… add a timer or counter from the toolbar.</p>
+      <p class="empty">The spirits are quiet… open a tool from the toolbar (Wiki, Map, Price Checker…) or ＋ Add a timer.</p>
     }
   </div>
 </div>
