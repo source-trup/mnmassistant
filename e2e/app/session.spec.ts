@@ -34,6 +34,11 @@ test.describe('Session timer', () => {
     // A counter of its own.
     await expect(c.locator('.empty')).toContainText('drag a counter panel onto this timer');
     await c.getByRole('button', { name: '＋ Counter' }).click();
+    const nameBox = c.getByLabel('New counter name');
+    await expect(nameBox).toBeFocused();
+    // Enter with nothing typed keeps the box open.
+    await page.keyboard.press('Enter');
+    await expect(nameBox).toBeVisible();
     await page.keyboard.type('Kills');
     await page.keyboard.press('Enter');
     const row = c.locator('.row');
@@ -46,10 +51,12 @@ test.describe('Session timer', () => {
 
     // Right-click the count to type it; right-click the name to rename.
     await row.locator('.val').click({ button: 'right' });
+    await expect(c.locator('.row-edit')).toBeFocused();
     await page.keyboard.type('7');
     await page.keyboard.press('Enter');
     await expect(row.locator('.val')).toHaveText('7');
     await row.locator('.nm').click({ button: 'right' });
+    await expect(c.locator('.row-edit')).toBeFocused();
     await page.keyboard.type('Skeletons');
     await page.keyboard.press('Enter');
     await expect(row.locator('.nm')).toHaveText('Skeletons');

@@ -12,15 +12,15 @@ test.describe('gear planner', () => {
     await card.getByLabel('Race').selectOption({ label: 'Deep Gnome' });
 
     // Clicking a slot puts the cursor in its search box: just type. Enter takes the first suggestion.
-    await card.locator('.slot', { hasText: 'Head' }).click();
+    await card.locator('.doll .slot', { hasText: 'Head' }).click();
     const search = card.getByLabel('Search items for this slot');
     await expect(search).toBeFocused();
     await page.keyboard.type('band');
     await expect(card.locator('.sugg .nm')).toHaveText(['Pirate Bandana']);
     await search.press('Enter');
-    await expect(card.locator('.slot', { hasText: 'Head' })).toContainText('Pirate Bandana');
+    await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('Pirate Bandana');
     // Its icon (from Worth the Camp) sits to the right of the name.
-    await expect(card.locator('.slot', { hasText: 'Head' }).locator('img.ic')).toHaveAttribute('src', 'https://worththecamp.com/icons/Itemicon0001.png');
+    await expect(card.locator('.doll .slot', { hasText: 'Head' }).locator('img.ic')).toHaveAttribute('src', 'https://worththecamp.com/icons/Itemicon0001.png');
     // No gear score; slots filled and stat totals in the middle.
     await expect(card.locator('.sum')).toContainText('1 / 21 slots');
     await expect(card.locator('.sum')).toContainText('Deep Gnome Shaman');
@@ -57,7 +57,7 @@ test.describe('gear planner', () => {
     // Wear it from the list.
     await card.locator('.ups li', { hasText: 'Guard Helm' }).getByRole('button', { name: 'Wear' }).click();
     await card.getByRole('tab', { name: 'Paper doll' }).click();
-    await expect(card.locator('.slot', { hasText: 'Head' })).toContainText('Guard Helm');
+    await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('Guard Helm');
 
     // Recommended: the best drop per slot from mobs up to 21, with the drop rate when it's known.
     await card.getByRole('tab', { name: 'Recommended' }).click();
@@ -71,9 +71,9 @@ test.describe('gear planner', () => {
     await nameBox.press('Enter');
     await expect(card.getByLabel('Character').locator('option:checked')).toHaveText('Alt');
     await card.getByRole('tab', { name: 'Paper doll' }).click();
-    await expect(card.locator('.slot', { hasText: 'Head' })).toContainText('—');
+    await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('—');
     await card.getByLabel('Character').selectOption({ label: 'Character 1' });
-    await expect(card.locator('.slot', { hasText: 'Head' })).toContainText('Guard Helm');
+    await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('Guard Helm');
 
     const state = await savedState(page);
     expect(state.gearPanel.characters.map((c: any) => c.name)).toEqual(['Character 1', 'Alt']);
@@ -81,13 +81,13 @@ test.describe('gear planner', () => {
 
     // Still there after a reload.
     await page.reload();
-    await expect(page.locator('app-gear-card .slot', { hasText: 'Head' })).toContainText('Guard Helm');
+    await expect(page.locator('app-gear-card .doll .slot', { hasText: 'Head' })).toContainText('Guard Helm');
   });
 
   test('stat weights change the scores, and reset', async ({ page }) => {
     await openTool(page, 'Gear Planner');
     const card = page.locator('app-gear-card');
-    await card.locator('.slot', { hasText: 'Head' }).click();
+    await card.locator('.doll .slot', { hasText: 'Head' }).click();
     await card.getByLabel('Search items for this slot').fill('cap');
     await expect(card.locator('.sugg .g')).toHaveText(['+2.15']); // Arcane Ledger's Shaman weights: AC 3 × 0.05 + WIS 2 × 1
     await card.getByLabel('Search items for this slot').blur(); // the doll slides back; the suggestions stay
@@ -108,7 +108,7 @@ test.describe('gear planner', () => {
     const search = card.getByLabel('Search items for this slot');
 
     // An empty slot: the search has the cursor; typing hides the rest of the doll.
-    await card.locator('.slot', { hasText: 'Head' }).click();
+    await card.locator('.doll .slot', { hasText: 'Head' }).click();
     await expect(search).toBeFocused();
     await expect(doll).not.toHaveClass(/collapsed/);
     await page.keyboard.type('pir');
@@ -144,7 +144,7 @@ test.describe('gear planner', () => {
     await expect(doll).not.toHaveClass(/collapsed/);
 
     // A filled slot opens without grabbing the cursor.
-    await card.locator('.slot', { hasText: 'Head' }).click();
+    await card.locator('.doll .slot', { hasText: 'Head' }).click();
     await expect(card.locator('.edit')).toBeVisible();
     await expect(search).not.toBeFocused();
   });

@@ -74,12 +74,10 @@ export class SessionCard {
     this.focusLater('.adder input');
   }
 
+  /** Enter adds the counter; with nothing typed yet it does nothing (Esc or ✕ closes the box). */
   protected addCounter(box: HTMLInputElement): void {
     const name = box.value.trim();
-    if (!name) {
-      this.adding.set(false);
-      return;
-    }
+    if (!name) return;
     this.store.addTimerCounter(this.timer().id, name);
     box.value = '';
     this.adding.set(false);
