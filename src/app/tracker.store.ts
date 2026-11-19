@@ -3,6 +3,7 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AlertsService } from './alerts.service';
 import { PANEL_MIN, PANEL_SIZE, Rect, findFreeSpot, overlaps, sizeOf } from './layout';
 import { GRID } from './layout';
+import { gearClassName } from './gear/gear';
 import {
   AppState,
   BuffEntry,
@@ -28,6 +29,9 @@ import {
   WikiPanel,
   WishItem,
   WishlistPanel,
+  GearCharacter,
+  GearFinder,
+  GearPanel,
   GameClockSettings,
   GameWindow,
   StandardCounter,
@@ -61,7 +65,8 @@ export type Panel =
   | ({ id: string; kind: 'classes'; item: ClassPanel } & Rect)
   | ({ id: string; kind: 'prices'; item: PricePanel } & Rect)
   | ({ id: string; kind: 'wiki'; item: WikiPanel } & Rect)
-  | ({ id: string; kind: 'wishlist'; item: WishlistPanel } & Rect);
+  | ({ id: string; kind: 'wishlist'; item: WishlistPanel } & Rect)
+  | ({ id: string; kind: 'gear'; item: GearPanel } & Rect);
 
 /** Panel id of the single Spells panel, and the smallest it can be resized to (grid cells). */
 export const SPELL_PANEL_ID = 'spells';
@@ -91,6 +96,12 @@ export const WISHLIST_PANEL_ID = 'wishlist';
 export const WISHLIST_MIN = { w: 15, h: 12 };
 /** Most items kept on the wishlist. */
 const WISHLIST_MAX = 200;
+
+/** Panel id of the single Gear Planner panel, and the smallest it can be resized to. */
+export const GEAR_PANEL_ID = 'gear';
+export const GEAR_MIN = { w: 20, h: 20 };
+/** Most characters kept in the Gear Planner. */
+const GEAR_MAX_CHARACTERS = 30;
 
 /** A link to an item page on monstersandmemories.wiki, or null if it isn't one. */
 export function wikiItemUrl(raw: unknown): string | null {
@@ -320,6 +331,75 @@ function normalizeWishlistPanel(raw: any): WishlistPanel {
 }
 
 /** Adds a layout file's wishlist to yours (same name: yours is kept, the file's note, link or "got it" fill gaps). */
+function defaultGearFinder(): GearFinder {
+  return { slot: null, maxMob: null, drops: true, crafted: false, quest: false, raid: false };
+}
+
+function defaultGearPanel(): GearPanel {
+  return { shown: false, ...PANEL_SIZE.gear, view: 'doll', characters: [], active: null, finder: defaultGearFinder(), ...UNPLACED };
+}
+
+function gearLevel(v: unknown): number | null {
+  const n = Math.floor(Number(v));
+  return v !== null && v !== '' && n >= 1 && n <= LEVEL_CAP ? n : null;
+}
+
+function normalizeGearCharacter(raw: any): GearCharacter | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const gear: GearCharacter['gear'] = {};
+  for (const [pos, g] of Object.entries(raw.gear ?? {})) {
+    const it = g as any;
+    if (it && Number.isInteger(it.id) && typeof it.name === 'string') gear[pos] = { id: it.id, name: it.name.slice(0, 100) };
+  }
+  const weights: GearCharacter['weights'] = {};
+  for (const [k, v] of Object.entries(raw.weights ?? {})) if (Number.isFinite(v)) weights[k] = v as number;
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : newId(),
+    name: typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 40) : 'Character',
+    cls: gearClassName(raw.cls),
+    race: typeof raw.race === 'string' && raw.race ? raw.race.slice(0, 8) : null,
+    look: raw.look === 'f' ? 'f' : 'm',
+    level: gearLevel(raw.level),
+    gear,
+    weights,
+  };
+}
+
+function normalizeGearPanel(raw: any): GearPanel {
+  const base = defaultGearPanel();
+  if (!raw || typeof raw !== 'object') return base;
+  const characters = (Array.isArray(raw.characters) ? raw.characters : [])
+    .map(normalizeGearCharacter)
+    .filter((c: GearCharacter | null): c is GearCharacter => !!c)
+    .slice(0, GEAR_MAX_CHARACTERS);
+  const f = raw.finder ?? {};
+  const bool = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
+  return {
+    shown: raw.shown === true,
+    w: Math.max(GEAR_MIN.w, Math.floor(Number(raw.w)) || base.w),
+    h: Math.max(GEAR_MIN.h, Math.floor(Number(raw.h)) || base.h),
+    view: ['doll', 'finder', 'recommended'].includes(raw.view) ? raw.view : 'doll',
+    characters,
+    active: characters.some((c: GearCharacter) => c.id === raw.active) ? raw.active : (characters[0]?.id ?? null),
+    finder: {
+      slot: typeof f.slot === 'string' && f.slot ? f.slot : null,
+      maxMob: gearLevel(f.maxMob),
+      drops: bool(f.drops, true),
+      crafted: bool(f.crafted, false),
+      quest: bool(f.quest, false),
+      raid: bool(f.raid, false),
+    },
+    x: raw.x ?? -1,
+    y: raw.y ?? -1,
+  };
+}
+
+/** A layout file's characters are added to yours (same id: yours is kept). */
+function mergeCharacters(mine: GearCharacter[], incoming: GearCharacter[]): GearCharacter[] {
+  const ids = new Set(mine.map((c) => c.id));
+  return [...mine, ...incoming.filter((c) => !ids.has(c.id))].slice(0, GEAR_MAX_CHARACTERS);
+}
+
 function mergeWishes(mine: WishItem[], incoming: WishItem[]): WishItem[] {
   const out = [...mine];
   for (const w of incoming) {
@@ -634,6 +714,7 @@ function defaultState(): AppState {
     pricePanel: defaultPricePanel(),
     wikiPanel: defaultWikiPanel(),
     wishlistPanel: defaultWishlistPanel(),
+    gearPanel: defaultGearPanel(),
     gameClock: { windows: [], offset: 0 },
   };
 }
@@ -683,6 +764,7 @@ function normalizeState(parsed: any): AppState | null {
     pricePanel: normalizePricePanel(parsed.pricePanel),
     wikiPanel: normalizeWikiPanel(parsed.wikiPanel),
     wishlistPanel: normalizeWishlistPanel(parsed.wishlistPanel),
+    gearPanel: normalizeGearPanel(parsed.gearPanel),
     gameClock: normalizeGameClock(parsed.gameClock),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
@@ -727,6 +809,7 @@ export class TrackerStore {
   readonly pricePanel = signal<PricePanel>(defaultPricePanel());
   readonly wikiPanel = signal<WikiPanel>(defaultWikiPanel());
   readonly wishlistPanel = signal<WishlistPanel>(defaultWishlistPanel());
+  readonly gearPanel = signal<GearPanel>(defaultGearPanel());
   /** The toolbar game clock: your spawn windows and any adjustment. */
   readonly gameClock = signal<GameClockSettings>({ windows: [], offset: 0 });
   /** A lookup another panel asked the Wiki panel to do (not saved). The counter makes repeat lookups fire again. */
@@ -782,6 +865,9 @@ export class TrackerStore {
     ...[this.wishlistPanel()]
       .filter((p) => p.shown)
       .map((p) => ({ id: WISHLIST_PANEL_ID, kind: 'wishlist' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
+    ...[this.gearPanel()]
+      .filter((p) => p.shown)
+      .map((p) => ({ id: GEAR_PANEL_ID, kind: 'gear' as const, item: p, x: p.x, y: p.y, w: p.w, h: p.h })),
   ]);
 
   /** Named / PH timers that have been put away, in the order they were created. */
@@ -859,6 +945,7 @@ export class TrackerStore {
     else if (id === PRICE_PANEL_ID) this.updatePricePanel({ x, y });
     else if (id === WIKI_PANEL_ID) this.updateWikiPanel({ x, y });
     else if (id === WISHLIST_PANEL_ID) this.updateWishlistPanel({ x, y });
+    else if (id === GEAR_PANEL_ID) this.updateGearPanel({ x, y });
     else this.updateNote(id, { x, y });
   }
 
@@ -896,6 +983,8 @@ export class TrackerStore {
     if (wikiSpot) this.updateWikiPanel(wikiSpot);
     const wishSpot = pos.get(WISHLIST_PANEL_ID);
     if (wishSpot) this.updateWishlistPanel(wishSpot);
+    const gearSpot = pos.get(GEAR_PANEL_ID);
+    if (gearSpot) this.updateGearPanel(gearSpot);
   }
 
   /**
@@ -946,6 +1035,7 @@ export class TrackerStore {
     this.pricePanel.update((p) => (p.shown ? place(p, p) : p));
     this.wikiPanel.update((p) => (p.shown ? place(p, p) : p));
     this.wishlistPanel.update((p) => (p.shown ? place(p, p) : p));
+    this.gearPanel.update((p) => (p.shown ? place(p, p) : p));
   }
 
   // ---------- timers ----------
@@ -1775,6 +1865,70 @@ export class TrackerStore {
     if (!this.levelingPanel().shown) this.toggleLeveling();
   }
 
+  // ---------- gear planner ----------
+
+  updateGearPanel(patch: Partial<GearPanel>): void {
+    this.gearPanel.update((p) => ({ ...p, ...patch }));
+  }
+
+  /** Shows or hides the Gear Planner (it comes back in its old spot and size). The first time, it starts a character. */
+  toggleGear(): void {
+    const p = this.gearPanel();
+    if (p.shown) {
+      this.updateGearPanel({ shown: false });
+      return;
+    }
+    if (!p.characters.length) this.addGearCharacter();
+    const fits = p.x >= 0 && p.y >= 0 && this.canPlace(GEAR_PANEL_ID, { x: p.x, y: p.y, w: p.w, h: p.h });
+    this.updateGearPanel({ shown: true, ...(fits ? {} : UNPLACED) });
+    this.placeUnplaced();
+  }
+
+  /** A new character (your theme's class and the level from Leveling Spots, when there is one), shown right away. */
+  addGearCharacter(): GearCharacter | null {
+    const list = this.gearPanel().characters;
+    if (list.length >= GEAR_MAX_CHARACTERS) return null;
+    let n = list.length + 1;
+    while (list.some((c) => c.name === `Character ${n}`)) n++;
+    const c: GearCharacter = {
+      id: newId(),
+      name: `Character ${n}`,
+      cls: gearClassName(this.theme()),
+      race: null,
+      look: 'm',
+      level: this.levelingPanel().level ?? this.levelPanel().level,
+      gear: {},
+      weights: {},
+    };
+    this.updateGearPanel({ characters: [...list, c], active: c.id });
+    return c;
+  }
+
+  updateGearCharacter(id: string, patch: Partial<Omit<GearCharacter, 'id'>>): void {
+    this.updateGearPanel({ characters: this.gearPanel().characters.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+  }
+
+  removeGearCharacter(id: string): void {
+    const p = this.gearPanel();
+    const characters = p.characters.filter((c) => c.id !== id);
+    this.updateGearPanel({ characters, active: p.active === id ? (characters[0]?.id ?? null) : p.active });
+  }
+
+  /** Puts an item on (or takes it off, with null) at these positions; other positions listed are emptied. */
+  setGear(charId: string, pos: string, item: { id: number; name: string } | null, clear: readonly string[] = []): void {
+    const c = this.gearPanel().characters.find((x) => x.id === charId);
+    if (!c) return;
+    const gear = { ...c.gear };
+    for (const k of clear) delete gear[k];
+    if (item) gear[pos] = { id: item.id, name: item.name };
+    else delete gear[pos];
+    this.updateGearCharacter(charId, { gear });
+  }
+
+  setGearFinder(patch: Partial<GearFinder>): void {
+    this.updateGearPanel({ finder: { ...this.gearPanel().finder, ...patch } });
+  }
+
   /** Smallest size a panel can be resized to, or null if it can't be resized. */
   minSize(p: Panel): { w: number; h: number } {
     switch (p.kind) {
@@ -1794,6 +1948,8 @@ export class TrackerStore {
         return WIKI_MIN;
       case 'wishlist':
         return WISHLIST_MIN;
+      case 'gear':
+        return GEAR_MIN;
       case 'counter':
         return PANEL_MIN[p.item.kind];
       default:
@@ -1847,6 +2003,9 @@ export class TrackerStore {
         break;
       case 'wishlist':
         this.updateWishlistPanel(size);
+        break;
+      case 'gear':
+        this.updateGearPanel(size);
         break;
     }
     return true;
@@ -2019,6 +2178,10 @@ export class TrackerStore {
     this.wikiPanel.set(state.wikiPanel);
     // The wishlist is kept across layouts: the file's items are added to yours.
     this.wishlistPanel.set({ ...state.wishlistPanel, items: mergeWishes(this.wishlistPanel().items, state.wishlistPanel.items) });
+    // Gear Planner characters are kept across layouts too: the file's are added to yours.
+    const chars = mergeCharacters(this.gearPanel().characters, state.gearPanel.characters);
+    const active = [state.gearPanel.active, this.gearPanel().active].find((id) => chars.some((c) => c.id === id)) ?? chars[0]?.id ?? null;
+    this.gearPanel.set({ ...state.gearPanel, characters: chars, active });
     this.gameClock.set(state.gameClock);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
@@ -2124,6 +2287,7 @@ export class TrackerStore {
       pricePanel: this.pricePanel(),
       wikiPanel: this.wikiPanel(),
       wishlistPanel: this.wishlistPanel(),
+      gearPanel: this.gearPanel(),
       gameClock: this.gameClock(),
       soundOn: this.soundOn(),
       theme: this.theme(),
@@ -2158,6 +2322,7 @@ export class TrackerStore {
     this.pricePanel.set(state.pricePanel);
     this.wikiPanel.set(state.wikiPanel);
     this.wishlistPanel.set(state.wishlistPanel);
+    this.gearPanel.set(state.gearPanel);
     this.gameClock.set(state.gameClock);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);

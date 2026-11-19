@@ -25,6 +25,8 @@ export interface WtcNpc {
   hi: number;
   /** How many items it's known to drop. */
   drops: number;
+  /** A raid boss (left out of leveling; the Gear Planner can include its drops). */
+  raid?: boolean;
 }
 
 /** A zone's page on Worth the Camp, by zone name. */
@@ -115,6 +117,7 @@ export function levelingPlan(npcs: readonly WtcNpc[], level: number, mode: Level
   const t = targetFor(level, mode, tier);
   const byZone = new Map<string, WtcNpc[]>();
   for (const n of npcs) {
+    if (n.raid) continue;
     const list = byZone.get(n.zone);
     if (list) list.push(n);
     else byZone.set(n.zone, [n]);

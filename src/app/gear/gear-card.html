@@ -1,0 +1,103 @@
+<div class="card">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <span class="name">⚔️ Gear Planner</span>
+    <button class="icon" (click)="store.toggleGear()" title="Hide (show it again from the toolbar)">✕</button>
+  </div>
+
+  @if (character(); as c) {
+    <div class="who">
+      @if (renaming()) {
+        <input
+          #nameBox
+          class="rename"
+          aria-label="Character name"
+          [value]="c.name"
+          maxlength="40"
+          (keydown.enter)="rename(nameBox)"
+          (keydown.escape)="renaming.set(false)"
+          (blur)="rename(nameBox)"
+        />
+      } @else {
+        <select #charSel aria-label="Character" (change)="pick(charSel.value)" title="Pick a character (each keeps its own gear)">
+          @for (x of panel().characters; track x.id) {
+            <option [value]="x.id" [selected]="x.id === c.id">{{ x.name }}</option>
+          }
+        </select>
+        <button class="small" (click)="startRename()" title="Rename this character">✎</button>
+      }
+      <button class="small" (click)="add()" title="Add another character">＋</button>
+      <button class="small" (click)="remove($event)" title="Delete this character (Shift+click: no question)">🗑</button>
+    </div>
+
+    <div class="stats-row">
+      <select #clsSel aria-label="Class" (change)="set({ cls: clsSel.value || null })" title="Class: what it can wear and which stats it values">
+        <option value="" [selected]="!c.cls">Class…</option>
+        @for (k of CLASSES; track k) {
+          <option [value]="k" [selected]="k === c.cls">{{ k }}</option>
+        }
+      </select>
+      <select #raceSel aria-label="Race" (change)="set({ race: raceSel.value || null })" title="Race: some items are for certain races only">
+        <option value="" [selected]="!c.race">Race…</option>
+        @for (r of RACES; track r.code) {
+          <option [value]="r.code" [selected]="r.code === c.race">{{ r.name }}</option>
+        }
+      </select>
+      <input
+        #lvlBox
+        class="lvl"
+        type="number"
+        min="1"
+        [max]="CAP"
+        inputmode="numeric"
+        aria-label="Level"
+        placeholder="Level"
+        [value]="c.level ?? ''"
+        (input)="setLevel(lvlBox)"
+        (focus)="lvlBox.select()"
+        title="Your level: recommendations are drops from mobs up to 3 levels above it"
+      />
+    </div>
+
+    <div class="tabs" role="tablist">
+      @for (t of TABS; track t.id) {
+        <button role="tab" [attr.aria-selected]="panel().view === t.id" [class.on]="panel().view === t.id" (click)="setView(t.id)" [title]="t.hint">
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    <div class="body">
+      @if (data.status() === 'error' && !data.items().length) {
+        <p class="hint">
+          Couldn't reach Worth the Camp for item data. <button class="small" (click)="data.load()">Try again</button>
+        </p>
+      } @else if (!data.items().length) {
+        <p class="hint">Loading Worth the Camp's item data…</p>
+      } @else {
+        @switch (panel().view) {
+          @case ('doll') {
+            <app-gear-doll [character]="c" [weights]="weights()" (findUpgrades)="setView('finder')" />
+          }
+          @default {
+            <app-gear-upgrades [character]="c" [weights]="weights()" [finder]="panel().finder" [recommended]="panel().view === 'recommended'" />
+          }
+        }
+      }
+    </div>
+  }
+
+  <p class="credit">
+    Items: <a href="https://worththecamp.com/" target="_blank" rel="noopener">Worth the Camp</a>, adapted from the
+    <a href="https://monstersandmemories.miraheze.org/" target="_blank" rel="noopener">Monsters and Memories Wiki</a>,
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Drop rates:
+    <a href="https://mnm-db.com/" target="_blank" rel="noopener">MnMdb</a>, Copyright (c) 2026 Zak (threefires),
+    <a href="https://github.com/Boisteroux/mnm-tools/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>.
+    Default stat weights: <a href="https://arcaneledger.tools/" target="_blank" rel="noopener">Castanova's Arcane Ledger</a>.
+    Race portraits and item icons: Monsters &amp; Memories art, © Niche Worlds Cult
+    (<a href="https://monstersandmemories.com/races" target="_blank" rel="noopener">races</a>; icons via Worth the Camp).
+    @if (updated()) {
+      Updated {{ updated() }} ago.
+    }
+  </p>
+</div>

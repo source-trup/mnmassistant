@@ -269,6 +269,47 @@ export interface WishlistPanel extends GridPos {
   hideGot: boolean;
 }
 
+/** One character in the Gear Planner: who they are and what they wear. */
+export interface GearCharacter {
+  id: string;
+  name: string;
+  /** Class, as Worth the Camp names it ("Shaman", "Shadowknight"); null = not picked. */
+  cls: string | null;
+  /** Race code as Worth the Camp's item data uses it ("Dgn"); null = not picked (race limits aren't checked). */
+  race: string | null;
+  /** Which of the race's portraits the paper doll shows (male / female). */
+  look: 'm' | 'f';
+  level: number | null;
+  /** Item id and name per equipment position (see gear.ts POSITIONS). */
+  gear: Partial<Record<string, { id: number; name: string }>>;
+  /** Stat weights you've changed from the class defaults. */
+  weights: Partial<Record<string, number>>;
+}
+
+/** The upgrade finder's filters. */
+export interface GearFinder {
+  /** Slot type, or null for every slot. */
+  slot: string | null;
+  /** Drops from mobs up to this level; null = your level + 3. */
+  maxMob: number | null;
+  drops: boolean;
+  crafted: boolean;
+  quest: boolean;
+  raid: boolean;
+}
+
+/** The single Gear Planner panel: position, size, visibility, the view open, your characters and the finder's filters. */
+export interface GearPanel extends GridPos {
+  shown: boolean;
+  w: number;
+  h: number;
+  view: 'doll' | 'finder' | 'recommended';
+  characters: GearCharacter[];
+  /** The character shown. */
+  active: string | null;
+  finder: GearFinder;
+}
+
 /** A span of game hours to watch, e.g. a named that only spawns at night (22 → 4). */
 export interface GameWindow {
   id: string;
@@ -309,6 +350,7 @@ export interface AppState {
   pricePanel: PricePanel;
   wikiPanel: WikiPanel;
   wishlistPanel: WishlistPanel;
+  gearPanel: GearPanel;
   gameClock: GameClockSettings;
   soundOn: boolean;
   theme: Theme;

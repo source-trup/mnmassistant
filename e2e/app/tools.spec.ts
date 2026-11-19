@@ -124,7 +124,10 @@ test.describe('leveling spots (Worth the Camp)', () => {
     // Remembered, and the data is kept in this browser (it's downloaded at most once a day).
     const s = await savedState(page);
     expect(s.levelingPanel).toMatchObject({ cls: 'Fighter', level: 25, mode: 'group' });
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('mnm-assistant.wtc.v1') ?? 'null')?.npcs.length)).toBe(10);
+    // Every NPC with a known level; the raid boss is kept (for the Gear Planner) but flagged, and left out here.
+    const cached = await page.evaluate(() => JSON.parse(localStorage.getItem('mnm-assistant.wtc.v2') ?? 'null')?.npcs);
+    expect(cached.length).toBe(11);
+    expect(cached.filter((n: any) => n.raid).map((n: any) => n.id)).toEqual(['the-tyrant']);
   });
 
   test("a board from before keeps its level; Worth the Camp being down says so", async ({ page }) => {

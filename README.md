@@ -19,6 +19,7 @@ MnMdb, Worth the Camp, MnM Atlas), but nothing about you is sent anywhere.
   - [Map](#map)
   - [Prices](#prices)
   - [Wishlist](#wishlist)
+  - [Gear Planner](#gear-planner)
   - [Leveling](#leveling)
   - [Spells](#spells)
   - [Classes](#classes)
@@ -76,7 +77,7 @@ Across the top of the page, left to right:
 
 | Part | What it does |
 | --- | --- |
-| **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
+| **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Gear Planner](#gear-planner) (a paper doll per character and the upgrades you can get), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
 | **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers and notes you've put away; click one to bring it back. The number on the button is how many are saved. |
 | **🕰️ Game time** | The [game clock](#game-time), with how long until 6 PM and 6 AM; click it for more. |
 | **?** | The quick guide. |
@@ -192,6 +193,90 @@ so it needs an internet connection and shows whatever MnMdb has now (it updates 
 
 The list is saved with everything else. Hiding the panel keeps it. Loading a layout file adds the file's items to
 yours instead of replacing them.
+
+---
+
+## Gear Planner
+
+Your gear on a paper doll, for each of your characters, and the upgrades you can get. **⚔️ Gear Planner** in the
+toolbar shows or hides the panel (there's only one; it comes back in the same spot and size). Drag its bottom-right
+corner to resize it. Item data is [Worth the Camp](https://worththecamp.com/)'s; NPC levels are the same ones the
+[Leveling Spots](#leveling) panel uses.
+
+**Characters.** The first time you open it there's a character with your [theme](#themes)'s class and the level from
+Leveling Spots (or Group Range). At the top:
+
+| Action | How |
+| --- | --- |
+| Switch character | The character list. Each one keeps its own gear, class, race, level and stat weights. |
+| Rename | **✎**, type, Enter. |
+| Add one | **＋** (it opens the name box). |
+| Delete one | **🗑**, after confirming (Shift+click skips the question). |
+| Class, race, level | The lists and box under the name. The class decides what can be worn and which stats count; the race matters for the few items only some races can wear; the level sets which mobs count as "around your level". |
+
+Three views, as tabs:
+
+**Paper doll.** All 21 positions: head, face, two ears, neck, shoulders, back on the left; chest, shirt, two wrists,
+hands, two fingers on the right; waist, legs and feet in the middle under your totals; primary, offhand, ranged and
+ammo along the bottom. Each filled slot shows the item's icon on the right (Worth the Camp has icons for most items).
+The middle shows your race and class, how many slots are filled and your stats added up, over your race's portrait
+from the [official races page](https://monstersandmemories.com/races) (dimmed so the text stays easy to read; **♂ / ♀**
+in its corner switches portraits) and your class's glyph and colour from its [theme](#themes).
+
+- Click a position to edit it: the search box is ready, so just type part of an item's name and pick it (Enter takes
+  the first). Suggestions only show
+  items that fit that slot and that your class and race can wear, best for you first, with the score change if you
+  wore it.
+- With an item in place: its stats, **📖** to look it up in the Wiki panel, **⭐** to add it to your
+  [Wishlist](#wishlist) (the Wishlist panel opens if it's hidden), **Take off**, and **🔎 Upgrades for …** to see every upgrade for that slot in the Upgrades
+  view. The name links to its Worth the Camp page.
+- A two-handed weapon in the primary takes the offhand too (it shows "(two-hander)").
+- **Stat weights** (under the doll): how much each point is worth to this character. Change any; the changed ones are
+  highlighted, and **Reset to … defaults** puts them back. Suggestions and upgrades follow them.
+
+**Upgrades.** Every item that would be better than what you wear, biggest gain first. Each shows the gain, the slot,
+what changes (**+3 WIS −1 AC**, and what it replaces), **No drop** if it can't be traded, and how to get it: the
+easiest mob that drops it (its con colour, level and zone, **🧭** to find it on the [Map](#map), the drop rate when
+players have recorded one, and **+N more** if others drop it too), the tradeskill that makes it, or "Quest or other".
+**Wear** puts it on the doll; **⭐** adds it to the Wishlist (and opens that panel). In a narrow panel ⭐ is left out of
+the list so the item names aren't cut short. Filters:
+
+- **Slot:** one slot, or all.
+- **Mobs up to:** only drops from mobs whose lowest level is at most this. Leave it blank for your level + 3.
+- **Drops**, **Crafted**, **Quest & other**, **Raid:** which sources count. "Quest & other" is anything with no known
+  drop that isn't crafted: quest rewards, starting gear, vendor items, or simply not known yet (Worth the Camp's data
+  doesn't say which). The mob level only limits drops, so crafted and quest items of any level show when they're on;
+  that's why only drops (no raids) are on to start with.
+
+**Recommended.** The biggest upgrade for each slot that you can get around your level: drops from mobs up to 3 levels
+above you, no raid bosses, at most one per position (a second ring goes on the other finger, and a two-hander rules
+out an offhand), the 12 biggest. It needs your level.
+
+How an item is scored:
+
+- **Stats × weights:** each stat point times the character's weight for it, added up. The default weights for every
+  class are [Castanova's Arcane Ledger](https://arcaneledger.tools/)'s: a Shaman, for example, counts WIS 1, mana
+  0.1, STA 0.2, DEX 0.15, HP 0.05 and AC 0.05; a Fighter STA 1, STR 0.7, AGI 0.5, AC 0.4, DEX 0.3, HP 0.1. Stats a
+  class doesn't list (resists, for most) count 0.
+- **Weapons:** damage ÷ delay × 100, times the class's weapon ratio weight (Arcane Ledger's "Ratio": Rogue 1.2,
+  Archer, Monk, Ranger and others 1, Fighter and Bard 0.7, the knights and Inquisitor 0.5, casters and healers 0), in
+  either hand and in the ranged slot. Arcane Ledger's Bard instrument weights aren't used: Worth the Camp's items
+  don't list instrument bonuses.
+- **Gain** is the score minus the score of what it replaces (for a pair, the weaker one; for a two-hander, both
+  hands). Items you already wear aren't listed again.
+
+Change the weights if you value things differently.
+
+**The data:** the panel downloads Worth the Camp's `items.json` (a few MB) when you first open it, at most once a day,
+and keeps the wearable items (about 3,000) in this browser's IndexedDB, so it opens instantly and works if their site
+is down. Your characters and gear are saved with the board, and in layout files (loading one adds its characters to
+yours). Item data is adapted from the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); observed drop rates are from
+[MnMdb](https://mnm-db.com/) (Copyright (c) 2026 Zak (threefires),
+[MIT License](https://github.com/Boisteroux/mnm-tools/blob/main/LICENSE)). Worth the Camp doesn't have required
+levels for items, so "around your level" means the level of the mobs that drop them. Item icons and race portraits
+are Monsters & Memories art (© Niche Worlds Cult, not covered by the CC license): the icons load from Worth the Camp
+and the portraits from the official site, straight into your browser; neither is copied into this app.
 
 ---
 
@@ -771,6 +856,8 @@ src/
     wiki.service.ts         Wiki partner API item search (via dev-server proxy)
     confirm.service.ts      In-app confirmation dialogs (+ confirm-dialog.ts)
     analytics.service.ts    Anonymous usage counts (GoatCounter), live site only
+    idb-cache.ts            Small IndexedDB cache for big downloads (the Gear Planner's items)
+    gear/                   Gear Planner: paper doll, upgrade finder and scoring (gear.ts), Worth the Camp items
     leveling/               Leveling Spots panel, Worth the Camp data and rules (archive/: the old leveling data)
     timer-card/             Timer panel, the countdown face it shares with Named / PH timers, respawn line
     camp-card/              Named / PH timer panel (countdown + PH / named kills)

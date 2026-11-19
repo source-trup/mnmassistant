@@ -1,0 +1,118 @@
+@let c = character();
+@let f = finder();
+
+@if (recommended()) {
+  @if (level() === null) {
+    <p class="hint">Type your level above to see the biggest upgrades you can get around it.</p>
+  } @else {
+    <p class="lead">
+      The biggest upgrade for each slot from mobs up to level <b>{{ level()! + ABOVE }}</b> (drops only, no raids),
+      for a {{ c.cls ?? 'character of any class' }} wearing what's on the paper doll.
+    </p>
+  }
+} @else {
+  <div class="filters">
+    <select #slotSel aria-label="Slot" (change)="set({ slot: slotSel.value || null })" title="Only one slot">
+      <option value="" [selected]="!f.slot">All slots</option>
+      @for (s of SLOT_TYPES; track s) {
+        <option [value]="s" [selected]="s === f.slot">{{ SLOT_LABEL[s] }}</option>
+      }
+    </select>
+    <label class="mob" title="Only drops from mobs whose lowest level is at most this (blank: your level + 3)">
+      Mobs up to
+      <input
+        #mobBox
+        type="number"
+        min="1"
+        max="99"
+        inputmode="numeric"
+        aria-label="Mobs up to level"
+        [value]="f.maxMob ?? ''"
+        [placeholder]="maxMob() ?? 'any'"
+        (change)="setMaxMob(mobBox)"
+      />
+    </label>
+    <span class="checks">
+      <label title="Items mobs drop"><input type="checkbox" [checked]="f.drops" (change)="set({ drops: !f.drops })" /> Drops</label>
+      <label title="Items a tradeskill makes"><input type="checkbox" [checked]="f.crafted" (change)="set({ crafted: !f.crafted })" /> Crafted</label>
+      <label title="No known drop and not craftable: quest rewards, starting gear, vendor items, or simply unknown so far"><input type="checkbox" [checked]="f.quest" (change)="set({ quest: !f.quest })" /> Quest &amp; other</label>
+      <label title="Include drops from raid bosses"><input type="checkbox" [checked]="f.raid" (change)="set({ raid: !f.raid })" /> Raid</label>
+    </span>
+  </div>
+  <p class="lead" aria-live="polite">
+    {{ results().length }} upgrade{{ results().length === 1 ? '' : 's' }}{{ f.slot ? ' for ' + slotName(f.slot) : '' }}, biggest first.
+    @if (f.crafted || f.quest) {
+      The mob level only limits drops.
+    }
+    @if (!c.cls) {
+      <span class="warn">Pick a class to leave out what it can't wear.</span>
+    }
+  </p>
+}
+
+<ul class="ups">
+  @for (u of shown(); track u.item.id) {
+    <li>
+      <div class="r1">
+        <span class="gain" title="Score gain over what it replaces, with this character's stat weights">{{ fmt(u.gain) }}</span>
+        <a class="nm" [href]="itemUrl(u.item)" target="_blank" rel="noopener" [title]="u.item.name + ' on Worth the Camp'">{{ u.item.name }}</a>
+        <span class="sl">{{ slotOf(u) }}{{ u.item.twoHand ? ' · 2H' : '' }}</span>
+        @if (u.item.flags.includes('NO DROP')) {
+          <span class="tag" title="Can't be traded: you have to get it yourself">No drop</span>
+        }
+        <span class="spacer"></span>
+        <button class="small" (click)="wear(u)" [title]="'Put it on the paper doll' + (u.replaces.length ? ', replacing ' + u.replaces[0].name : '')">Wear</button>
+        <button class="small wish" (click)="wish(u.item.name)" title="Add it to your Wishlist">⭐</button>
+        <button class="small" (click)="store.showWiki(u.item.name)" title="Look it up in the Wiki panel">📖</button>
+      </div>
+      <div class="chg">
+        @for (s of u.changes; track s.label) {
+          <span [class.down]="s.delta < 0">{{ s.delta > 0 ? '+' : '−' }}{{ s.delta < 0 ? -s.delta : s.delta }} {{ s.label }}</span>
+        }
+        @if (u.item.dmg && u.item.delay) {
+          <span class="wpn">{{ u.item.dmg }}/{{ u.item.delay }}</span>
+        }
+        @if (u.replaces.length) {
+          <span class="rep">over {{ u.replaces[0].name }}{{ u.replaces.length > 1 ? ' + ' + u.replaces[1].name : '' }}</span>
+        }
+      </div>
+      <div class="how">
+        @if (dropOf(u); as d) {
+            @let k = con(d.hi);
+            <span class="dot" [class]="'dot con-' + (k ?? 'none')" [title]="k ? conLabel[k] + ' (at its highest level)' : 'Level unknown'"></span>
+            <span class="npc">{{ d.name }}</span>
+            <span class="lv">{{ levels(d.lo, d.hi) }}</span>
+            @if (d.raid) {
+              <span class="tag">Raid</span>
+            }
+            @if (d.zone) {
+              <span class="zone">{{ d.zone }}</span>
+              @if (atlasId(d.zone); as id) {
+                <button class="icon" (click)="store.showMap({ map: id, level: null, find: d.name })" [title]="'Find ' + d.name + ' on the Map panel'">🧭</button>
+              }
+            }
+            @if (d.rate !== null) {
+              <span class="rate" [title]="'Seen to drop ' + pct(d.rate) + ' of the time over ' + d.kills + ' kills (MnMdb)'">{{ pct(d.rate) }}</span>
+            }
+            @if (moreDrops(u); as more) {
+              <span class="more">+{{ more }} more</span>
+            }
+        } @else if (craftedOf(u); as text) {
+          <span>⚒ Crafted: {{ text }}</span>
+        } @else {
+          <span class="muted">Quest or other (no known drop)</span>
+        }
+      </div>
+    </li>
+  } @empty {
+    @if (!recommended() || level() !== null) {
+      <li class="empty">
+        {{ recommended() ? 'No upgrades found from mobs around your level. Try the Upgrades view with a higher mob level.' : 'No upgrades match these filters.' }}
+      </li>
+    }
+  }
+</ul>
+
+@if (results().length > shown().length) {
+  <button class="more-btn" (click)="limit.set(limit() + 40)">Show {{ results().length - shown().length > 40 ? 40 : results().length - shown().length }} more</button>
+}

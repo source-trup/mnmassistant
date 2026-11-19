@@ -1,0 +1,389 @@
+:host {
+  display: block;
+  padding-top: 6px;
+  font-size: 0.82rem;
+}
+
+.muted,
+.none {
+  color: var(--muted);
+}
+
+.small {
+  padding: 2px 7px;
+  font-size: 0.78rem;
+}
+
+/* ---- the doll: left, middle (totals, waist / legs / feet), right; weapons along the bottom ---- */
+
+/* While you type an item name the doll slides up out of the way (rows 1fr → 0fr) and comes back after. */
+.doll-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 0.25s ease,
+    opacity 0.2s ease;
+
+  &.collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.doll {
+  min-height: 0;
+  overflow: hidden;
+  padding: 1px; /* room for the selected slot's ring */
+  display: grid;
+  grid-template-columns: 1fr 1.05fr 1fr;
+  gap: 4px;
+}
+
+/* The slot being edited, alone, while the doll is away. */
+.pinned {
+  display: grid;
+  animation: pin-in 0.25s ease;
+
+  .slot {
+    pointer-events: none;
+  }
+}
+
+@keyframes pin-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doll-wrap {
+    transition: none;
+  }
+  .pinned {
+    animation: none;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mid .sum {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex: 1;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  padding: 6px 6px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--cls-accent, var(--spirit)) 16%, transparent), transparent 72%),
+    var(--input-bg);
+  text-align: center;
+
+  /* The class glyph, large and faint, behind everything. */
+  /* The class glyph, small in the bottom-right corner (like the watermark on every panel), over the wash. */
+  &.themed::before {
+    content: '';
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 22px;
+    height: 22px;
+    z-index: -1;
+    opacity: 0.4;
+    background: var(--cls-glyph) no-repeat center / contain;
+  }
+  /* A dark wash at the bottom, so the totals always read clearly over the art. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background: linear-gradient(to bottom, transparent 30%, rgb(0 0 0 / 0.55) 78%);
+    pointer-events: none;
+  }
+}
+
+/* The race portrait (a sepia sketch on transparent), lightened into a soft, dim line drawing. */
+.portrait {
+  position: absolute;
+  z-index: -3;
+  left: 50%;
+  top: 4px;
+  height: calc(100% - 8px);
+  max-width: 100%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  object-position: top center;
+  pointer-events: none;
+  user-select: none;
+  filter: invert(1) sepia(0.5) saturate(0.7) brightness(0.95);
+  opacity: 0.3;
+}
+
+.look {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 1px 7px;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: var(--muted);
+  background: rgb(0 0 0 / 0.35);
+  border-color: transparent;
+}
+
+.who-line {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cls-accent, var(--bone));
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+}
+
+.filled {
+  font-size: 0.7rem;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+}
+
+.tot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 7px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+
+  b {
+    color: var(--muted);
+    font-weight: 600;
+  }
+}
+
+.weapons {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 4px 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--input-bg) 70%, transparent);
+  text-align: left;
+  line-height: 1.2;
+
+  .txt {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sl {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .it {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+  .ic {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    object-fit: contain;
+    background: rgb(0 0 0 / 0.3);
+  }
+  &.filled .it {
+    color: var(--text);
+    font-weight: 600;
+  }
+  &.blocked {
+    opacity: 0.55;
+  }
+  &.on {
+    border-color: var(--spirit);
+    box-shadow: 0 0 0 1px var(--spirit);
+  }
+}
+
+/* ---- editing one slot ---- */
+
+.edit {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--spirit);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.eh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  .wn {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+  }
+  .sc {
+    flex: none;
+    padding: 0 5px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    background: var(--panel-2);
+  }
+  .icon {
+    flex: none;
+    padding: 0 5px;
+  }
+}
+
+.line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.search {
+  width: 100%;
+}
+
+.sugg {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+
+  li.muted {
+    padding: 5px 7px;
+  }
+  button {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 8px;
+    width: 100%;
+    padding: 3px 7px;
+    border: none;
+    border-radius: 0;
+    background: none;
+    text-align: left;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--panel-2);
+      filter: none;
+    }
+  }
+  .nm {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .st {
+    grid-column: 1;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .g {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    &.up {
+      color: var(--good, #4fd16b);
+    }
+    &.down {
+      color: var(--bad, #ff7a7a);
+    }
+  }
+}
+
+/* ---- weights ---- */
+
+.weights {
+  margin-top: 10px;
+
+  summary {
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .chg {
+    margin-left: 4px;
+    padding: 0 5px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    color: var(--bg);
+    background: var(--spirit);
+  }
+  p {
+    margin: 4px 0;
+    font-size: 0.74rem;
+  }
+}
+
+.wgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 3px 8px;
+  margin-bottom: 5px;
+
+  label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 0.74rem;
+    color: var(--muted);
+  }
+  label.changed span {
+    color: var(--spirit);
+    font-weight: 700;
+  }
+  input {
+    width: 54px;
+    padding: 1px 3px;
+    font-size: 0.74rem;
+  }
+}

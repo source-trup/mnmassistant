@@ -1,5 +1,5 @@
 import { Page, expect, test as base } from '@playwright/test';
-import { atlasPage, mnmdbAuctions, mnmdbEa, mnmdbVendors, wikiApi, wtcMeta, wtcNpcs, wtcZones } from './sample-data';
+import { atlasPage, mnmdbAuctions, mnmdbEa, mnmdbVendors, wikiApi, wtcItems, wtcMeta, wtcNpcs, wtcZones } from './sample-data';
 
 export { expect };
 
@@ -53,7 +53,7 @@ async function mockOutside(page: Page): Promise<void> {
   );
   await page.route('https://worththecamp.com/api/v1/*.json', (route) => {
     const file = new URL(route.request().url()).pathname.split('/').pop();
-    const body = file === 'npcs.json' ? wtcNpcs : file === 'zones.json' ? wtcZones : file === 'meta.json' ? wtcMeta : null;
+    const body = ({ 'npcs.json': wtcNpcs, 'zones.json': wtcZones, 'meta.json': wtcMeta, 'items.json': wtcItems } as Record<string, unknown>)[file ?? ''] ?? null;
     return body ? route.fulfill(json(body)) : route.fulfill({ status: 404 });
   });
   await page.route('https://www.mnmatlas.com/**', (route) =>

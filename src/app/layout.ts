@@ -1,7 +1,7 @@
 /** Size of one grid cell in pixels. */
 export const GRID = 20;
 
-export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes' | 'prices' | 'wiki' | 'wishlist';
+export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes' | 'prices' | 'wiki' | 'wishlist' | 'gear';
 
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
@@ -23,6 +23,7 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   prices: { w: 23, h: 31 }, // 440 x 600 (resizable)
   wiki: { w: 24, h: 31 }, // 460 x 600 (resizable)
   wishlist: { w: 22, h: 28 }, // 420 x 540 (resizable)
+  gear: { w: 27, h: 34 }, // 520 x 660 (resizable)
   map: { w: 27, h: 30 }, // 520 x 580 (resizable)
   spells: { w: 22, h: 28 }, // 420 x 540 (resizable; this is the starting size)
 };

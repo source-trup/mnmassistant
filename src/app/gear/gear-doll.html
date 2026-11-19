@@ -1,0 +1,161 @@
+@let c = character();
+
+<ng-template #tile let-id>
+  @let w = worn(id);
+  <button
+    class="slot"
+    [class.on]="selected() === id"
+    [class.filled]="!!w"
+    [class.blocked]="id === 'offhand' && twoHanded()"
+    [attr.aria-pressed]="selected() === id"
+    (click)="select(id)"
+    [title]="w ? w.name + (w.item ? ' — ' + summary(w.item) : ' (no longer in the item data)') : pos(id).label + ': empty. Click to pick an item.'"
+  >
+    <span class="txt">
+      <span class="sl">{{ pos(id).label }}</span>
+      <span class="it">{{ w ? w.name : id === 'offhand' && twoHanded() ? '(two-hander)' : '—' }}</span>
+    </span>
+    @if (iconUrl(w?.item); as src) {
+      <img class="ic" [src]="src" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
+    }
+  </button>
+</ng-template>
+
+<div class="doll-wrap" [class.collapsed]="searching()" [attr.inert]="searching() ? '' : null">
+<div class="doll">
+  <div class="col">
+    @for (id of LEFT; track id) {
+      <ng-container *ngTemplateOutlet="tile; context: { $implicit: id }" />
+    }
+  </div>
+
+  <div class="col mid">
+    <div
+      class="sum"
+      [class.themed]="!!classArt()"
+      [style.--cls-accent]="classArt()?.accent ?? null"
+      [style.--cls-glyph]="classArt()?.glyph ?? null"
+    >
+      @if (portrait(); as src) {
+        @if (portraitFailed() !== src) {
+          <img class="portrait" [src]="src" alt="" aria-hidden="true" (error)="portraitFailed.set(src)" />
+        }
+        <button class="look" (click)="toggleLook()" [title]="'Show the ' + (c.look === 'f' ? 'male' : 'female') + ' ' + raceLabel() + ' portrait'">
+          {{ c.look === 'f' ? '♀' : '♂' }}
+        </button>
+      }
+      <div class="who-line">{{ raceLabel() }}{{ raceLabel() && c.cls ? ' ' : '' }}{{ c.cls ?? '' }}</div>
+      <div class="filled">{{ filled() }} / 21 slots</div>
+      <div class="tot">
+        @for (t of totals(); track t.label) {
+          <span><b>{{ t.label }}</b> {{ t.delta }}</span>
+        } @empty {
+          <span class="none">Click a slot to add what you wear.</span>
+        }
+      </div>
+    </div>
+    @for (id of MIDDLE; track id) {
+      <ng-container *ngTemplateOutlet="tile; context: { $implicit: id }" />
+    }
+  </div>
+
+  <div class="col">
+    @for (id of RIGHT; track id) {
+      <ng-container *ngTemplateOutlet="tile; context: { $implicit: id }" />
+    }
+  </div>
+
+  <div class="weapons">
+    @for (id of WEAPONS; track id) {
+      <ng-container *ngTemplateOutlet="tile; context: { $implicit: id }" />
+    }
+  </div>
+</div>
+</div>
+
+@if (selected(); as id) {
+  @let w = worn(id);
+  @if (searching()) {
+    <div class="pinned">
+      <ng-container *ngTemplateOutlet="tile; context: { $implicit: id }" />
+    </div>
+  }
+  <section class="edit" [class.searching]="searching()" aria-label="Edit slot" (mousedown)="keepSearchFocus($event)">
+    <div class="eh">
+      <b>{{ pos(id).label }}</b>
+      @if (w) {
+        <a class="wn" [href]="w.item ? itemUrl(w.item) : null" target="_blank" rel="noopener" [title]="'Open ' + w.name + ' on Worth the Camp'">{{ w.name }}</a>
+        @if (scoreAt(id) !== null) {
+          <span class="sc" title="This item's score for you">{{ scoreAt(id) }}</span>
+        }
+      } @else {
+        <span class="muted">empty</span>
+      }
+      <span class="spacer"></span>
+      <button class="icon" (click)="close()" title="Done">✕</button>
+    </div>
+    @if (w?.item; as it) {
+      <p class="line">{{ summary(it) }}</p>
+    }
+    <div class="acts">
+      <button class="small" (click)="upgradesFor(id)" title="Show every upgrade for this slot in the Upgrades view">🔎 Upgrades for {{ pos(id).label }}</button>
+      @if (w) {
+        <button class="small" (click)="store.showWiki(w.name)" title="Look it up in the Wiki panel">📖</button>
+        <button class="small" (click)="wish(w.name)" title="Add it to your Wishlist">⭐</button>
+        <button class="small" (click)="takeOff(id)" title="Empty this slot">Take off</button>
+      }
+    </div>
+    <input
+      #q
+      class="search"
+      [placeholder]="'Type an item for ' + pos(id).label + '…'"
+      aria-label="Search items for this slot"
+      [value]="query()"
+      (input)="query.set(q.value)"
+      (keydown.enter)="suggestions().length && equip(suggestions()[0].item)"
+      (focus)="searchFocused.set(true)"
+      (blur)="searchFocused.set(false)"
+      (keydown.escape)="endSearch(q)"
+    />
+    @if (query().trim().length >= 2) {
+      <!-- Clicking or scrolling the list keeps the cursor in the search, so the doll doesn't slide back mid-click. -->
+      <ul class="sugg" role="listbox" (mousedown)="$event.preventDefault()">
+        @for (s of suggestions(); track s.item.id) {
+          <li>
+            <button role="option" (click)="equip(s.item)" [title]="'Wear ' + s.item.name">
+              <span class="nm">{{ s.item.name }}</span>
+              <span class="st">{{ summary(s.item) }}</span>
+              <span class="g" [class.up]="s.gain > 0" [class.down]="s.gain < 0" title="Score change if you wear it">{{ fmt(s.gain) }}</span>
+            </button>
+          </li>
+        } @empty {
+          <li class="muted">No {{ pos(id).label.toLowerCase() }} items {{ c.cls ? 'a ' + c.cls + ' can wear ' : '' }}match "{{ query().trim() }}".</li>
+        }
+      </ul>
+    }
+  </section>
+}
+
+<details class="weights">
+  <summary>
+    Stat weights{{ c.cls ? ' (' + c.cls + ')' : '' }}
+    @if (changedWeights()) {
+      <span class="chg">{{ changedWeights() }} changed</span>
+    }
+  </summary>
+  <p class="muted">
+    How much each point is worth to this character; upgrades and suggestions follow them. The defaults are
+    Castanova's Arcane Ledger's for the class. Weapon and ranged ratios are per point of damage ÷ delay.
+  </p>
+  <div class="wgrid">
+    @for (k of WEIGHT_KEYS; track k) {
+      <label [class.changed]="c.weights[k] !== undefined">
+        <span>{{ WEIGHT_LABEL[k] }}</span>
+        <input #wb type="number" step="0.05" [value]="weights()[k]" (change)="setWeight(k, wb)" [attr.aria-label]="WEIGHT_LABEL[k] + ' weight'" />
+      </label>
+    }
+  </div>
+  @if (changedWeights()) {
+    <button class="small" (click)="resetWeights()">Reset to {{ c.cls ?? 'class' }} defaults</button>
+  }
+</details>

@@ -192,3 +192,53 @@ export const wtcMeta = {
     { class: 'Druid', solo: { grade: 'S' } },
   ],
 };
+
+const item = (
+  id: number,
+  name: string,
+  slots: string[],
+  stats: Record<string, number>,
+  extra: { classes?: string[]; races?: string[]; flags?: string[]; skill?: string; crafted?: string; drops?: string[]; observed?: { npc: string; rate: number; corpses: number }[]; icon?: string } = {},
+) => ({
+  id,
+  name,
+  url: `https://worththecamp.com/item/${id}`,
+  slots,
+  stats,
+  classes: extra.classes ?? [],
+  races: extra.races ?? [],
+  flags: extra.flags ?? [],
+  required_level: null,
+  skill: extra.skill ?? null,
+  crafted: extra.crafted ?? null,
+  drops: (extra.drops ?? []).map((id) => ({ zone: 'Somewhere', npc: id.replace(/-/g, ' '), npc_url: `https://worththecamp.com/npc/${id}` })),
+  observed_drops: (extra.observed ?? []).map((o) => ({ npc: o.npc.replace(/-/g, ' '), npc_url: `https://worththecamp.com/npc/${o.npc}`, zone: 'Somewhere', rate: o.rate, drops: 1, corpses: o.corpses })),
+  recipes: [],
+  icon_url: `https://worththecamp.com/icons/${extra.icon ?? 'placeholder.png'}`,
+  icon_placeholder: !extra.icon,
+});
+
+/**
+ * Items for the Gear Planner. For a level 18 Shaman (Wisdom and Stamina Primary): drops from the gnoll (17–18) and the
+ * pirate (19) are around their level, the guard (40) isn't, the Tyrant is a raid boss.
+ */
+export const wtcItems = {
+  api_version: 1,
+  attribution: WTC_ATTRIBUTION,
+  items: [
+    item(1, 'Gnollhide Cap', ['head'], { ac: 3, wis: 2 }, { drops: ['a-mud-gnoll'], observed: [{ npc: 'a-mud-gnoll', rate: 0.12, corpses: 50 }] }),
+    item(2, 'Pirate Bandana', ['head'], { ac: 2, wis: 5, sta: 3 }, { drops: ['a-river-pirate'], icon: 'Itemicon0001.png' }),
+    item(3, 'Guard Helm', ['head'], { ac: 15, wis: 10, sta: 10 }, { drops: ['a-harbor-guard'] }),
+    item(4, "Tyrant's Crown", ['head'], { ac: 20, wis: 20 }, { drops: ['the-tyrant'], flags: ['NO DROP'] }),
+    item(5, 'Forged Wisdom Circlet', ['head'], { wis: 7 }, { crafted: 'Smithing (trivial 40)' }),
+    item(6, 'Mystic Hood', ['head'], { wis: 30 }),
+    item(7, 'Fighter Helm', ['head'], { ac: 9, str: 9, sta: 9 }, { classes: ['Fighter'], drops: ['a-mud-gnoll'] }),
+    item(8, 'Gnomish Goggles', ['face'], { wis: 4 }, { races: ['Gnm'], drops: ['a-mud-gnoll'] }),
+    item(9, 'Pirate Ring', ['finger'], { wis: 3, mana: 10 }, { drops: ['a-river-pirate'] }),
+    item(10, 'Gnoll Toe Ring', ['finger'], { sta: 2 }, { drops: ['a-mud-gnoll'] }),
+    item(11, 'Pirate Cutlass', ['primary', 'offhand'], { damage: 7, delay: 25, str: 2 }, { skill: 'SLA', drops: ['a-river-pirate'] }),
+    item(12, 'Gnoll Bonestaff', ['primary'], { damage: 12, delay: 40, wis: 4, sta: 2 }, { skill: 'BLG 2H', drops: ['a-mud-gnoll'] }),
+    item(13, 'Driftwood Shield', ['offhand'], { ac: 6, sta: 2 }, { drops: ['a-river-pirate'] }),
+    item(14, 'A pile of bones', [], {}),
+  ],
+};

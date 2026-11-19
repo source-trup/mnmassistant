@@ -269,6 +269,13 @@
               <div class="panel-loading"></div>
             }
           }
+          @case ('gear') {
+            @defer (on immediate) {
+              <app-gear-card [panel]="p.item" />
+            } @placeholder {
+              <div class="panel-loading"></div>
+            }
+          }
           @case ('wiki') {
             @defer (on immediate) {
               <app-wiki-card [panel]="p.item" />

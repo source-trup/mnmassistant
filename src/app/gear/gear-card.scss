@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--spirit);
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.small {
+  padding: 2px 7px;
+  font-size: 0.8rem;
+  flex: none;
+}
+
+.who,
+.stats-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  select,
+  .rename {
+    flex: 1 1 100px;
+    min-width: 0;
+  }
+}
+
+.who select,
+.rename {
+  font-weight: 700;
+}
+
+.lvl {
+  width: 62px;
+  flex: none;
+  text-align: center;
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+
+  button {
+    padding: 3px 9px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 4px 4px 0 0;
+    background: none;
+    font-size: 0.82rem;
+    color: var(--muted);
+
+    &:hover {
+      color: var(--text);
+      filter: none;
+    }
+    &.on {
+      color: var(--bone);
+      border-bottom-color: var(--spirit);
+      font-weight: 700;
+    }
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.hint {
+  margin: 8px 2px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.credit {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--muted);
+
+  a {
+    color: var(--spirit);
+  }
+}

@@ -1,0 +1,197 @@
+:host {
+  display: block;
+  padding-top: 6px;
+  font-size: 0.82rem;
+  container-type: inline-size;
+
+  /* In-game consider colours (as in Leveling Spots). */
+  --con-grey: #8d929b;
+  --con-green: #4fd16b;
+  --con-lightblue: #7fdcff;
+  --con-blue: #5b8cff;
+  --con-white: #f2f2f2;
+  --con-yellow: #f4d03f;
+  --con-red: #ff5c5c;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  padding: 1px 6px;
+  font-size: 0.76rem;
+  flex: none;
+}
+
+.hint,
+.lead {
+  margin: 4px 2px 6px;
+  color: var(--muted);
+}
+
+.lead b {
+  color: var(--bone);
+}
+
+.warn {
+  color: var(--named, var(--bone));
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+
+  select {
+    flex: 0 1 120px;
+  }
+  .mob {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+    input {
+      width: 52px;
+      text-align: center;
+    }
+  }
+  .checks {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px 9px;
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+  }
+}
+
+.ups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    padding: 5px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  li.empty {
+    color: var(--muted);
+    border: none;
+  }
+}
+
+.r1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  .gain {
+    flex: none;
+    min-width: 40px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--good, #4fd16b);
+  }
+  .nm {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    &:hover {
+      color: var(--spirit);
+      text-decoration: underline;
+    }
+  }
+  .sl {
+    flex: none;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+}
+
+.tag {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 0.66rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.chg,
+.how {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 7px;
+  margin-left: 46px;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chg {
+  color: var(--good, #4fd16b);
+
+  .down {
+    color: var(--bad, #ff7a7a);
+  }
+  .wpn,
+  .rep {
+    color: var(--muted);
+  }
+}
+
+.how {
+  color: var(--muted);
+
+  .npc {
+    color: var(--text);
+  }
+  .lv {
+    font-weight: 700;
+  }
+  .icon {
+    padding: 0 2px;
+    background: none;
+    border: none;
+  }
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c, var(--border));
+}
+
+.con-grey { --c: var(--con-grey); }
+.con-green { --c: var(--con-green); }
+.con-lightblue { --c: var(--con-lightblue); }
+.con-blue { --c: var(--con-blue); }
+.con-white { --c: var(--con-white); }
+.con-yellow { --c: var(--con-yellow); }
+.con-red { --c: var(--con-red); }
+
+/* In a narrow panel the item name matters more than the Wishlist button (⭐ is also on the paper doll). */
+@container (max-width: 470px) {
+  .wish {
+    display: none;
+  }
+}
+
+.more-btn {
+  display: block;
+  margin: 6px auto;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+}
