@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../confirm-dialog';
 import { CounterCard } from '../counter-card/counter-card';
 import { LootPrompt } from '../loot/loot-prompt';
 import { TimerCard } from '../timer-card/timer-card';
+import { SessionCard } from '../session-timer/session-card';
 import { CampPopCard } from './camp-pop-card';
 import { PopoutService } from './popout.service';
 
@@ -15,7 +16,7 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
  */
 @Component({
   selector: 'app-popout-host',
-  imports: [TimerCard, CounterCard, BuffCard, CampPopCard, ConfirmDialog, LootPrompt],
+  imports: [TimerCard, SessionCard, CounterCard, BuffCard, CampPopCard, ConfirmDialog, LootPrompt],
   template: `
     @if (popout.mode(); as mode) {
       @if (mode === 'window' && showHint()) {
@@ -40,7 +41,11 @@ const HINT_KEY = 'mnm-assistant.popout-hint-hidden';
             <div class="pop-panel" [style.height.px]="u.height">
               @switch (u.panel.kind) {
                 @case ('timer') {
-                  <app-timer-card [timer]="u.panel.item" />
+                  @if (u.panel.item.mode === 'session') {
+                    <app-session-card [timer]="u.panel.item" />
+                  } @else {
+                    <app-timer-card [timer]="u.panel.item" />
+                  }
                 }
                 @case ('counter') {
                   @if (u.panel.item.kind === 'standard') {

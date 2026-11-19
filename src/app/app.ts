@@ -28,6 +28,7 @@ import { PopoutService } from './popout/popout.service';
 import { THEMES, themeById } from './themes';
 import { formatDuration, parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
+import { SessionCard } from './session-timer/session-card';
 import { PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
 
 /** A panel (note or Spells) being resized by its bottom-right corner. */
@@ -58,6 +59,8 @@ interface DragState {
   /** Pointer offset inside the panel when the drag started. */
   offX: number;
   offY: number;
+  /** A plain counter, which can be dropped onto a Session timer. */
+  counter: boolean;
 }
 
 function wishCount(n: number): string {
@@ -70,7 +73,7 @@ function playerCount(n: number): string {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, CounterCard, CampCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, WishlistCard, GearCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, SessionCard, CounterCard, CampCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, WishlistCard, GearCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -162,8 +165,11 @@ export class App {
     return { ...rect, valid: this.store.canPlace(r.id, rect) };
   });
 
+  /** The Session timer a dragged counter is over (dropping it there asks to add it). */
+  protected readonly dropTarget = signal<string | null>(null);
+
   /** Ghost outline: where a dragged panel would land, or the size a resized note would get. */
-  protected readonly ghost = computed(() => this.preview() ?? this.resizePreview());
+  protected readonly ghost = computed(() => (this.dropTarget() ? null : (this.preview() ?? this.resizePreview())));
 
   protected readonly boardHeight = computed(() => {
     let rows = 0;
@@ -198,6 +204,12 @@ export class App {
     if (ms === null) return;
     this.addLength(kind, ms);
     input.value = '';
+    menu.hidePopover();
+  }
+
+  protected addSession(menu: HTMLElement): void {
+    this.store.addSessionTimer();
+    this.analytics.count('add/session-timer', 'Added a Session timer');
     menu.hidePopover();
   }
 
@@ -386,6 +398,7 @@ export class App {
       py: p.y * GRID,
       offX: x - p.x * GRID,
       offY: y - p.y * GRID,
+      counter: p.kind === 'counter' && p.item.kind === 'standard',
     });
   }
 
@@ -394,17 +407,54 @@ export class App {
     if (!d) return;
     const { x, y } = this.pointerInBoard(e);
     this.drag.set({ ...d, px: Math.max(0, x - d.offX), py: Math.max(0, y - d.offY) });
+    if (d.counter) this.dropTarget.set(this.sessionTimerAt(x, y));
   }
 
   protected onPointerUp(): void {
     const prev = this.preview();
     const d = this.drag();
+    const target = this.dropTarget();
     this.drag.set(null);
-    if (d && prev?.valid) this.store.movePanel(d.id, prev.x, prev.y);
+    this.dropTarget.set(null);
+    if (d && target) void this.dropOnTimer(d.id, target);
+    else if (d && prev?.valid) this.store.movePanel(d.id, prev.x, prev.y);
   }
 
   protected onPointerCancel(): void {
     this.drag.set(null);
+    this.dropTarget.set(null);
+  }
+
+  /** The Session timer panel under a point on the board, if any. */
+  private sessionTimerAt(x: number, y: number): string | null {
+    const hit = this.store
+      .panels()
+      .find(
+        (p) =>
+          p.kind === 'timer' &&
+          p.item.mode === 'session' &&
+          x >= p.x * GRID &&
+          x <= p.x * GRID + (p.w - 1) * GRID &&
+          y >= p.y * GRID &&
+          y <= p.y * GRID + (p.h - 1) * GRID,
+      );
+    return hit?.id ?? null;
+  }
+
+  /** A counter dropped on a Session timer: after asking, it moves into the timer and its own panel goes. */
+  private async dropOnTimer(counterId: string, timerId: string): Promise<void> {
+    const c = this.store.counters().find((x) => x.id === counterId);
+    const t = this.store.sessionTimers().get(timerId);
+    if (!c || !t) return;
+    const ok = await this.confirm.ask(
+      'Add counter to timer?',
+      `Add "${c.name}" to "${t.name}"? It moves into the timer (count and all) and its own panel leaves the board. You can move it back out from the timer's ⚙ settings.`,
+      'Add',
+      'primary',
+    );
+    if (!ok) return;
+    if (this.popout.isPopped(counterId)) this.popout.dock(counterId);
+    this.store.moveCounterToTimer(counterId, timerId);
   }
 
   // ---------- resizing notes ----------

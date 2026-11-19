@@ -88,6 +88,13 @@
         />
       </div>
     </div>
+    <button class="item" (click)="addSession(addMenu)" title="Add a Session timer">
+      <span class="ic" aria-hidden="true">⏲️</span>
+      <span class="txt">
+        <span class="nm">Session timer</span>
+        <span class="sub">Counts up; holds counters; stats and charts per session</span>
+      </span>
+    </button>
     <hr />
     <span class="menu-title">Panels</span>
     @for (a of addItems; track a.label) {
@@ -179,6 +186,8 @@
       <div
         class="panel"
         [class.lifted]="drag()?.id === p.id"
+        [class.drop-target]="dropTarget() === p.id"
+        [class.over-target]="!!dropTarget() && drag()?.id === p.id"
         [style.left.px]="left(p)"
         [style.top.px]="top(p)"
         [class.resizing]="resize()?.id === p.id"
@@ -198,7 +207,11 @@
         } @else {
         @switch (p.kind) {
           @case ('timer') {
-            <app-timer-card [timer]="p.item" />
+            @if (p.item.mode === 'session') {
+              <app-session-card [timer]="p.item" />
+            } @else {
+              <app-timer-card [timer]="p.item" />
+            }
           }
           @case ('counter') {
             @if (p.item.kind === 'namedPh') {

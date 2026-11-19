@@ -92,7 +92,7 @@ test.describe('quick guide', () => {
     const guide = page.locator('dialog.guide');
     const themes = page.locator('dialog.themes-dlg');
     await expect(guide).toBeVisible();
-    await expect(guide.locator('summary')).toHaveCount(7);
+    await expect(guide.locator('summary')).toHaveCount(8);
     await guide.getByRole('button', { name: 'Got it' }).click();
 
     await expect(themes).toBeVisible();

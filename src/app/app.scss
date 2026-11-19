@@ -315,6 +315,37 @@ h1 {
     opacity: 0.9;
     filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.5));
   }
+
+  /* A counter over a Session timer goes see-through, so the timer shows under it. */
+  &.lifted.over-target {
+    opacity: 0.55;
+  }
+
+  /* A Session timer with a counter dragged over it: let go to add the counter to it. */
+  &.drop-target {
+    border-radius: 8px;
+    outline: 2px dashed var(--spirit);
+    outline-offset: 3px;
+    box-shadow: 0 0 22px var(--spirit-soft);
+
+    &::after {
+      content: 'Drop to add the counter';
+      position: absolute;
+      left: 50%;
+      top: 30px;
+      transform: translateX(-50%);
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--spirit-line);
+      box-shadow: 0 2px 10px rgb(0 0 0 / 0.5);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
 }
 
 .ghost {

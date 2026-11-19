@@ -1,0 +1,147 @@
+<div class="top">
+  <h3>📊 {{ timer().name }} — stats</h3>
+  <div class="seg">
+    <button [class.on]="scope() === 'session'" (click)="scope.set('session')">Session</button>
+    <button [class.on]="scope() === 'all'" (click)="scope.set('all')">All time</button>
+  </div>
+</div>
+
+@if (!sessions().length) {
+  <p class="none">
+    No sessions yet. Start the timer (or count something on it) to begin one; End session finishes it. Each session's
+    counts show up here.
+  </p>
+} @else if (scope() === 'session') {
+  @if (one(); as o) {
+    <div class="filters">
+      <label>
+        Session
+        <select (change)="pick($any($event.target).value)" aria-label="Which session">
+          @for (s of newestFirst(); track s.id) {
+            <option [value]="s.id" [selected]="s.id === o.id">{{ label(s.start) }}{{ s.end === null ? ' (going)' : '' }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="tiles">
+      <div><span class="k">Session time</span><span class="v">{{ o.time }}</span></div>
+      <div><span class="k">Started</span><span class="v sm">{{ o.started }}</span></div>
+      <div><span class="k">{{ o.going ? 'Now' : 'Ended' }}</span><span class="v sm">{{ o.ended }}</span></div>
+      <div><span class="k">Paused for</span><span class="v">{{ o.paused }}</span></div>
+    </div>
+
+    @if (o.series.length) {
+      <h4>Running count</h4>
+      @if (o.series.length > 1) {
+        <ul class="legend">
+          @for (s of o.series; track s.id) {
+            <li><i [style.background]="s.color"></i>{{ s.name }}</li>
+          }
+        </ul>
+      }
+      <app-session-line-chart [series]="o.series" [end]="o.end" />
+    }
+
+    <h4>Counts</h4>
+    @if (o.rows.length) {
+      <table>
+        <thead>
+          <tr><th>Counter</th><th class="n">Count</th><th class="n">Per hour</th></tr>
+        </thead>
+        <tbody>
+          @for (r of o.rows; track r.id) {
+            <tr>
+              <td><i class="key" [style.background]="r.color"></i>{{ r.name }}</td>
+              <td class="n">{{ r.total }}</td>
+              <td class="n">{{ rate(r.perHour) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="none">Nothing counted in this session{{ o.going ? ' yet' : '' }}.</p>
+    }
+  }
+} @else {
+  @let a = all();
+  <div class="tiles">
+    <div><span class="k">Sessions</span><span class="v">{{ a.count }}</span></div>
+    <div><span class="k">Time counted</span><span class="v">{{ a.time }}</span></div>
+    <div><span class="k">Average session</span><span class="v">{{ a.average }}</span></div>
+  </div>
+
+  @if (a.counters.length) {
+    <h4>Totals</h4>
+    <table>
+      <thead>
+        <tr><th>Counter</th><th class="n">Total</th><th class="n">Per hour</th><th class="n">Best session</th></tr>
+      </thead>
+      <tbody>
+        @for (c of a.counters; track c.id) {
+          <tr>
+            <td><i class="key" [style.background]="c.color"></i>{{ c.name }}</td>
+            <td class="n">{{ c.total }}</td>
+            <td class="n">{{ rate(c.perHour) }}</td>
+            <td class="n">
+              @if (c.best; as b) {
+                {{ b.total }} <small>{{ b.when }}</small>
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (barCounter(); as bc) {
+      <div class="chart-head">
+        <h4>
+          @if (a.counters.length > 1) {
+            <select (change)="choose($any($event.target).value)" aria-label="Which counter to chart">
+              @for (c of a.counters; track c.id) {
+                <option [value]="c.id" [selected]="c.id === bc.id">{{ c.name }}</option>
+              }
+            </select>
+          } @else {
+            {{ bc.name }}
+          }
+          {{ measure() === 'total' ? 'per session' : 'per hour, by session' }}
+        </h4>
+        <div class="seg small">
+          <button [class.on]="measure() === 'total'" (click)="measure.set('total')">Total</button>
+          <button [class.on]="measure() === 'rate'" (click)="measure.set('rate')">Per hour</button>
+        </div>
+      </div>
+      <app-session-bar-chart [bars]="bars()" [color]="bc.color" [unit]="measure() === 'total' ? bc.name : bc.name + ' per hour'" />
+      @if (sessions().length > 30) {
+        <p class="note">The newest 30 sessions.</p>
+      }
+    }
+  }
+
+  <h4>Sessions</h4>
+  <ul class="sessions">
+    @for (s of list(); track s.id) {
+      <li>
+        <button class="open" (click)="pick(s.id)" title="Show this session">
+          <span class="when">{{ s.when }}@if (s.going) { <span class="going">going</span>}</span>
+          <span class="len">{{ s.time }}</span>
+          <span class="cnt">{{ s.counts || 'nothing counted' }}</span>
+        </button>
+        @if (!s.going) {
+          <button class="icon del" (click)="deleteSession(s.id, $event)" title="Delete this session (Shift+click to skip confirmation)">✕</button>
+        }
+      </li>
+    }
+  </ul>
+}
+
+<div class="dialog-actions">
+  @if (sessions().length && scope() === 'all') {
+    <button class="danger" (click)="clearAll()">Clear history</button>
+  }
+  <span class="spacer"></span>
+  <button class="primary" (click)="closed.emit()">Done</button>
+</div>

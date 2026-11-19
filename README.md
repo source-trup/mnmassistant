@@ -27,6 +27,7 @@ MnMdb, Worth the Camp, MnM Atlas), but nothing about you is sent anywhere.
   - [Naughty and Nice lists](#naughty-and-nice-lists)
 - [The board](#the-board)
 - [Timers](#timers)
+- [Session timers](#session-timers)
 - [Named / PH timers](#named--ph-timers)
 - [Counters](#counters)
 - [Camp history and loot](#camp-history-and-loot)
@@ -78,7 +79,7 @@ Across the top of the page, left to right:
 | Part | What it does |
 | --- | --- |
 | **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Gear Planner](#gear-planner) (a paper doll per character and the upgrades you can get), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
-| **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers and notes you've put away; click one to bring it back. The number on the button is how many are saved. |
+| **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). A [Session timer](#session-timers) counts up instead. **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers and notes you've put away; click one to bring it back. The number on the button is how many are saved. |
 | **🕰️ Game time** | The [game clock](#game-time), with how long until 6 PM and 6 AM; click it for more. |
 | **?** | The quick guide. |
 | **🔔 / 🔕** | Mutes all alerts. |
@@ -471,6 +472,39 @@ the camp's counts built in.
 
 ---
 
+## Session timers
+
+A timer that **counts up**, for tracking a play session: how long you've been at it and what you got
+(**＋ Add → Session timer**). Each start → **End session** is one session; pauses don't count toward its time.
+
+| Action | How |
+| --- | --- |
+| Start / pause / resume | Click the **big clock**, or **Start**, **Pause** and **Resume**. |
+| End the session | **End session**. It's kept for the stats (a start of a few seconds with nothing counted isn't). |
+| Add a counter | **＋ Counter**, type a name, Enter. Or pick a counter from the board in **or move in…**. |
+| Drag a counter in | Drag a counter panel by its header onto the Session timer. It lights up; let go and confirm, and the counter moves into the timer (with its count) and its own panel leaves the board. |
+| Count | **+** and **−** on each counter. Pressing **+** while no session is going starts one. |
+| Fix a count | **Right-click the number**, type the count, Enter. Esc cancels. |
+| Rename a counter | **Right-click its name**, type, Enter. |
+| Delete a counter | **✕** at the end of its row (it asks first; Shift+click skips that). Its counts stay in the session stats. |
+| Move a counter back out | **⚙** lists the timer's counters, each with **Move to board** and **Delete**. |
+
+Starting a new session starts its counters from 0; what they reached is kept with the session it was counted in.
+Deleting the Session timer deletes its counters and saved sessions too (it asks first).
+
+### Stats (📊)
+
+- **Session:** pick any session (the one going is first). It shows the session time, when it started and ended, how
+  long it was paused, a **running-count chart** with a line per counter over the session's time (hover or use the
+  arrow keys for every counter's count at that minute), and each counter's count and **per hour**.
+- **All time:** sessions, time counted, average session; each counter's **total**, **per hour** (over the sessions it
+  was counted in) and **best session**; a **bar per session** (the newest 30) for one counter, as totals or per hour;
+  and the list of sessions. Click one to open it, **✕** deletes one, **Clear history** deletes every finished session.
+- A counter keeps its colour in every chart. Counts by the minute are kept (not each click), so a long history stays
+  small; up to 500 sessions are kept per timer.
+
+---
+
 ## Named / PH timers
 
 Built for camping a named mob and its placeholders: one panel with the camp's **respawn countdown** on top and its
@@ -525,7 +559,8 @@ countdown. Links from standard counters are dropped.
 
 ## Counters
 
-A single number starting at 0 (**＋ Add → Count**).
+A single number starting at 0 (**＋ Add → Count**). Drag it onto a [Session timer](#session-timers) to count it per
+session there.
 
 - **+** or clicking the number adds one step. **−** subtracts.
 - Shows a **per-hour rate** since the last reset.
@@ -860,6 +895,7 @@ src/
     gear/                   Gear Planner: paper doll, upgrade finder and scoring (gear.ts), Worth the Camp items
     leveling/               Leveling Spots panel, Worth the Camp data and rules (archive/: the old leveling data)
     timer-card/             Timer panel, the countdown face it shares with Named / PH timers, respawn line
+    session-timer/          Session timer panel (count-up, its counters), session logic, stats dialog and its charts
     camp-card/              Named / PH timer panel (countdown + PH / named kills)
     counter-card/           Standard counter panel, camp-history dialog, respawn estimate
     popout/                 Pop-out window (and the compact Named / PH timer shown there)

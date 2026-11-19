@@ -1,0 +1,145 @@
+<div class="card" [attr.data-status]="status()">
+  <div class="head drag-handle" title="Drag to move">
+    <span class="grip">⠿</span>
+    <app-panel-title [name]="timer().name" (renamed)="store.renameTimer(timer().id, $event)" />
+    <button
+      class="icon pop"
+      (click)="popout.toggle(timer().id)"
+      [title]="popout.isPopped(timer().id) ? 'Put back on the board' : 'Pop out into its own window (stays on top)'"
+    >{{ popout.isPopped(timer().id) ? '⤓' : '⧉' }}</button>
+    <button class="icon" (click)="openStats()" title="Stats: this session and all time, with charts">📊</button>
+    <button class="icon" (click)="openEdit()" title="Settings">⚙</button>
+    <button class="icon" (click)="remove($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+  </div>
+
+  <button class="clock" (click)="primary()" [title]="status() === 'running' ? 'Pause' : status() === 'paused' ? 'Resume' : 'Start a session'">
+    <span class="time">{{ elapsed() }}</span>
+    <span class="sub">
+      @switch (status()) {
+        @case ('idle') { click to start a session }
+        @case ('running') { session going · click to pause }
+        @case ('paused') { paused · click to resume }
+      }
+    </span>
+  </button>
+
+  <div class="actions">
+    @switch (status()) {
+      @case ('idle') {
+        <button class="primary" (click)="store.startSession(timer().id)">Start</button>
+      }
+      @case ('running') {
+        <button (click)="store.pauseSession(timer().id)">Pause</button>
+      }
+      @case ('paused') {
+        <button (click)="store.startSession(timer().id)">Resume</button>
+      }
+    }
+    @if (status() !== 'idle') {
+      <button (click)="endSession()" title="End this session (it's kept in the stats) and stop the clock">End session</button>
+    }
+  </div>
+
+  <ul class="counters">
+    @for (c of counters(); track c.id) {
+      <li class="row">
+        @if (isEditing(c, 'name')) {
+          <input
+            class="row-edit nm-edit"
+            [value]="editStart"
+            aria-label="Counter name"
+            title="Enter to rename, Esc to cancel"
+            (keydown.enter)="applyEdit(c, $any($event.target))"
+            (keydown.escape)="editing.set(null)"
+            (blur)="applyEdit(c, $any($event.target))"
+          />
+        } @else {
+          <span class="nm" (contextmenu)="edit($event, c, 'name')" [title]="c.name + ' · right-click to rename'">{{ c.name }}</span>
+        }
+        <button class="step minus" (click)="store.bump(c.id, -1)" [title]="'Subtract ' + c.step">−</button>
+        @if (isEditing(c, 'value')) {
+          <input
+            class="row-edit val-edit"
+            [value]="editStart"
+            inputmode="numeric"
+            aria-label="Count"
+            title="Enter to set, Esc to cancel"
+            (keydown.enter)="applyEdit(c, $any($event.target))"
+            (keydown.escape)="editing.set(null)"
+            (blur)="applyEdit(c, $any($event.target))"
+          />
+        } @else {
+          <span
+            class="val"
+            [class.reached]="c.target !== null && c.value >= c.target"
+            (contextmenu)="edit($event, c, 'value')"
+            title="Right-click to type the count"
+          >{{ c.value }}@if (c.target !== null) {<small>/{{ c.target }}</small>}</span>
+        }
+        <button class="step plus" (click)="store.bump(c.id, 1)" [title]="'Add ' + c.step">+</button>
+        <button class="icon del" (click)="deleteCounter(c, $event)" [title]="'Delete ' + c.name + ' (Shift+click to skip confirmation)'" [attr.aria-label]="'Delete ' + c.name">✕</button>
+      </li>
+    } @empty {
+      <li class="empty">Add a counter, or drag a counter panel onto this timer, to count things each session.</li>
+    }
+  </ul>
+
+  @if (adding()) {
+    <div class="adder">
+      <input
+        placeholder="New counter, e.g. Kills"
+        aria-label="New counter name"
+        (keydown.enter)="addCounter($any($event.target))"
+        (keydown.escape)="adding.set(false)"
+      />
+      @if (boardCounters().length) {
+        <select (change)="moveIn($any($event.target))" aria-label="Move a counter from the board" title="Move a counter panel from the board into this timer">
+          <option value="">or move in…</option>
+          @for (b of boardCounters(); track b.id) {
+            <option [value]="b.id">{{ b.name }} ({{ b.value }})</option>
+          }
+        </select>
+      }
+      <button class="icon" (click)="adding.set(false)" title="Cancel">✕</button>
+    </div>
+  } @else {
+    <button class="add" (click)="openAdder()" title="Add a counter to this timer">＋ Counter</button>
+  }
+</div>
+
+<dialog #stats class="wide stats-dlg" (close)="statsOpen.set(false)">
+  @if (statsOpen()) {
+    <app-session-stats [timer]="timer()" (closed)="closeStats()" />
+  }
+</dialog>
+
+<dialog #dlg>
+  <h3>Session timer settings</h3>
+  <div class="edit">
+    <label>Name <input [value]="timer().name" (change)="rename($event)" placeholder="e.g. Crypt farming" /></label>
+  </div>
+  <h4>Counters</h4>
+  @if (counters().length) {
+    <ul class="manage">
+      @for (c of counters(); track c.id) {
+        <li>
+          <span class="nm">{{ c.name }}</span>
+          <button class="small" (click)="moveOut(c)" title="Give it its own panel on the board again">Move to board</button>
+          <button class="small danger" (click)="deleteCounter(c, $event)" title="Delete (Shift+click to skip confirmation)">Delete</button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="hint">None yet. Use ＋ Counter on the timer, or drag a counter panel onto it.</p>
+  }
+  <p class="hint">
+    Each start → End session is a session; pauses don't count toward its time. Starting a new session starts the counters
+    from 0. Every session's counts are kept in 📊 Stats. Right-click a counter's name to rename it, or its count to type
+    a number.
+  </p>
+  <div class="dialog-actions">
+    <button class="danger" (click)="remove($event)">Delete</button>
+    <span class="spacer"></span>
+    <button class="primary" (click)="closeEdit()">Done</button>
+  </div>
+</dialog>

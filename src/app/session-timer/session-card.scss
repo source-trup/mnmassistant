@@ -1,0 +1,237 @@
+:host {
+  display: block;
+  height: 100%;
+  /* The clock grows with the panel when it's resized (cqw / cqh are % of the panel's width / height). */
+  container-type: size;
+}
+
+.card {
+  --accent: var(--idle);
+  height: 100%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &[data-status='running'] {
+    --accent: var(--running);
+  }
+  &[data-status='paused'] {
+    --accent: var(--paused);
+  }
+}
+
+.clock {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent);
+
+  &:hover .time {
+    filter: brightness(1.2);
+  }
+}
+
+.time {
+  font-size: clamp(2.1rem, min(14cqw, 15cqh), 7rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+
+  button {
+    padding: 3px 9px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+}
+
+/* ---- counters ---- */
+
+.counters {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 4px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+}
+
+.nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  cursor: context-menu;
+}
+
+.val {
+  min-width: 2.6em;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--counter);
+  cursor: context-menu;
+
+  small {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  &.reached {
+    color: var(--goal);
+  }
+}
+
+.step {
+  flex: none;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  font-size: 1.15rem;
+  line-height: 1;
+
+  &.plus {
+    background: var(--counter-bg);
+    border-color: var(--counter);
+  }
+}
+
+/* Delete: faint until you point at the row, so it doesn't compete with + and −. */
+.del {
+  flex: none;
+  padding: 2px 3px;
+  font-size: 0.8rem;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+
+  .row:hover &,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.row-edit {
+  padding: 2px 5px;
+  font-size: 0.9rem;
+
+  &.nm-edit {
+    flex: 1;
+    min-width: 0;
+  }
+  &.val-edit {
+    width: 3.6em;
+    text-align: center;
+    font-weight: 700;
+  }
+}
+
+.empty {
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+.add {
+  flex: none;
+  align-self: flex-start;
+  padding: 2px 9px;
+  font-size: 0.8rem;
+}
+
+.adder {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 6px;
+    font-size: 0.82rem;
+  }
+  select {
+    flex: none;
+    max-width: 45%;
+    padding: 2px 4px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ---- settings ---- */
+
+h4 {
+  margin: 14px 0 6px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--bone);
+}
+
+.manage {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nm {
+    cursor: default;
+  }
+}
+
+.small {
+  padding: 2px 8px;
+  font-size: 0.78rem;
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+dialog.stats-dlg {
+  width: min(680px, calc(100vw - 32px));
+}

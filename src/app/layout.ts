@@ -1,7 +1,7 @@
 /** Size of one grid cell in pixels. */
 export const GRID = 20;
 
-export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes' | 'prices' | 'wiki' | 'wishlist' | 'gear';
+export type PanelSizeKind = 'timer' | 'session' | 'standard' | 'namedPh' | 'buffs' | 'note' | 'checklist' | 'players' | 'levels' | 'spells' | 'leveling' | 'map' | 'classes' | 'prices' | 'wiki' | 'wishlist' | 'gear';
 
 /**
  * Footprint of each panel type in grid cells. The footprint includes one cell of gutter on the
@@ -11,6 +11,7 @@ export type PanelSizeKind = 'timer' | 'standard' | 'namedPh' | 'buffs' | 'note' 
  */
 export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
   timer: { w: 15, h: 10 }, // 280 x 180
+  session: { w: 15, h: 15 }, // 280 x 280: the Session timer (count-up clock and its counters)
   standard: { w: 15, h: 9 }, // 280 x 160
   namedPh: { w: 15, h: 18 }, // 280 x 340: the Named / PH timer (countdown and camp)
   buffs: { w: 15, h: 14 }, // 280 x 260
@@ -32,8 +33,9 @@ export const PANEL_SIZE: Record<PanelSizeKind, { w: number; h: number }> = {
  * Smallest each panel can be resized to (grid cells): enough that its controls never get cut off.
  * Notes, Spells and Leveling have their own minimums in TrackerStore.
  */
-export const PANEL_MIN: Record<'timer' | 'standard' | 'namedPh' | 'buffs' | 'players' | 'levels', { w: number; h: number }> = {
+export const PANEL_MIN: Record<'timer' | 'session' | 'standard' | 'namedPh' | 'buffs' | 'players' | 'levels', { w: number; h: number }> = {
   timer: { w: 13, h: 9 },
+  session: { w: 13, h: 11 },
   standard: { w: 12, h: 8 },
   namedPh: { w: 14, h: 18 },
   buffs: { w: 13, h: 9 },

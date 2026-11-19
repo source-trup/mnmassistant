@@ -37,9 +37,21 @@ import {
   StandardCounter,
   Theme,
   TimerItem,
+  TimerSession,
 } from './models';
 import { DEFAULT_THEME, applyTheme, normalizeThemeId, themeById } from './themes';
 import { formatDuration } from './time';
+import {
+  MAX_SESSIONS,
+  endSession,
+  newSession,
+  normalizeSessions,
+  openSession,
+  pauseSession,
+  recordCount,
+  resumeSession,
+  worthKeeping,
+} from './session-timer/session';
 
 const STORAGE_KEY = 'mnm-assistant.state.v1';
 const TICK_MS = 250;
@@ -489,6 +501,18 @@ function makeTimer(durationMs: number, name?: string): TimerItem {
   };
 }
 
+const DEFAULT_SESSION_NAME = 'Session';
+
+/** A new Session timer: counts up, no sessions yet. */
+function makeSessionTimer(name = DEFAULT_SESSION_NAME): TimerItem {
+  return { ...makeTimer(0, name), autoNamed: name === DEFAULT_SESSION_NAME, mode: 'session', sessions: [] };
+}
+
+/** Board size of a timer panel: a Session timer is taller (it holds counters). */
+function timerSize(t: TimerItem): { w: number; h: number } {
+  return sizeOf(t, PANEL_SIZE[t.mode === 'session' ? 'session' : 'timer']);
+}
+
 function makeStandardCounter(name = 'Counter'): StandardCounter {
   return { id: newId(), since: Date.now(), ...UNPLACED, kind: 'standard', name, value: 0, step: 1, target: null };
 }
@@ -526,7 +550,8 @@ function makeCamp(name = DEFAULT_NPH_NAME, durationMs = DEFAULT_CAMP_MS): { camp
  * lose their link. Kill logs keep their keys: a camp tied to a timer you'd named still writes to that NPC's log.
  */
 function migrateCamps(timers: TimerItem[], raw: any[]): { timers: TimerItem[]; counters: CounterItem[] } {
-  const byId = new Map(timers.map((t) => [t.id, t]));
+  const byId = new Map(timers.filter((t) => t.mode !== 'session').map((t) => [t.id, t]));
+  const sessionTimers = new Set(timers.filter((t) => t.mode === 'session').map((t) => t.id));
   const owned = new Map<string, TimerItem>();
   const counters: CounterItem[] = [];
   for (const r of raw) {
@@ -534,7 +559,8 @@ function migrateCamps(timers: TimerItem[], raw: any[]): { timers: TimerItem[]; c
     const { linkedTimerId, history: _moved, timerId, ...rest } = r; // history now lives in campLogs
     const pos = { x: r.x ?? -1, y: r.y ?? -1 };
     if (r.kind !== 'namedPh') {
-      counters.push({ ...makeStandardCounter(), ...rest, kind: 'standard', ...pos });
+      const inTimer = typeof timerId === 'string' && sessionTimers.has(timerId) ? timerId : null;
+      counters.push({ ...makeStandardCounter(), ...rest, kind: 'standard', ...pos, timerId: inTimer });
       continue;
     }
     const camp: NamedPhCounter = { ...makeCamp().camp, ...rest, kind: 'namedPh', closed: r.closed === true, ...pos };
@@ -744,6 +770,8 @@ function normalizeState(parsed: any): AppState | null {
     autoNamed: t.autoNamed ?? AUTO_TIMER_NAME.test(t.name ?? ''),
     x: t.x ?? -1,
     y: t.y ?? -1,
+    mode: t.mode === 'session' ? ('session' as const) : undefined,
+    sessions: t.mode === 'session' ? normalizeSessions(t.sessions) : undefined,
   }));
   const campLogs = normalizeLogs(parsed, savedTimers);
   const { timers, counters } = migrateCamps(savedTimers, parsed.counters);
@@ -827,12 +855,21 @@ export class TrackerStore {
   /** Countdowns that belong to a Named / PH timer (shown inside that panel, not on their own). */
   readonly campTimerIds = computed(() => new Set(this.counters().flatMap((c) => (c.kind === 'namedPh' ? [c.timerId] : []))));
 
+  /** Session timers, by id. */
+  readonly sessionTimers = computed(() => new Map(this.timers().flatMap((t) => (t.mode === 'session' ? [[t.id, t] as const] : []))));
+
+  /** Counters that live in a Session timer (shown in that panel, not on their own). */
+  readonly timerCounterIds = computed(() => {
+    const timers = this.sessionTimers();
+    return new Set(this.counters().flatMap((c) => (c.kind === 'standard' && c.timerId && timers.has(c.timerId) ? [c.id] : [])));
+  });
+
   readonly panels = computed<Panel[]>(() => [
     ...this.timers()
       .filter((t) => !this.campTimerIds().has(t.id))
-      .map((t) => ({ id: t.id, kind: 'timer' as const, item: t, x: t.x, y: t.y, ...sizeOf(t, PANEL_SIZE.timer) })),
+      .map((t) => ({ id: t.id, kind: 'timer' as const, item: t, x: t.x, y: t.y, ...timerSize(t) })),
     ...this.counters()
-      .filter((c) => !(c.kind === 'namedPh' && c.closed))
+      .filter((c) => !(c.kind === 'namedPh' && c.closed) && !this.timerCounterIds().has(c.id))
       .map((c) => ({ id: c.id, kind: 'counter' as const, item: c, x: c.x, y: c.y, ...sizeOf(c, PANEL_SIZE[c.kind]) })),
     ...this.buffPanels().map((b) => ({ id: b.id, kind: 'buffs' as const, item: b, x: b.x, y: b.y, ...sizeOf(b, PANEL_SIZE.buffs) })),
     ...this.notes()
@@ -1018,8 +1055,11 @@ export class TrackerStore {
       return { ...item, ...spot };
     };
     const campTimers = this.campTimerIds();
-    this.timers.update((list) => list.map((t) => (campTimers.has(t.id) ? t : place(t, sizeOf(t, PANEL_SIZE.timer)))));
-    this.counters.update((list) => list.map((c) => (c.kind === 'namedPh' && c.closed ? c : place(c, sizeOf(c, PANEL_SIZE[c.kind])))));
+    const inTimers = this.timerCounterIds();
+    this.timers.update((list) => list.map((t) => (campTimers.has(t.id) ? t : place(t, timerSize(t)))));
+    this.counters.update((list) =>
+      list.map((c) => ((c.kind === 'namedPh' && c.closed) || inTimers.has(c.id) ? c : place(c, sizeOf(c, PANEL_SIZE[c.kind])))),
+    );
     this.buffPanels.update((list) => list.map((b) => place(b, sizeOf(b, PANEL_SIZE.buffs))));
     this.notes.update((list) => list.map((n) => (n.closed ? n : place(n, n))));
     this.listPanels.update((lp) => {
@@ -1049,6 +1089,8 @@ export class TrackerStore {
     if (this.campTimerIds().has(id)) return; // a camp's countdown goes with its panel
     this.timers.update((list) => list.filter((t) => t.id !== id));
     this.timerAlerted.delete(id);
+    // A Session timer's counters live only in it, so they go too.
+    this.counters.update((list) => list.filter((c) => !(c.kind === 'standard' && c.timerId === id)));
   }
 
   updateTimer(id: string, patch: Partial<TimerItem>): void {
@@ -1136,6 +1178,111 @@ export class TrackerStore {
   resetAllTimers(): void {
     this.timerAlerted.clear();
     this.timers.update((list) => list.map((t) => ({ ...t, endsAt: null, pausedRemainingMs: null })));
+  }
+
+  // ---------- Session timers ----------
+
+  /** Adds a Session timer (counts up; holds counters). */
+  addSessionTimer(name?: string): void {
+    this.timers.update((list) => [...list, makeSessionTimer(name)]);
+    this.placeUnplaced();
+  }
+
+  /** Changes the session going (if any) of a Session timer. */
+  private updateSession(timerId: string, fn: (s: TimerSession) => TimerSession): void {
+    this.timers.update((list) =>
+      list.map((t) => {
+        const open = t.id === timerId ? openSession(t) : null;
+        if (!open) return t;
+        const sessions = [...t.sessions!];
+        sessions[sessions.length - 1] = fn(open);
+        return { ...t, sessions };
+      }),
+    );
+  }
+
+  /** The counters in a Session timer, in board order. */
+  countersIn(timerId: string): StandardCounter[] {
+    return this.counters().filter((c): c is StandardCounter => c.kind === 'standard' && c.timerId === timerId);
+  }
+
+  /**
+   * Starts a Session timer: resumes a paused session, or starts a new one, which starts its counters from 0 (the last
+   * session's counts are in the stats).
+   */
+  startSession(timerId: string): void {
+    const t = this.sessionTimers().get(timerId);
+    if (!t) return;
+    const now = Date.now();
+    if (openSession(t)) {
+      this.updateSession(timerId, (s) => resumeSession(s, now));
+      return;
+    }
+    const sessions = [...(t.sessions ?? []), newSession(newId(), now)].slice(-MAX_SESSIONS);
+    this.updateTimer(timerId, { sessions });
+    const mine = new Set(this.countersIn(timerId).map((c) => c.id));
+    this.counters.update((list) => list.map((c) => (mine.has(c.id) ? { ...c, value: 0, since: now } : c)));
+  }
+
+  pauseSession(timerId: string): void {
+    const now = Date.now();
+    this.updateSession(timerId, (s) => pauseSession(s, now));
+  }
+
+  /** Ends the session going: it's kept for the stats (unless it was a few seconds with nothing counted). */
+  endSession(timerId: string): void {
+    const t = this.sessionTimers().get(timerId);
+    const open = t && openSession(t);
+    if (!t || !open) return;
+    const ended = endSession(open, Date.now());
+    const sessions = t.sessions!.slice(0, -1);
+    this.updateTimer(timerId, { sessions: worthKeeping(ended) ? [...sessions, ended] : sessions });
+  }
+
+  /** Deletes one session from a Session timer's history. */
+  deleteSession(timerId: string, sessionId: string): void {
+    const t = this.sessionTimers().get(timerId);
+    if (t) this.updateTimer(timerId, { sessions: (t.sessions ?? []).filter((s) => s.id !== sessionId) });
+  }
+
+  /** Deletes every finished session (the one going, if any, stays). */
+  clearSessions(timerId: string): void {
+    const t = this.sessionTimers().get(timerId);
+    if (!t) return;
+    const open = openSession(t);
+    this.updateTimer(timerId, { sessions: open ? [open] : [] });
+  }
+
+  /** A new counter inside a Session timer. */
+  addTimerCounter(timerId: string, name: string): void {
+    if (!this.sessionTimers().has(timerId)) return;
+    const c: StandardCounter = { ...makeStandardCounter(name.trim() || 'Counter'), timerId };
+    this.counters.update((list) => [...list, c]);
+    this.growForCounter(timerId);
+  }
+
+  /** Moves a counter from the board into a Session timer (its own panel goes away). */
+  moveCounterToTimer(counterId: string, timerId: string): void {
+    const c = this.counters().find((x) => x.id === counterId);
+    if (!c || c.kind !== 'standard' || !this.sessionTimers().has(timerId) || c.timerId === timerId) return;
+    this.updateCounter(counterId, { timerId });
+    this.growForCounter(timerId);
+  }
+
+  /** Takes a counter out of its Session timer and gives it its own panel again. */
+  moveCounterToBoard(counterId: string): void {
+    const c = this.counters().find((x) => x.id === counterId);
+    if (!c || c.kind !== 'standard' || !c.timerId) return;
+    this.updateCounter(counterId, { timerId: null, ...UNPLACED });
+    this.placeUnplaced();
+  }
+
+  /** Each counter row needs room: past two counters, a Session timer grows a row when there's space below it. */
+  private growForCounter(timerId: string): void {
+    const p = this.panels().find((x) => x.id === timerId);
+    if (!p || p.kind !== 'timer') return;
+    const needed = PANEL_SIZE.session.h + Math.max(0, this.countersIn(timerId).length - 2) * 2;
+    if (p.h < needed) this.resizePanel(timerId, p.w, Math.min(needed, p.h + 2));
   }
 
   // ---------- counters ----------
@@ -1307,7 +1454,23 @@ export class TrackerStore {
   bump(id: string, direction: 1 | -1): void {
     const c = this.counters().find((x) => x.id === id);
     if (!c || c.kind !== 'standard') return;
-    this.updateCounter(id, { value: c.value + direction * c.step });
+    // In a Session timer with no session going, counting up starts one (which starts the counts from 0).
+    const timer = c.timerId ? this.sessionTimers().get(c.timerId) : undefined;
+    const fresh = direction === 1 && !!timer && !openSession(timer);
+    if (timer && fresh) this.startSession(timer.id);
+    this.setCounterValue(id, (fresh ? 0 : c.value) + direction * c.step);
+  }
+
+  /** Sets a counter's value; in a Session timer the change counts toward the session going (if any). */
+  setCounterValue(id: string, value: number): void {
+    const c = this.counters().find((x) => x.id === id);
+    if (!c || c.kind !== 'standard' || !Number.isFinite(value)) return;
+    const delta = value - c.value;
+    this.updateCounter(id, { value });
+    if (c.timerId && delta) {
+      const now = Date.now();
+      this.updateSession(c.timerId, (s) => recordCount(s, id, c.name, delta, now));
+    }
   }
 
   /** Placeholder killed: +1 PH, log it, and restart the camp's countdown. */
@@ -1952,6 +2115,8 @@ export class TrackerStore {
         return GEAR_MIN;
       case 'counter':
         return PANEL_MIN[p.item.kind];
+      case 'timer':
+        return PANEL_MIN[p.item.mode === 'session' ? 'session' : 'timer'];
       default:
         return PANEL_MIN[p.kind];
     }
@@ -2143,7 +2308,15 @@ export class TrackerStore {
     this.buffWarned.clear();
     this.buffFaded.clear();
     this.lootQueue.set([]);
-    this.timers.set(state.timers.map((t) => ({ ...t, endsAt: null, pausedRemainingMs: null })));
+    this.timers.set(
+      state.timers.map((t) => ({
+        ...t,
+        endsAt: null,
+        pausedRemainingMs: null,
+        // A session that was going comes back paused, at the time it had when the file was saved.
+        ...(t.sessions ? { sessions: t.sessions.map((x) => (x.runningSince === null ? x : { ...x, runningSince: null })) } : {}),
+      })),
+    );
     this.counters.set(state.counters);
     // Kill history is kept per NPC, so a layout file adds to it instead of erasing what you have.
     this.campLogs.update((mine) => {

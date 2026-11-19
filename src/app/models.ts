@@ -28,6 +28,36 @@ export interface TimerItem extends GridPos, Sized {
   pausedRemainingMs: number | null;
   /** Automatically start over when it reaches zero. */
   repeat: boolean;
+  /**
+   * 'session': a Session timer, which counts up instead of down. Each start → end is a session (pauses allowed), and
+   * it can hold counters whose counts are kept per session for the stats. Missing means a countdown.
+   */
+  mode?: 'session';
+  /** Session timer: every session, oldest first. The last one is still going while its `end` is null. */
+  sessions?: TimerSession[];
+}
+
+/** One session of a Session timer: from start to end, with what each of its counters added up to. */
+export interface TimerSession {
+  id: string;
+  /** Epoch ms it started, and ended (null while it's still going). */
+  start: number;
+  end: number | null;
+  /** Time counted before the current run (pauses don't count). */
+  elapsedMs: number;
+  /** Epoch ms the current run began; null while paused or after the end. */
+  runningSince: number | null;
+  /** What each counter added up to this session, by counter id. */
+  counts: Record<string, SessionCount>;
+}
+
+/** One counter's tally in one session. */
+export interface SessionCount {
+  /** The counter's name then (kept if the counter is renamed or deleted later). */
+  name: string;
+  total: number;
+  /** The changes by minute of session time (pauses don't count): [minute, change], minutes in order. */
+  marks: [number, number][];
 }
 
 interface CounterBase extends GridPos, Sized {
@@ -44,6 +74,8 @@ export interface StandardCounter extends CounterBase {
   step: number;
   /** Optional goal, e.g. "collect 20". */
   target: number | null;
+  /** The Session timer it lives in (it's shown in that panel, not on its own); missing or null = its own panel. */
+  timerId?: string | null;
 }
 
 /** An item that dropped, optionally matched to a wiki entry. */
@@ -357,3 +389,6 @@ export interface AppState {
 }
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'done';
+
+/** Where a Session timer is: no session going, counting, or paused. */
+export type SessionStatus = 'idle' | 'running' | 'paused';
