@@ -7,7 +7,7 @@
   } @else {
     <p class="lead">
       The biggest upgrade for each slot from mobs up to level <b>{{ level()! + ABOVE }}</b> (drops only, no raids),
-      for a {{ c.cls ?? 'character of any class' }} wearing what's on the paper doll.
+      for a {{ c.cls ?? 'character of any class' }} wearing what's in Current Gear.
     </p>
   }
 } @else {
@@ -61,7 +61,7 @@
           <span class="tag" title="Can't be traded: you have to get it yourself">No drop</span>
         }
         <span class="spacer"></span>
-        <button class="small" (click)="wear(u)" [title]="'Put it on the paper doll' + (u.replaces.length ? ', replacing ' + u.replaces[0].name : '')">Wear</button>
+        <button class="small" (click)="wear(u)" [title]="'Put it in Current Gear' + (u.replaces.length ? ', replacing ' + u.replaces[0].name : '')">Wear</button>
         <button class="small wish" (click)="wish(u.item.name)" title="Add it to your Wishlist">⭐</button>
         <button class="small" (click)="store.showWiki(u.item.name)" title="Look it up in the Wiki panel">📖</button>
       </div>

@@ -182,7 +182,7 @@
 .con-yellow { --c: var(--con-yellow); }
 .con-red { --c: var(--con-red); }
 
-/* In a narrow panel the item name matters more than the Wishlist button (⭐ is also on the paper doll). */
+/* In a narrow panel the item name matters more than the Wishlist button (⭐ is also in Current Gear). */
 @container (max-width: 470px) {
   .wish {
     display: none;

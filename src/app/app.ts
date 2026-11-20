@@ -110,7 +110,7 @@ export class App {
       tool('🧭', 'Map', 'Zone maps from MnM Atlas. Zoom in, or find an NPC on any map.', s.mapPanel().shown, () => s.toggleMap()),
       tool('💰', 'Price Checker', 'What an item sells for on Trem, what buyers offer and what a vendor pays.', s.pricePanel().shown, () => s.togglePrices()),
       tool('⭐', 'Wishlist', `Items you're after, with their stats, who drops them and wiki links. ${wishCount(s.wishlistPanel().items.filter((i) => !i.got).length)}`, s.wishlistPanel().shown, () => s.toggleWishlist()),
-      tool('⚔️', 'Gear Planner', "Your gear on a paper doll for each character, every upgrade by slot, mob level and source, and the biggest upgrades around your level.", s.gearPanel().shown, () => s.toggleGear()),
+      tool('⚔️', 'Gear Planner', "Each character's current gear, every upgrade by slot, mob level and source, and the biggest upgrades around your level.", s.gearPanel().shown, () => s.toggleGear()),
       tool('🗺️', 'Leveling Spots', 'Pick your class and level to see the zones and mobs that con right for you, solo or in a group (Worth the Camp).', s.levelingPanel().shown, () => s.toggleLeveling()),
       tool('🪄', 'Spells', "Every spell by class and level, and what a level's spells cost.", s.spellPanel().shown, () => s.toggleSpells()),
       tool('🛡️', 'Class Guides', 'How to play each class: builds, key abilities, leveling and gear.', s.classPanel().shown, () => s.toggleClasses()),

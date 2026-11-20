@@ -56,7 +56,7 @@ test.describe('gear planner', () => {
 
     // Wear it from the list.
     await card.locator('.ups li', { hasText: 'Guard Helm' }).getByRole('button', { name: 'Wear' }).click();
-    await card.getByRole('tab', { name: 'Paper doll' }).click();
+    await card.getByRole('tab', { name: 'Current Gear' }).click();
     await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('Guard Helm');
 
     // Recommended: the best drop per slot from mobs up to 21, with the drop rate when it's known.
@@ -70,7 +70,7 @@ test.describe('gear planner', () => {
     await nameBox.fill('Alt');
     await nameBox.press('Enter');
     await expect(card.getByLabel('Character').locator('option:checked')).toHaveText('Alt');
-    await card.getByRole('tab', { name: 'Paper doll' }).click();
+    await card.getByRole('tab', { name: 'Current Gear' }).click();
     await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('—');
     await card.getByLabel('Character').selectOption({ label: 'Character 1' });
     await expect(card.locator('.doll .slot', { hasText: 'Head' })).toContainText('Guard Helm');

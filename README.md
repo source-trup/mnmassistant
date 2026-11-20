@@ -78,7 +78,7 @@ Across the top of the page, left to right:
 
 | Part | What it does |
 | --- | --- |
-| **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Gear Planner](#gear-planner) (a paper doll per character and the upgrades you can get), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
+| **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Gear Planner](#gear-planner) (each character's current gear and the upgrades you can get), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
 | **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). A [Session timer](#session-timers) counts up instead. **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers and notes you've put away; click one to bring it back. The number on the button is how many are saved. |
 | **🕰️ Game time** | The [game clock](#game-time), with how long until 6 PM and 6 AM; click it for more. |
 | **?** | The quick guide. |
@@ -199,7 +199,7 @@ yours instead of replacing them.
 
 ## Gear Planner
 
-Your gear on a paper doll, for each of your characters, and the upgrades you can get. **⚔️ Gear Planner** in the
+Each of your characters' current gear, and the upgrades you can get. **⚔️ Gear Planner** in the
 toolbar shows or hides the panel (there's only one; it comes back in the same spot and size). Drag its bottom-right
 corner to resize it. Item data is [Worth the Camp](https://worththecamp.com/)'s; NPC levels are the same ones the
 [Leveling Spots](#leveling) panel uses.
@@ -217,7 +217,7 @@ Leveling Spots (or Group Range). At the top:
 
 Three views, as tabs:
 
-**Paper doll.** All 21 positions: head, face, two ears, neck, shoulders, back on the left; chest, shirt, two wrists,
+**Current Gear.** A paper doll with all 21 positions: head, face, two ears, neck, shoulders, back on the left; chest, shirt, two wrists,
 hands, two fingers on the right; waist, legs and feet in the middle under your totals; primary, offhand, ranged and
 ammo along the bottom. Each filled slot shows the item's icon on the right (Worth the Camp has icons for most items).
 The middle shows your race and class, how many slots are filled and your stats added up, over your race's portrait

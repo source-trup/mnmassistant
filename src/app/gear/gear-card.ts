@@ -29,7 +29,7 @@ export class GearCard {
   protected readonly CLASSES = GEAR_CLASSES;
   protected readonly RACES = RACES;
   protected readonly TABS = [
-    { id: 'doll', label: 'Paper doll', hint: 'What this character wears: click a slot to pick an item' },
+    { id: 'doll', label: 'Current Gear', hint: 'What this character wears: click a slot to pick an item' },
     { id: 'finder', label: 'Upgrades', hint: 'Every upgrade, filtered by slot, mob level and how you get it' },
     { id: 'recommended', label: 'Recommended', hint: 'The biggest upgrades you can get around your level' },
   ] as const;
