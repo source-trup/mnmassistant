@@ -342,6 +342,29 @@ export interface GearPanel extends GridPos {
   finder: GearFinder;
 }
 
+/**
+ * An item you made yourself (🛠 My items): for anything the item sites don't have yet. It joins the Gear Planner's
+ * items and the Wishlist like any other, with its own item card.
+ */
+export interface CustomItem {
+  /** Negative, so it never clashes with Worth the Camp's item ids (gear is saved by id). */
+  id: number;
+  name: string;
+  /** Full URL of its icon (one of the wiki's item icons), or null. */
+  icon: string | null;
+  /** Slot types it can go in (gear.ts SLOT_TYPES). */
+  slots: string[];
+  /** AC, HP, Mana, attributes and resists, by the planner's stat keys (gear.ts STATS). */
+  stats: Partial<Record<string, number>>;
+  /** Weapon damage and delay (0 when it isn't a weapon). */
+  dmg: number;
+  delay: number;
+  twoHand: boolean;
+  /** Where it comes from, in your words (shown on its card). */
+  source: string;
+  added: number;
+}
+
 /** A span of game hours to watch, e.g. a named that only spawns at night (22 → 4). */
 export interface GameWindow {
   id: string;
@@ -383,6 +406,8 @@ export interface AppState {
   wikiPanel: WikiPanel;
   wishlistPanel: WishlistPanel;
   gearPanel: GearPanel;
+  /** Items you made yourself. */
+  customItems: CustomItem[];
   gameClock: GameClockSettings;
   soundOn: boolean;
   theme: Theme;

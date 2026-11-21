@@ -55,7 +55,7 @@
     <li>
       <div class="r1">
         <span class="gain" title="Score gain over what it replaces, with this character's stat weights">{{ fmt(u.gain) }}</span>
-        <a class="nm" [href]="itemUrl(u.item)" target="_blank" rel="noopener" [title]="u.item.name + ' on Worth the Camp'">{{ u.item.name }}</a>
+        <a class="nm" [href]="itemUrl(u.item)" target="_blank" rel="noopener" [appItemTip]="u.item">{{ u.item.name }}</a>
         <span class="sl">{{ slotOf(u) }}{{ u.item.twoHand ? ' · 2H' : '' }}</span>
         @if (u.item.flags.includes('NO DROP')) {
           <span class="tag" title="Can't be traded: you have to get it yourself">No drop</span>
@@ -73,7 +73,7 @@
           <span class="wpn">{{ u.item.dmg }}/{{ u.item.delay }}</span>
         }
         @if (u.replaces.length) {
-          <span class="rep">over {{ u.replaces[0].name }}{{ u.replaces.length > 1 ? ' + ' + u.replaces[1].name : '' }}</span>
+          <span class="rep">over <span [appItemTip]="u.replaces[0]">{{ u.replaces[0].name }}</span>@if (u.replaces.length > 1) { + <span [appItemTip]="u.replaces[1]">{{ u.replaces[1].name }}</span>}</span>
         }
       </div>
       <div class="how">
@@ -99,6 +99,8 @@
             }
         } @else if (craftedOf(u); as text) {
           <span>⚒ Crafted: {{ text }}</span>
+        } @else if (u.how.kind === 'mine') {
+          <span>🛠 Your item{{ u.how.text ? ': ' + u.how.text : '' }}</span>
         } @else {
           <span class="muted">Quest or other (no known drop)</span>
         }

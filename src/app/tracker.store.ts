@@ -12,6 +12,7 @@ import {
   CampEvent,
   CampLog,
   CounterItem,
+  CustomItem,
   CounterKind,
   LootItem,
   NamedPhCounter,
@@ -406,6 +407,53 @@ function normalizeGearPanel(raw: any): GearPanel {
   };
 }
 
+/** Most items you can make yourself. */
+export const MAX_CUSTOM_ITEMS = 500;
+
+/** A new id for an item of your own: negative (Worth the Camp's ids are positive) and unlikely to clash with another board's. */
+export function newCustomItemId(): number {
+  return -(1 + Math.floor(Math.random() * 2 ** 40));
+}
+
+function finite(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Items of your own as saved (any version): well-formed ones only. */
+export function normalizeCustomItems(raw: unknown): CustomItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: CustomItem[] = [];
+  const ids = new Set<number>();
+  for (const r of raw) {
+    if (!r || typeof r !== 'object' || typeof r.name !== 'string' || !r.name.trim()) continue;
+    let id = Number.isInteger(r.id) && r.id < 0 ? r.id : newCustomItemId();
+    if (ids.has(id)) id = newCustomItemId();
+    ids.add(id);
+    const stats: Partial<Record<string, number>> = {};
+    for (const [k, v] of Object.entries(r.stats ?? {})) if (finite(v)) stats[k] = finite(v);
+    out.push({
+      id,
+      name: r.name.trim().slice(0, 80),
+      icon: typeof r.icon === 'string' && /^https:\/\//.test(r.icon) ? r.icon : null,
+      slots: Array.isArray(r.slots) ? r.slots.filter((x: unknown): x is string => typeof x === 'string') : [],
+      stats,
+      dmg: Math.max(0, finite(r.dmg)),
+      delay: Math.max(0, finite(r.delay)),
+      twoHand: r.twoHand === true,
+      source: typeof r.source === 'string' ? r.source.slice(0, 200) : '',
+      added: finite(r.added) || Date.now(),
+    });
+  }
+  return out.slice(0, MAX_CUSTOM_ITEMS);
+}
+
+/** A layout file's own items are added to yours (same id: yours is kept). */
+function mergeCustomItems(mine: CustomItem[], incoming: CustomItem[]): CustomItem[] {
+  const ids = new Set(mine.map((c) => c.id));
+  return [...mine, ...incoming.filter((c) => !ids.has(c.id))].slice(0, MAX_CUSTOM_ITEMS);
+}
+
 /** A layout file's characters are added to yours (same id: yours is kept). */
 function mergeCharacters(mine: GearCharacter[], incoming: GearCharacter[]): GearCharacter[] {
   const ids = new Set(mine.map((c) => c.id));
@@ -741,6 +789,7 @@ function defaultState(): AppState {
     wikiPanel: defaultWikiPanel(),
     wishlistPanel: defaultWishlistPanel(),
     gearPanel: defaultGearPanel(),
+    customItems: [],
     gameClock: { windows: [], offset: 0 },
   };
 }
@@ -793,6 +842,7 @@ function normalizeState(parsed: any): AppState | null {
     wikiPanel: normalizeWikiPanel(parsed.wikiPanel),
     wishlistPanel: normalizeWishlistPanel(parsed.wishlistPanel),
     gearPanel: normalizeGearPanel(parsed.gearPanel),
+    customItems: normalizeCustomItems(parsed.customItems),
     gameClock: normalizeGameClock(parsed.gameClock),
     notes: (Array.isArray(parsed.notes) ? parsed.notes : []).filter((n: any) => n && typeof n === 'object').map(normalizeNote),
     timers,
@@ -838,6 +888,8 @@ export class TrackerStore {
   readonly wikiPanel = signal<WikiPanel>(defaultWikiPanel());
   readonly wishlistPanel = signal<WishlistPanel>(defaultWishlistPanel());
   readonly gearPanel = signal<GearPanel>(defaultGearPanel());
+  /** Items you made yourself (Gear Planner, Wishlist). */
+  readonly customItems = signal<CustomItem[]>([]);
   /** The toolbar game clock: your spawn windows and any adjustment. */
   readonly gameClock = signal<GameClockSettings>({ windows: [], offset: 0 });
   /** A lookup another panel asked the Wiki panel to do (not saved). The counter makes repeat lookups fire again. */
@@ -2092,6 +2144,34 @@ export class TrackerStore {
     this.updateGearPanel({ finder: { ...this.gearPanel().finder, ...patch } });
   }
 
+  // ---------- items of your own ----------
+
+  /** Saves an item of your own: a new one (no id yet) or changes to one. Returns it as saved. */
+  saveCustomItem(item: Omit<CustomItem, 'id' | 'added'> & { id?: number }): CustomItem | null {
+    const had = item.id !== undefined ? this.customItems().find((c) => c.id === item.id) : undefined;
+    const [saved] = normalizeCustomItems([{ ...item, id: had?.id ?? newCustomItemId(), added: had?.added ?? Date.now() }]);
+    if (!saved) return null;
+    if (had) this.customItems.update((list) => list.map((c) => (c.id === had.id ? saved : c)));
+    else if (this.customItems().length < MAX_CUSTOM_ITEMS) this.customItems.update((list) => [...list, saved]);
+    else return null;
+    // A renamed item keeps its name wherever it's worn.
+    if (had && had.name !== saved.name) {
+      this.gearPanel.update((p) => ({
+        ...p,
+        characters: p.characters.map((c) => ({
+          ...c,
+          gear: Object.fromEntries(Object.entries(c.gear).map(([k, g]) => [k, g && g.id === saved.id ? { ...g, name: saved.name } : g])),
+        })),
+      }));
+    }
+    return saved;
+  }
+
+  /** Deletes an item of your own (characters wearing it keep its name, as with an item that's left the item data). */
+  removeCustomItem(id: number): void {
+    this.customItems.update((list) => list.filter((c) => c.id !== id));
+  }
+
   /** Smallest size a panel can be resized to, or null if it can't be resized. */
   minSize(p: Panel): { w: number; h: number } {
     switch (p.kind) {
@@ -2355,6 +2435,8 @@ export class TrackerStore {
     const chars = mergeCharacters(this.gearPanel().characters, state.gearPanel.characters);
     const active = [state.gearPanel.active, this.gearPanel().active].find((id) => chars.some((c) => c.id === id)) ?? chars[0]?.id ?? null;
     this.gearPanel.set({ ...state.gearPanel, characters: chars, active });
+    // Your own items are kept too: the file's are added to yours.
+    this.customItems.update((mine) => mergeCustomItems(mine, state.customItems));
     this.gameClock.set(state.gameClock);
     // Buff sets are a library, so a layout file adds to them instead of wiping yours (same name: the file's wins).
     const incoming = new Set(state.buffSets.map((s) => s.name.toLowerCase()));
@@ -2461,6 +2543,7 @@ export class TrackerStore {
       wikiPanel: this.wikiPanel(),
       wishlistPanel: this.wishlistPanel(),
       gearPanel: this.gearPanel(),
+      customItems: this.customItems(),
       gameClock: this.gameClock(),
       soundOn: this.soundOn(),
       theme: this.theme(),
@@ -2496,6 +2579,7 @@ export class TrackerStore {
     this.wikiPanel.set(state.wikiPanel);
     this.wishlistPanel.set(state.wishlistPanel);
     this.gearPanel.set(state.gearPanel);
+    this.customItems.set(state.customItems);
     this.gameClock.set(state.gameClock);
     this.buffSets.set(state.buffSets);
     this.soundOn.set(state.soundOn);

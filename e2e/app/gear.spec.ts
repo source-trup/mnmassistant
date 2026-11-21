@@ -1,4 +1,4 @@
-import { expect, openTool, savedState, test } from '../support/fixtures';
+import { expect, loadState, openTool, savedState, test } from '../support/fixtures';
 
 test.describe('gear planner', () => {
   test('paper doll, upgrades with filters, recommendations, and several characters', async ({ page }) => {
@@ -147,5 +147,52 @@ test.describe('gear planner', () => {
     await card.locator('.doll .slot', { hasText: 'Head' }).click();
     await expect(card.locator('.edit')).toBeVisible();
     await expect(search).not.toBeFocused();
+  });
+
+  test('resting the pointer on an item name shows its item card, beside the panel', async ({ page }) => {
+    await loadState(page, {
+      gearPanel: {
+        shown: true, w: 27, h: 34, x: 0, y: 0, view: 'doll', active: 'c1',
+        characters: [{ id: 'c1', name: 'Dalgrimm', cls: 'Shaman', race: 'Dgn', look: 'm', level: 18, gear: { head: { id: 2, name: 'Pirate Bandana' } }, weights: {} }],
+      },
+    });
+    const card = page.locator('app-gear-card');
+    const tip = page.locator('app-item-card');
+
+    // Current Gear: the name in a filled slot.
+    await card.locator('.doll .slot', { hasText: 'Head' }).locator('.it').hover();
+    await expect(tip.locator('.name')).toHaveText('Pirate Bandana');
+    await expect(tip.locator('.facts').first()).toContainText(/Slot\s*Head/);
+    await expect(tip.locator('.head-stats')).toContainText(/AC\s*2/);
+    await expect(tip.locator('.attrs')).toContainText(/STA\s*\+3/);
+    await expect(tip.locator('.attrs')).toContainText(/WIS\s*\+5/);
+    await expect(tip.locator('.who')).toContainText(/Class\s*All\s*Race\s*All/);
+    await expect(tip.locator('.drop')).toContainText(/a river pirate\s*19\s*Somewhere/);
+    // It sits beside the panel, not over it.
+    const panelBox = (await card.boundingBox())!;
+    const tipBox = (await tip.boundingBox())!;
+    expect(tipBox.x).toBeGreaterThanOrEqual(panelBox.x + panelBox.width);
+
+    // Moving away hides it.
+    await page.mouse.move(1650, 950);
+    await expect(tip).toHaveCount(0);
+
+    // A search result: anywhere on its row, not just the name.
+    await card.locator('.doll .slot', { hasText: 'Head' }).click();
+    await card.getByLabel('Search items for this slot').fill('cap');
+    await card.locator('.sugg li', { hasText: 'Gnollhide Cap' }).locator('.st').hover();
+    await expect(tip.locator('.name')).toHaveText('Gnollhide Cap');
+    await page.keyboard.press('Escape');
+    await expect(tip).toHaveCount(0);
+    await card.locator('.edit').getByTitle('Done').click();
+
+    // Upgrades: a weapon shows its damage and delay.
+    await card.getByRole('tab', { name: 'Upgrades' }).click();
+    await card.locator('.ups .nm', { hasText: 'Gnoll Bonestaff' }).hover();
+    await expect(tip.locator('.name')).toHaveText('Gnoll Bonestaff');
+    await expect(tip.locator('.facts').first()).toContainText(/12\s*dmg\s*·\s*40\s*delay\s*·\s*two-handed/);
+    // Escape hides it too.
+    await page.keyboard.press('Escape');
+    await expect(tip).toHaveCount(0);
   });
 });

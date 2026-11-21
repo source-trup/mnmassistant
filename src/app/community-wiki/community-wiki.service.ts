@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
+import { cacheGet, cacheSet } from '../idb-cache';
 
 /**
  * The community Monsters and Memories Wiki on Miraheze (CC BY-SA 4.0), read through its public MediaWiki API.
  *
  * Only live lookups, one at a time, when you search or open a page: no crawling. Results are cached for the session.
+ * The one list it reads is the names of the wiki's item icons (for 🛠 My items), a few API pages at most once a week.
  * The API sends CORS headers for anonymous requests (origin=*), so the browser can call it directly.
  */
 export const COMMUNITY_WIKI = {
@@ -64,8 +66,63 @@ function cleanSnippet(s: string): string {
     .slice(0, 160);
 }
 
+/** One of the wiki's item icon files. */
+export interface WikiIcon {
+  /** File name, e.g. "Itemicon0106AA.png". */
+  name: string;
+  url: string;
+}
+
+const ICONS_KEY = 'wiki-item-icons.v1';
+const ICONS_MAX_AGE_MS = 7 * 24 * 3_600_000;
+/** 500 names a page; more pages than the wiki has item icons, so the list is never cut short in practice. */
+const ICON_PAGES = 20;
+
 @Injectable({ providedIn: 'root' })
 export class CommunityWikiService {
+  private icons: Promise<WikiIcon[]> | null = null;
+
+  /**
+   * Every item icon on the wiki (files named "Itemicon…"), from the API's file list, one page after another. Kept in
+   * this browser for a week. Rejects if the wiki can't be reached and there's no saved copy.
+   */
+  itemIcons(): Promise<WikiIcon[]> {
+    this.icons ??= this.loadIcons().catch((e) => {
+      this.icons = null;
+      throw e;
+    });
+    return this.icons;
+  }
+
+  private async loadIcons(): Promise<WikiIcon[]> {
+    const saved = await cacheGet<{ at: number; icons: WikiIcon[] }>(ICONS_KEY);
+    if (saved && Array.isArray(saved.icons) && Date.now() - saved.at < ICONS_MAX_AGE_MS) return saved.icons;
+    try {
+      const icons: WikiIcon[] = [];
+      let from: string | undefined;
+      for (let page = 0; page < ICON_PAGES; page++) {
+        const data = await this.api({
+          action: 'query',
+          list: 'allimages',
+          aiprefix: 'Itemicon',
+          ailimit: '500',
+          aiprop: 'url',
+          ...(from ? { aicontinue: from } : {}),
+        });
+        for (const i of data?.query?.allimages ?? []) {
+          if (typeof i?.name === 'string' && typeof i?.url === 'string' && i.url.startsWith('https://')) icons.push({ name: i.name, url: i.url });
+        }
+        from = data?.continue?.aicontinue;
+        if (!from) break;
+      }
+      if (!icons.length) throw new Error('no icons');
+      void cacheSet(ICONS_KEY, { at: Date.now(), icons });
+      return icons;
+    } catch (e) {
+      if (saved?.icons?.length) return saved.icons;
+      throw e;
+    }
+  }
   private readonly pages = new Map<string, WikiPage | null>();
   private readonly searches = new Map<string, WikiHit[]>();
   private readonly resolved = new Map<string, string | null>();

@@ -3,12 +3,14 @@ import { atlasMapForZone } from '../map/atlas-maps';
 import { PricePanel } from '../models';
 import { formatAgo } from '../time';
 import { TrackerStore } from '../tracker.store';
+import { ItemTip } from '../item-card/item-tip';
 import { Listing, MARKET_SERVER, MNMDB_URL, PriceItem, PriceService, coin, itemSources, itemStatLines, median, mnmdbItemUrl } from './price.service';
 
 
 /** Price checker: Trem auction asks and bids, NPC vendor value, and where an item comes from (data from MnMdb). */
 @Component({
   selector: 'app-prices-card',
+  imports: [ItemTip],
   templateUrl: './prices-card.html',
   styleUrl: './prices-card.scss',
 })
@@ -39,7 +41,7 @@ export class PricesCard {
     const contains = names.filter((n) => !n.toLowerCase().startsWith(q) && n.toLowerCase().includes(q));
     return [...starts, ...contains].slice(0, 8).map((n) => {
       const it = this.data.find(n)!;
-      return { name: n, asks: it.listings.filter((l) => l.intent === 'sell').length };
+      return { name: n, item: it, asks: it.listings.filter((l) => l.intent === 'sell').length };
     });
   });
 

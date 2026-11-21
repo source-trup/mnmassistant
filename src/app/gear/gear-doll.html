@@ -9,7 +9,9 @@
     [class.blocked]="id === 'offhand' && twoHanded()"
     [attr.aria-pressed]="selected() === id"
     (click)="select(id)"
-    [title]="w ? w.name + (w.item ? ' — ' + summary(w.item) : ' (no longer in the item data)') : pos(id).label + ': empty. Click to pick an item.'"
+    [attr.title]="w ? null : pos(id).label + ': empty. Click to pick an item.'"
+    [attr.aria-label]="w?.item ? pos(id).label + ': ' + w.name + ' — ' + summary(w.item) : null"
+    [appItemTip]="w ? (w.item ?? w.name) : null"
   >
     <span class="txt">
       <span class="sl">{{ pos(id).label }}</span>
@@ -84,7 +86,7 @@
     <div class="eh">
       <b>{{ pos(id).label }}</b>
       @if (w) {
-        <a class="wn" [href]="w.item ? itemUrl(w.item) : null" target="_blank" rel="noopener" [title]="'Open ' + w.name + ' on Worth the Camp'">{{ w.name }}</a>
+        <a class="wn" [href]="w.item ? itemUrl(w.item) : null" target="_blank" rel="noopener" [appItemTip]="w.item">{{ w.name }}</a>
         @if (scoreAt(id) !== null) {
           <span class="sc" title="This item's score for you">{{ scoreAt(id) }}</span>
         }
@@ -122,7 +124,7 @@
       <ul class="sugg" role="listbox" (mousedown)="$event.preventDefault()">
         @for (s of suggestions(); track s.item.id) {
           <li>
-            <button role="option" (click)="equip(s.item)" [title]="'Wear ' + s.item.name">
+            <button role="option" (click)="equip(s.item)" [appItemTip]="s.item">
               <span class="nm">{{ s.item.name }}</span>
               <span class="st">{{ summary(s.item) }}</span>
               <span class="g" [class.up]="s.gain > 0" [class.down]="s.gain < 0" title="Score change if you wear it">{{ fmt(s.gain) }}</span>
@@ -131,6 +133,9 @@
         } @empty {
           <li class="muted">No {{ pos(id).label.toLowerCase() }} items {{ c.cls ? 'a ' + c.cls + ' can wear ' : '' }}match "{{ query().trim() }}".</li>
         }
+        <li class="create">
+          <button (click)="create(id)" title="Make an item of your own for this slot (🛠 My items)">🛠 Create “{{ query().trim() }}” as your own item</button>
+        </li>
       </ul>
     }
   </section>

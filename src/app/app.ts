@@ -28,6 +28,8 @@ import { PopoutService } from './popout/popout.service';
 import { THEMES, themeById } from './themes';
 import { formatDuration, parseDuration } from './time';
 import { TimerCard } from './timer-card/timer-card';
+import { ItemTipLayer } from './item-card/item-tip';
+import { ItemEditor } from './item-card/item-editor';
 import { SessionCard } from './session-timer/session-card';
 import { PLAYER_LISTS, Panel, TrackerStore } from './tracker.store';
 
@@ -73,7 +75,7 @@ function playerCount(n: number): string {
 
 @Component({
   selector: 'app-root',
-  imports: [TimerCard, SessionCard, CounterCard, CampCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, WishlistCard, GearCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark],
+  imports: [TimerCard, SessionCard, CounterCard, CampCard, BuffCard, NoteCard, PlayerListCard, LevelRangeCard, SpellsCard, LevelingCard, MapCard, ClassesCard, PricesCard, WikiCard, WishlistCard, GearCard, QuickGuide, HeaderClock, PopoutHost, LootPrompt, ConfirmDialog, Backdrop, DalgrimmMark, ItemTipLayer, ItemEditor],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

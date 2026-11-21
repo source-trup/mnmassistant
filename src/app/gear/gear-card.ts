@@ -8,6 +8,7 @@ import { GEAR_CLASSES, RACES, weightsFor } from './gear';
 import { GearDataService } from './gear-data.service';
 import { GearDoll } from './gear-doll';
 import { GearUpgrades } from './gear-upgrades';
+import { ItemEditorService } from '../item-card/item-editor.service';
 
 /**
  * Gear Planner: a paper doll per character (what you wear, saved), an upgrade finder (filter by slot, mob level and
@@ -22,6 +23,7 @@ import { GearUpgrades } from './gear-upgrades';
 export class GearCard {
   readonly panel = input.required<GearPanel>();
   protected readonly store = inject(TrackerStore);
+  protected readonly editor = inject(ItemEditorService);
   protected readonly data = inject(GearDataService);
   private readonly confirm = inject(ConfirmService);
 

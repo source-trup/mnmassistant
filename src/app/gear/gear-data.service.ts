@@ -1,7 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { cacheDelete, cacheGet, cacheSet } from '../idb-cache';
 import { WorthTheCampService } from '../leveling/worth-the-camp.service';
-import { GearItem, NpcLevel } from './gear';
+import { TrackerStore } from '../tracker.store';
+import { GearItem, NpcLevel, customToGear } from './gear';
 import { trimItems } from './gear-trim';
 
 const ITEMS_URL = 'https://worththecamp.com/api/v1/items.json';
@@ -19,14 +20,19 @@ interface ItemCache {
 
 /**
  * Worth the Camp's items for the Gear Planner: downloaded only when the panel is opened, at most once a day, trimmed
- * to wearable items and kept in this browser. NPC levels come from the same NPC list Leveling Spots uses.
+ * to wearable items and kept in this browser. NPC levels come from the same NPC list Leveling Spots uses. Items you
+ * made yourself (🛠 My items) are added in front.
  */
 @Injectable({ providedIn: 'root' })
 export class GearDataService {
   private readonly wtc = inject(WorthTheCampService);
+  private readonly store = inject(TrackerStore);
 
   readonly status = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
-  readonly items = signal<readonly GearItem[]>([]);
+  /** Worth the Camp's items (empty until they've loaded). */
+  readonly wtcItems = signal<readonly GearItem[]>([]);
+  /** Your own items, then Worth the Camp's: everything the planner can pick from. */
+  readonly items = computed<readonly GearItem[]>(() => [...this.store.customItems().map(customToGear), ...this.wtcItems()]);
   readonly fetchedAt = signal<number | null>(null);
   private pending: Promise<void> | null = null;
 
@@ -47,9 +53,9 @@ export class GearDataService {
   }
 
   private async fetchOrCache(): Promise<void> {
-    const cached = this.items().length ? { items: this.items(), fetchedAt: this.fetchedAt() ?? 0 } : await readCache();
+    const cached = this.wtcItems().length ? { items: this.wtcItems(), fetchedAt: this.fetchedAt() ?? 0 } : await readCache();
     if (cached) {
-      this.items.set(cached.items);
+      this.wtcItems.set(cached.items);
       this.fetchedAt.set(cached.fetchedAt);
       this.status.set('ready');
       if (Date.now() - cached.fetchedAt < MAX_AGE_MS) return;
@@ -62,7 +68,7 @@ export class GearDataService {
       const items = trimItems(await res.json());
       if (!items.length) throw new Error('items: none');
       const data = { items, fetchedAt: Date.now() };
-      this.items.set(items);
+      this.wtcItems.set(items);
       this.fetchedAt.set(data.fetchedAt);
       this.status.set('ready');
       void cacheSet(CACHE_KEY, data);

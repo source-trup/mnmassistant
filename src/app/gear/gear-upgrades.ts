@@ -20,6 +20,7 @@ import {
   wtcItemUrl,
 } from './gear';
 import { GearDataService } from './gear-data.service';
+import { ItemTip } from '../item-card/item-tip';
 
 /** Upgrades listed before "Show more". */
 const PAGE = 40;
@@ -30,6 +31,7 @@ const PAGE = 40;
  */
 @Component({
   selector: 'app-gear-upgrades',
+  imports: [ItemTip],
   templateUrl: './gear-upgrades.html',
   styleUrl: './gear-upgrades.scss',
 })

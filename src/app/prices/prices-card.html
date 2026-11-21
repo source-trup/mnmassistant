@@ -23,7 +23,7 @@
     @if (open() && suggestions().length) {
       <ul class="suggest" role="listbox">
         @for (s of suggestions(); track s.name; let i = $index) {
-          <li role="option" [class.active]="i === active()" [attr.aria-selected]="i === active()" (mousedown)="pick(s.name, box)">
+          <li role="option" [class.active]="i === active()" [attr.aria-selected]="i === active()" (mousedown)="pick(s.name, box)" [appItemTip]="s.item">
             <span>{{ s.name }}</span>
             @if (s.asks) {
               <small>{{ s.asks }} for sale</small>
@@ -38,7 +38,7 @@
     <div class="recent">
       @for (r of panel().recent; track r) {
         <span class="chip" [class.on]="r === panel().item">
-          <button class="pickr" (click)="pick(r)">{{ r }}</button>
+          <button class="pickr" (click)="pick(r)" [appItemTip]="data.find(r)">{{ r }}</button>
           <button class="x" (click)="forgetRecent(r, $event)" title="Remove from recent">✕</button>
         </span>
       }
@@ -57,7 +57,7 @@
               <img [src]="it.info!.icon" alt="" width="32" height="32" referrerpolicy="no-referrer" />
             }
             <div>
-              <h3>{{ it.name }}</h3>
+              <h3 [appItemTip]="it">{{ it.name }}</h3>
               @if (it.info?.flags?.length) {
                 <span class="flags">{{ it.info!.flags.join(' · ') }}</span>
               }

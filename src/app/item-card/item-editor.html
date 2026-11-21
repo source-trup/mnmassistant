@@ -1,0 +1,154 @@
+<dialog #dlg class="item-editor" (close)="cancel()" (cancel)="$event.preventDefault(); cancel()">
+  @if (isOpen()) {
+  @let d = draft();
+  <div class="top">
+    <h3>🛠 My items</h3>
+    @if (store.customItems().length) {
+      <select class="which" aria-label="Which item" (change)="pickItem($any($event.target).value)">
+        <option value="" [selected]="isNew()">＋ New item</option>
+        @for (c of store.customItems(); track c.id) {
+          <option [value]="c.id" [selected]="c.id === d.id">{{ c.name }}</option>
+        }
+      </select>
+    }
+  </div>
+  <p class="lead">
+    For items the item sites don't have yet. Yours show up in the Gear Planner and the Wishlist with their own card,
+    and are saved with your board.
+  </p>
+
+  <div class="cols">
+    <div class="form">
+      <div class="who">
+        <button class="icon-btn" (click)="openPicker()" [class.on]="picking()" title="Choose an icon from the wiki's item icons" aria-label="Choose icon">
+          @if (d.icon) {
+            <img [src]="d.icon" alt="" referrerpolicy="no-referrer" />
+          } @else {
+            <span>Icon</span>
+          }
+        </button>
+        <label class="name">
+          <span>Name</span>
+          <input
+            class="name-box"
+            maxlength="80"
+            placeholder="e.g. Cracked Bone Ring"
+            [value]="d.name"
+            (input)="update({ name: $any($event.target).value })"
+          />
+        </label>
+      </div>
+
+      @if (picking()) {
+        <div class="picker">
+          <div class="pick-head">
+            <input
+              placeholder="Find by item name or file (e.g. ring, 0106)"
+              aria-label="Find an icon"
+              [value]="iconQuery()"
+              (input)="iconQuery.set($any($event.target).value)"
+            />
+            @if (d.icon) {
+              <button class="small" (click)="pickIcon(null)">No icon</button>
+            }
+          </div>
+          @if (iconsFailed()) {
+            <p class="muted">Couldn't reach the wiki for its icons. <button class="small" (click)="picking.set(false); openPicker()">Try again</button></p>
+          } @else if (!icons()) {
+            <p class="muted">Loading the wiki's item icons…</p>
+          } @else {
+            @let s = shownIcons();
+            <div class="grid" role="listbox" aria-label="Item icons">
+              @for (i of s.icons; track i.name) {
+                <button
+                  role="option"
+                  [class.on]="i.url === d.icon"
+                  [attr.aria-selected]="i.url === d.icon"
+                  (click)="pickIcon(i.url)"
+                  [title]="i.name + (i.items.length ? ' — ' + i.items.join(', ') : '')"
+                >
+                  <img [src]="i.url" alt="" loading="lazy" referrerpolicy="no-referrer" />
+                </button>
+              } @empty {
+                <p class="muted">No icons match.</p>
+              }
+            </div>
+            <p class="muted small-note">
+              {{ s.total > s.icons.length ? 'Showing ' + s.icons.length + ' of ' + s.total + ': type to narrow it down. ' : s.total + ' icons. ' }}
+              Icons: the <a href="https://monstersandmemories.miraheze.org/" target="_blank" rel="noopener">Monsters and Memories Wiki</a>.
+            </p>
+          }
+        </div>
+      }
+
+      <fieldset>
+        <legend>Slots</legend>
+        <div class="slots">
+          @for (s of SLOT_TYPES; track s) {
+            <button class="chip" [class.on]="d.slots.includes(s)" [attr.aria-pressed]="d.slots.includes(s)" (click)="toggleSlot(s)">{{ SLOT_LABEL[s] }}</button>
+          }
+        </div>
+        @if (!d.slots.length) {
+          <p class="muted small-note">Pick a slot to use it in the Gear Planner. Without one it's only for the Wishlist.</p>
+        }
+      </fieldset>
+
+      @if (isWeapon()) {
+        <fieldset>
+          <legend>Weapon</legend>
+          <div class="nums">
+            <label><span>Damage</span><input type="number" min="0" [value]="d.dmg || ''" (change)="setNumber('dmg', $any($event.target))" /></label>
+            <label><span>Delay</span><input type="number" min="0" [value]="d.delay || ''" (change)="setNumber('delay', $any($event.target))" /></label>
+            <label class="check"><input type="checkbox" [checked]="d.twoHand" (change)="update({ twoHand: !d.twoHand })" /> Two-handed</label>
+          </div>
+        </fieldset>
+      }
+
+      <fieldset>
+        <legend>Stats</legend>
+        <div class="nums">
+          @for (k of HEADLINE; track k) {
+            <label><span>{{ STAT_LABEL[k] }}</span><input type="number" [value]="stat(k)" (input)="setStat(k, $any($event.target))" /></label>
+          }
+        </div>
+        <div class="nums attrs">
+          @for (k of ATTRS; track k) {
+            <label><span>{{ STAT_LABEL[k] }}</span><input type="number" [value]="stat(k)" (input)="setStat(k, $any($event.target))" /></label>
+          }
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Resists</legend>
+        <div class="nums attrs">
+          @for (k of RESISTS; track k) {
+            <label><span>{{ STAT_LABEL[k] }}</span><input type="number" [value]="stat(k)" (input)="setStat(k, $any($event.target))" /></label>
+          }
+        </div>
+      </fieldset>
+
+      <label class="from">
+        <span>Where from</span>
+        <input maxlength="200" placeholder="e.g. Grimfang, Fallen Pass" [value]="d.source" (input)="update({ source: $any($event.target).value })" />
+      </label>
+    </div>
+
+    <div class="preview" aria-label="Item card preview">
+      <span class="pv-label">Its card</span>
+      <app-item-card [card]="preview()" />
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  <div class="dialog-actions">
+    @if (!isNew()) {
+      <button class="danger" (click)="remove($event)" title="Delete this item (Shift+click to skip confirmation)">Delete</button>
+    }
+    <span class="spacer"></span>
+    <button (click)="cancel()">Cancel</button>
+    <button class="primary" (click)="save()">{{ isNew() ? 'Add item' : 'Save' }}</button>
+  </div>
+  }
+</dialog>

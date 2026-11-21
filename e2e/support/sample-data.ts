@@ -125,6 +125,13 @@ export function wikiApi(q: URLSearchParams): unknown {
     const content = title === 'MediaWiki:Gadget-mnmGameTimeSidebar.js' ? gadgetSource : undefined;
     return { query: { pages: [content ? { title, revisions: [{ slots: { main: { content } } }] } : { title, missing: true }] } };
   }
+  if (action === 'query' && q.get('list') === 'allimages') {
+    // Item icons, two pages: the app follows "continue" until there's none.
+    const file = (n: string) => ({ name: n, url: `https://static.wikitide.net/monstersandmemorieswiki/0/00/${n}` });
+    return q.get('aicontinue')
+      ? { query: { allimages: [file('Itemicon0103AB.png')] } }
+      : { continue: { aicontinue: 'Itemicon0103AB.png' }, query: { allimages: [file('Itemicon0001.png'), file('Itemicon0102AA.png')] } };
+  }
   if (action === 'query' && q.get('titles')) {
     const titles = (q.get('titles') ?? '').split('|');
     return { query: { pages: titles.map((t) => (PAGES[t] ? { title: t, pageid: 1 } : { title: t, missing: true })) } };

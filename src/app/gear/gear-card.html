@@ -2,6 +2,7 @@
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
     <span class="name">⚔️ Gear Planner</span>
+    <button class="icon" (click)="editor.open()" title="My items: make your own items for anything the item sites don't have yet">🛠</button>
     <button class="icon" (click)="store.toggleGear()" title="Hide (show it again from the toolbar)">✕</button>
   </div>
 
@@ -68,11 +69,11 @@
     </div>
 
     <div class="body">
-      @if (data.status() === 'error' && !data.items().length) {
+      @if (data.status() === 'error' && !data.wtcItems().length) {
         <p class="hint">
           Couldn't reach Worth the Camp for item data. <button class="small" (click)="data.load()">Try again</button>
         </p>
-      } @else if (!data.items().length) {
+      } @else if (!data.wtcItems().length) {
         <p class="hint">Loading Worth the Camp's item data…</p>
       } @else {
         @switch (panel().view) {

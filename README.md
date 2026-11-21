@@ -151,6 +151,7 @@ back in the same spot and size).
 | Listings | **For sale** (cheapest first) and **Wanted** (highest offer first): price each, as listed (e.g. `3s / 20` for a stack), the player and when it was last seen. |
 | Item | Slot, AC, stats, classes, which mobs drop it (with drop rates where enough kills are logged), whether it's gathered, which tradeskills use it and which merchants sell it. **🧭** opens a zone in the [Map](#map) panel. **MnMdb ↗** opens the item on mnm-db.com. |
 | Refresh | **↻** in the header reloads the latest data. |
+| Item card | Rest the pointer on a suggestion, a recent chip or the item's name for its card (see [Gear Planner](#gear-planner) item cards), with MnMdb's details. |
 
 **💰** next to an item in a Named / PH counter's loot summary ([history](#history-view-)) opens it here, so you can
 see what a drop is worth.
@@ -173,6 +174,9 @@ so it needs an internet connection and shows whatever MnMdb has now (it updates 
   knows yet.
 - Each row shows **where it drops**: the first MnMdb drop source with its rate, or your own note. On the right is the
   typical Trem asking price.
+- **Rest the pointer** anywhere on an item's row for its card (stats, who can wear it, where it drops): your own
+  item's, or MnMdb's details, like the [Gear Planner's](#gear-planner) item cards. An item nobody has data for says
+  so. **🛠** beside the add box makes an item of your own ([My items](#gear-planner)) and adds it to the list.
 - **Click a row** for the details:
   - **Stats** (slot, AC, damage/delay, attributes, HP, mana, resists, flags such as MAGIC or UNIQUE), classes and
     races, and any effect.
@@ -214,6 +218,22 @@ Leveling Spots (or Group Range). At the top:
 | Add one | **＋** (it opens the name box). |
 | Delete one | **🗑**, after confirming (Shift+click skips the question). |
 | Class, race, level | The lists and box under the name. The class decides what can be worn and which stats count; the race matters for the few items only some races can wear; the level sets which mobs count as "around your level". |
+
+**Item cards:** rest the pointer on any item's name (in Current Gear, anywhere on a search suggestion's row, in
+Upgrades or Recommended, including the item an upgrade replaces) and its card appears beside the panel, like the game's inspect
+window: icon, name, flags (MAGIC, NO DROP, …), slot, weapon damage and delay, stats, which classes and races can wear
+it, and where it comes from (the easiest drops with level, zone and drop rate, or the tradeskill that makes it).
+Moving away, clicking, scrolling or Escape hides it. In Current Gear the whole slot shows it.
+
+**🛠 My items:** for items the sites don't have yet, make your own. Open it from **🛠** in the Gear Planner's header,
+from **🛠 Create “…” as your own item** at the bottom of a slot's search results (it goes straight into that slot
+once saved), or from **🛠** beside the Wishlist's add box (it goes on your list). Give it a name, an icon (any of the
+wiki's item icons: find one by file name or by the name of an item that uses it), its slots, weapon damage and delay,
+AC, HP, Mana, attributes, resists and where it comes from, and watch its card as you type. Your items work like any
+other: suggestions, **Wear**, Upgrades (marked **🛠 Your item**; they always count, but Recommended is drops only),
+the Wishlist's suggestions and item cards. Pick one from the list at the top of 🛠 to change or delete it (characters
+wearing a deleted item keep its name). They're saved with your board and travel in layout files (a loaded file's
+items are added to yours).
 
 Three views, as tabs:
 
@@ -893,6 +913,7 @@ src/
     analytics.service.ts    Anonymous usage counts (GoatCounter), live site only
     idb-cache.ts            Small IndexedDB cache for big downloads (the Gear Planner's items)
     gear/                   Gear Planner: paper doll, upgrade finder and scoring (gear.ts), Worth the Camp items
+    item-card/              Item cards (hover tooltip) for the Gear Planner, Wishlist and Price Checker, and 🛠 My items (your own items)
     leveling/               Leveling Spots panel, Worth the Camp data and rules (archive/: the old leveling data)
     timer-card/             Timer panel, the countdown face it shares with Named / PH timers, respawn line
     session-timer/          Session timer panel (count-up, its counters), session logic, stats dialog and its charts

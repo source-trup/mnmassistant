@@ -1,5 +1,54 @@
 import { expect, openTool, savedState, test } from '../support/fixtures';
 
+test.describe('item cards from MnMdb', () => {
+  test('resting the pointer on a Wishlist item or a Price Checker item shows its card', async ({ page }) => {
+    const tip = page.locator('app-item-card');
+
+    // Wishlist row.
+    await openTool(page, 'Wishlist');
+    const wish = page.locator('app-wishlist-card');
+    await wish.locator('app-item-search input').fill('silver');
+    await wish.locator('.list button', { hasText: 'Silver Comb of House Torvald' }).click();
+    await page.mouse.move(1650, 950);
+    await wish.locator('.wish', { hasText: 'Silver Comb of House Torvald' }).locator('.nm .title').hover();
+    await expect(tip.locator('.name')).toHaveText('Silver Comb of House Torvald');
+    await expect(tip.locator('.flags')).toContainText('MAGIC');
+    await expect(tip.locator('.facts').first()).toContainText(/Slot\s*Head/);
+    await expect(tip.locator('.head-stats')).toContainText(/AC\s*24/);
+    await expect(tip.locator('.head-stats')).toContainText(/Mana\s*\+30/);
+    await expect(tip.locator('.attrs')).toContainText(/INT\s*\+4/);
+    await expect(tip.locator('.who')).toContainText(/Class\s*Shaman, Cleric\s*Race\s*All/);
+    await expect(tip.locator('.drop')).toContainText('Handmaiden Mira');
+    await expect(tip.locator('.via')).toHaveText('Details: MnMdb');
+    // Beside the panel, not over it.
+    const panelBox = (await wish.boundingBox())!;
+    expect((await tip.boundingBox())!.x).toBeGreaterThanOrEqual(panelBox.x + panelBox.width);
+    await page.mouse.move(1650, 950);
+    await expect(tip).toHaveCount(0);
+
+    // Price Checker: a suggestion, and the item it shows.
+    await openTool(page, 'Price Checker');
+    const prices = page.locator('app-prices-card');
+    const box = prices.getByLabel('Item to price check');
+    await box.fill('silver');
+    await prices.locator('.suggest li', { hasText: 'Silver Comb of House Torvald' }).hover();
+    await expect(tip.locator('.name')).toHaveText('Silver Comb of House Torvald');
+    await box.press('Enter');
+    await expect(prices.locator('.title h3')).toHaveText('Silver Comb of House Torvald');
+    await page.mouse.move(1650, 950);
+    await expect(tip).toHaveCount(0);
+    await prices.locator('.title h3').hover();
+    await expect(tip.locator('.name')).toHaveText('Silver Comb of House Torvald');
+
+    // An item MnMdb only has prices for (no details) shows no card.
+    await page.mouse.move(1650, 950);
+    await box.fill('bat w');
+    await prices.locator('.suggest li', { hasText: 'Bat Wing' }).hover();
+    await page.waitForTimeout(600);
+    await expect(tip).toHaveCount(0);
+  });
+});
+
 test.describe('wishlist', () => {
   test('an item MnMdb knows: stats, where it drops, map and wiki links', async ({ page }) => {
     await openTool(page, 'Wishlist');

@@ -25,6 +25,8 @@ import {
   wtcItemUrl,
 } from './gear';
 import { GearDataService } from './gear-data.service';
+import { ItemTip } from '../item-card/item-tip';
+import { ItemEditorService } from '../item-card/item-editor.service';
 
 /** Suggestions shown while typing an item name. */
 const SUGGESTIONS = 12;
@@ -40,7 +42,7 @@ const WEAPONS: PositionId[] = ['primary', 'offhand', 'ranged', 'ammo'];
  */
 @Component({
   selector: 'app-gear-doll',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, ItemTip],
   templateUrl: './gear-doll.html',
   styleUrl: './gear-doll.scss',
 })
@@ -173,6 +175,17 @@ export class GearDoll {
     if (id === 'offhand' && this.twoHanded()) clear.push('primary');
     this.store.setGear(this.character().id, id, item, clear);
     this.query.set('');
+  }
+
+  private readonly editor = inject(ItemEditorService);
+
+  /** "Create … as your own item": opens 🛠 My items with the name and slot filled in, and wears it once saved. */
+  protected async create(id: PositionId): Promise<void> {
+    const slot = this.pos(id).slot;
+    const saved = await this.editor.open({ name: this.query().trim(), slot });
+    if (!saved || !saved.slots.includes(slot) || this.selected() !== id) return;
+    const item = this.data.byId().get(saved.id);
+    if (item) this.equip(item);
   }
 
   protected takeOff(id: PositionId): void {

@@ -29,9 +29,14 @@ export interface ItemInfo {
   ac: number | null;
   dmg: number | null;
   delay: number | null;
+  /** Weapon skill as MnMdb gives it ("1H Slashing"), and whether it's one- or two-handed. */
+  skill: string | null;
+  handed: string | null;
   stats: Record<string, number>;
   hp: number | null;
   mana: number | null;
+  hpRegen: number | null;
+  manaRegen: number | null;
   haste: number | null;
   resists: Record<string, number>;
   weight: number | null;
@@ -203,9 +208,13 @@ export class PriceService {
         ac: s.ac ?? null,
         dmg: s.dmg ?? null,
         delay: s.delay ?? null,
+        skill: typeof s.skill === 'string' && s.skill.trim() ? s.skill.trim() : null,
+        handed: typeof s.handed === 'string' && s.handed.trim() ? s.handed.trim() : null,
         stats: s.stats ?? {},
         hp: s.hp ?? null,
         mana: s.mana ?? null,
+        hpRegen: s.hpRegen ?? null,
+        manaRegen: s.manaRegen ?? null,
         haste: s.haste ?? null,
         resists: s.resists ?? {},
         weight: s.weight ?? null,

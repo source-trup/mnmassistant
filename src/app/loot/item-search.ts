@@ -6,7 +6,7 @@ import { WIKI_HOME, WikiService } from '../wiki.service';
 
 interface Suggestion {
   item: LootItem;
-  source: 'drop' | 'recent' | 'wiki' | 'mnmdb';
+  source: 'drop' | 'recent' | 'wiki' | 'mnmdb' | 'mine';
   detail: string;
 }
 
@@ -116,7 +116,13 @@ export class ItemSearch {
       .filter((d) => d.item.name.toLowerCase().includes(q))
       .slice(0, 5)
       .map(dropRow);
-    const dropNames = new Set(drops.map((d) => d.item.name.toLowerCase()));
+    // Items of your own (🛠 My items).
+    const mine: Suggestion[] = this.store
+      .customItems()
+      .filter((c) => c.name.toLowerCase().includes(q) && !drops.some((d) => d.item.name.toLowerCase() === c.name.toLowerCase()))
+      .slice(0, 4)
+      .map((c) => ({ item: { name: c.name }, source: 'mine', detail: 'your item' }));
+    const dropNames = new Set([...drops, ...mine].map((d) => d.item.name.toLowerCase()));
     const wiki = this.wikiResults().filter((w) => !dropNames.has(w.name.toLowerCase()));
     const wikiNames = new Set(wiki.map((w) => w.name.toLowerCase()));
     const recent: Suggestion[] = this.store
@@ -140,7 +146,7 @@ export class ItemSearch {
     const fromMnmdb: Suggestion[] = [...starts, ...contains]
       .slice(0, Math.max(0, 8 - fromWiki.length))
       .map((name) => this.mnmdbSuggestion(name));
-    return [...drops, ...recent, ...fromWiki, ...fromMnmdb];
+    return [...drops, ...mine, ...recent, ...fromWiki, ...fromMnmdb];
   });
 
   protected readonly hasWikiResults = computed(() => this.wikiResults().length > 0);

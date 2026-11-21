@@ -1,3 +1,5 @@
+import type { CustomItem } from '../models';
+
 /**
  * Gear Planner logic: the paper doll's positions, how an item is scored for a class, and the upgrade finder.
  * Item data is Worth the Camp's (adapted from the community wiki, CC BY-SA 4.0); NPC levels come from their NPC list.
@@ -179,6 +181,8 @@ export interface GearItem {
   drops: GearDrop[];
   /** Icon file name on Worth the Camp (game art), when it has a real one. */
   icon: string | null;
+  /** An item of your own (🛠 My items): its icon's full URL and where it comes from, in your words. */
+  custom?: { iconUrl: string | null; source: string };
 }
 
 /** An NPC an item drops from. */
@@ -407,7 +411,7 @@ export interface Upgrade {
   replaces: GearItem[];
   changes: StatChange[];
   /** How you'd get it: the easiest matching drop (lowest-level mob first), crafting, or quest / other. */
-  how: { kind: 'drop'; drop: DropInfo; more: number } | { kind: 'crafted'; text: string } | { kind: 'quest' };
+  how: { kind: 'drop'; drop: DropInfo; more: number } | { kind: 'crafted'; text: string } | { kind: 'quest' } | { kind: 'mine'; text: string };
 }
 
 export interface Wearer {
@@ -468,6 +472,8 @@ export function findUpgrades(
 
 /** How the filters let you get an item, or null if they rule it out. */
 function howToGet(item: GearItem, npcs: ReadonlyMap<string, NpcLevel>, opts: FinderOptions): Upgrade['how'] | null {
+  // Your own items always count (Recommended leaves them out: it's drops only).
+  if (item.custom) return { kind: 'mine', text: item.custom.source };
   if (opts.drops && item.drops.length) {
     const ok = item.drops
       .map((d) => dropInfo(d, npcs))
@@ -497,7 +503,7 @@ export function recommend(
   w: Weights,
   level: number,
 ): Upgrade[] {
-  const all = findUpgrades(items, byId, npcs, who, w, {
+  const all = findUpgrades(items.filter((i) => !i.custom), byId, npcs, who, w, {
     slot: null,
     maxMob: level + RECOMMEND_ABOVE,
     drops: true,
@@ -544,11 +550,33 @@ export function recommend(
 // ---------- links ----------
 
 /** An item's icon (Monsters & Memories art, served by Worth the Camp), or null. */
-export function itemIconUrl(item: Pick<GearItem, 'icon'> | null | undefined): string | null {
+export function itemIconUrl(item: Pick<GearItem, 'icon' | 'custom'> | null | undefined): string | null {
+  if (item?.custom) return item.custom.iconUrl;
   return item?.icon ? `https://worththecamp.com/icons/${encodeURIComponent(item.icon)}` : null;
 }
 
-export function wtcItemUrl(item: Pick<GearItem, 'id' | 'name'>): string {
+/** An item of your own, as a Gear Planner item. */
+export function customToGear(c: CustomItem): GearItem {
+  return {
+    id: c.id,
+    name: c.name,
+    slots: c.slots.filter((s): s is SlotType => (SLOT_TYPES as readonly string[]).includes(s)),
+    stats: Object.fromEntries(STATS.filter((k) => c.stats[k]).map((k) => [k, c.stats[k]!])) as Partial<Record<Stat, number>>,
+    dmg: c.dmg,
+    delay: c.delay,
+    twoHand: c.twoHand,
+    classes: [],
+    races: [],
+    flags: [],
+    crafted: null,
+    drops: [],
+    icon: null,
+    custom: { iconUrl: c.icon, source: c.source },
+  };
+}
+
+export function wtcItemUrl(item: Pick<GearItem, 'id' | 'name' | 'custom'>): string | null {
+  if (item.custom) return null; // your own item has no page
   const slug = item.name
     .toLowerCase()
     .normalize('NFKD')

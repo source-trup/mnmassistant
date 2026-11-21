@@ -5,6 +5,8 @@ import { LootItem, WishItem, WishlistPanel } from '../models';
 import { PriceService, coin, itemSources } from '../prices/price.service';
 import { TrackerStore } from '../tracker.store';
 import { WishDetails } from './wish-details';
+import { ItemTip } from '../item-card/item-tip';
+import { ItemEditorService } from '../item-card/item-editor.service';
 
 /**
  * Items you're after. Add them by name (MnMdb suggestions as you type); click one for its stats, where it drops and
@@ -12,7 +14,7 @@ import { WishDetails } from './wish-details';
  */
 @Component({
   selector: 'app-wishlist-card',
-  imports: [ItemSearch, WishDetails],
+  imports: [ItemSearch, WishDetails, ItemTip],
   template: `
     <div class="card">
       <div class="head drag-handle" title="Drag to move">
@@ -36,12 +38,13 @@ import { WishDetails } from './wish-details';
 
       <div class="add">
         <app-item-search [autofocus]="false" placeholder="Add an item… (type a name, Enter)" (picked)="add($event)" />
+        <button class="small make" (click)="make()" title="My items: make an item of your own (stats, icon) and add it here">🛠</button>
       </div>
 
       <ul class="list">
         @for (r of rows(); track r.item.id) {
           <li class="wish" [class.got]="r.item.got" [class.open]="isOpen(r.item.id)">
-            <div class="row">
+            <div class="row" [appItemTip]="r.item.name">
               <input
                 type="checkbox"
                 [checked]="r.item.got"
@@ -49,7 +52,7 @@ import { WishDetails } from './wish-details';
                 [title]="r.item.got ? 'Got it (click to undo)' : 'Mark as got'"
                 [attr.aria-label]="'Got ' + r.item.name"
               />
-              <button class="nm" (click)="toggle(r.item.id)" [title]="isOpen(r.item.id) ? 'Hide details' : 'Stats, where it drops and links'">
+              <button class="nm" (click)="toggle(r.item.id)" [attr.aria-expanded]="isOpen(r.item.id)">
                 <span class="title">{{ r.item.name }}</span>
                 <span class="from" [class.unknown]="!r.from">{{ r.from || 'where? click to add' }}</span>
               </button>
@@ -79,6 +82,19 @@ import { WishDetails } from './wish-details';
     :host {
       display: block;
       height: 100%;
+    }
+    .add {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      app-item-search {
+        flex: 1;
+        min-width: 0;
+      }
+      .make {
+        flex: none;
+        padding: 4px 8px;
+      }
     }
     .card {
       height: 100%;
@@ -203,6 +219,7 @@ export class WishlistCard {
   protected readonly store = inject(TrackerStore);
   private readonly prices = inject(PriceService);
   private readonly confirm = inject(ConfirmService);
+  private readonly editor = inject(ItemEditorService);
 
   private readonly opened = signal<ReadonlySet<string>>(new Set());
 
@@ -244,6 +261,12 @@ export class WishlistCard {
     const item = this.store.addWish(picked.name, picked.url ?? null);
     // Open a new item with nothing known yet, so you can say where it drops.
     if (item && !this.prices.find(item.name) && !this.isOpen(item.id)) this.toggle(item.id);
+  }
+
+  /** 🛠: make an item of your own and put it on the list. */
+  protected async make(): Promise<void> {
+    const saved = await this.editor.open();
+    if (saved) this.store.addWish(saved.name, null);
   }
 
   protected async remove(item: WishItem, e: MouseEvent): Promise<void> {

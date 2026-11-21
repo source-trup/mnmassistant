@@ -288,6 +288,13 @@
   list-style: none;
   margin: 0;
   padding: 0;
+
+  li.create button {
+    display: block;
+    border-top: 1px dashed var(--border);
+    color: var(--spirit);
+    font-size: 0.76rem;
+  }
   max-height: 220px;
   overflow-y: auto;
   border: 1px solid var(--border);
