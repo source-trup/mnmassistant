@@ -1,4 +1,4 @@
-<div class="card" [attr.data-status]="status()">
+<div class="card" [attr.data-status]="status()" [class.warning]="warning()">
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
     <app-panel-title
@@ -86,6 +86,16 @@
         placeholder="6:40, 90s, 1h30m, 5"
       />
     </label>
+    <label>
+      Warn at
+      <input
+        [value]="warnText()"
+        (change)="setWarn($event)"
+        [class.invalid]="warnError()"
+        placeholder="off"
+        title="Warn this long before it's up, e.g. 0:30 or 1m. Leave it empty for no warning."
+      />
+    </label>
     <label class="check">
       <input type="checkbox" [checked]="timer()?.repeat ?? false" (change)="setRepeat($event)" /> Auto-repeat when it reaches zero
     </label>
@@ -94,6 +104,7 @@
     <label>PH streak <input type="number" min="0" [value]="camp().phSinceNamed" (change)="setNumber('phSinceNamed', $event)" /></label>
     <p class="hint">
       “+ PH” and “+ Named” restart the countdown.
+      {{ warnHint() }}
       @if (npc(); as n) {
         Kills are saved to {{ n }}'s history, and it will say “{{ n }} is up”.
       } @else {

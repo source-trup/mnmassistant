@@ -545,7 +545,12 @@ The countdown works like a [timer](#timers): click the clock to start or restart
 entry or anything else. Below the counts are **PH since the last named**, **how long ago the last named died**, and
 the kill rate; hover the "named … ago" text for the named odds.
 
-**⚙ settings:** name, respawn length, auto-repeat, and the PH, named and PH-streak counts.
+**⚙ settings:** name, respawn length, **Warn at**, auto-repeat, and the PH, named and PH-streak counts.
+
+**Warn at** (off until you set it): a time before the respawn, typed like any other (`0:30`, `1m`, `90s`); empty turns
+it off. When that much is left it says "Grimfang is up in 30 seconds" (or chimes, if the camp doesn't have an NPC's
+name yet), and the panel turns amber and pulses gently until it's up, like a buff about to fade. It only counts when
+it's shorter than the respawn.
 
 **Name it after the named NPC** (right-click the title, e.g. *Grimfang*). Its kills and loot are then saved to
 [Grimfang's history](#history-is-saved-per-named-npc), and when the countdown ends it says "Grimfang is up" (a camp

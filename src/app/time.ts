@@ -49,6 +49,16 @@ export function formatClock(t: number): string {
     : `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
 }
 
+/** A length of time as said aloud: "30 seconds", "1 minute", "2 minutes 15 seconds". */
+export function spokenDuration(ms: number): string {
+  const total = Math.max(1, Math.round(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const part = (n: number, unit: string) => (n ? `${n} ${unit}${n === 1 ? '' : 's'}` : '');
+  return [part(h, 'hour'), part(m, 'minute'), part(s, 'second')].filter(Boolean).join(' ');
+}
+
 /** Formats ms as m:ss or h:mm:ss. Rounds up so a countdown shows 0:01 until it truly ends. */
 export function formatDuration(ms: number, roundUp = true): string {
   const total = Math.max(0, roundUp ? Math.ceil(ms / 1000) : Math.floor(ms / 1000));

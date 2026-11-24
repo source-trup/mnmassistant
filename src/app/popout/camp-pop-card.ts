@@ -3,7 +3,7 @@ import { NamedPhCounter, TimerItem, TimerStatus } from '../models';
 import { formatDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
 import { RespawnInfo } from '../timer-card/respawn-info';
-import { timerStatus } from '../timer-card/timer-face';
+import { inWarning, timerStatus } from '../timer-card/timer-face';
 import { PopoutService } from './popout.service';
 
 const NO_TIMER: TimerItem = { id: '', name: '', autoNamed: true, durationMs: 0, endsAt: null, pausedRemainingMs: null, repeat: false, x: -1, y: -1 };
@@ -16,7 +16,7 @@ const NO_TIMER: TimerItem = { id: '', name: '', autoNamed: true, durationMs: 0, 
   selector: 'app-camp-pop-card',
   imports: [RespawnInfo],
   template: `
-    <div class="card" [attr.data-status]="status()">
+    <div class="card" [attr.data-status]="status()" [class.warning]="warning()">
       <div class="head">
         <span class="name" [title]="camp().name">{{ camp().name }}</span>
         <button class="icon" (click)="popout.dock(camp().id)" title="Put back on the board">⤓</button>
@@ -72,6 +72,13 @@ const NO_TIMER: TimerItem = { id: '', name: '', autoNamed: true, durationMs: 0, 
         --accent: var(--done);
         animation: pulse 1.2s ease-in-out infinite;
       }
+      &.warning[data-status='running'] {
+        --accent: var(--paused);
+        animation: warn 1.4s ease-in-out infinite;
+      }
+    }
+    @keyframes warn {
+      50% { background: rgb(229 184 75 / 0.12); }
     }
     @keyframes pulse {
       50% {
@@ -188,6 +195,7 @@ export class CampPopCard {
 
   protected readonly timer = computed(() => this.store.campTimer(this.camp()) ?? NO_TIMER);
   protected readonly status = computed<TimerStatus>(() => timerStatus(this.timer(), this.store.now()));
+  protected readonly warning = computed(() => inWarning(this.timer(), this.store.now()));
 
   private readonly remainingMs = computed(() => {
     const t = this.timer();

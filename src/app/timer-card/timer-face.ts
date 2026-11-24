@@ -10,6 +10,13 @@ export function timerStatus(t: TimerItem, now: number): TimerStatus {
   return t.endsAt <= now ? 'done' : 'running';
 }
 
+/** Inside its "Warn at" time: counting down, with no more than that left (and the warning shorter than the countdown). */
+export function inWarning(t: TimerItem, now: number): boolean {
+  if (!t.warnMs || t.warnMs >= t.durationMs || t.endsAt === null || t.pausedRemainingMs !== null) return false;
+  const left = t.endsAt - now;
+  return left > 0 && left <= t.warnMs;
+}
+
 /**
  * A countdown's face: the big clock (click to start or restart, right-click to type the time left), the progress bar
  * and −1m / Pause / +1m / Reset. Shared by the Timer and Named / PH timer panels, which add their own header around

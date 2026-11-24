@@ -6,7 +6,7 @@ import { NameInput } from '../name-input';
 import { PanelTitle } from '../panel-title';
 import { PopoutService } from '../popout/popout.service';
 import { RespawnInfo } from '../timer-card/respawn-info';
-import { TimerFace, timerStatus } from '../timer-card/timer-face';
+import { TimerFace, timerStatus, inWarning } from '../timer-card/timer-face';
 import { formatAgo, formatDuration, parseDuration } from '../time';
 import { TrackerStore } from '../tracker.store';
 
@@ -35,6 +35,24 @@ export class CampCard {
   });
   protected readonly durationText = computed(() => formatDuration(this.timer()?.durationMs ?? 0));
   protected readonly durationError = signal(false);
+
+  /** Inside the "Warn at" time: the panel turns amber. */
+  protected readonly warning = computed(() => {
+    const t = this.timer();
+    return !!t && inWarning(t, this.store.now());
+  });
+  protected readonly warnText = computed(() => {
+    const w = this.timer()?.warnMs;
+    return w ? formatDuration(w) : '';
+  });
+  protected readonly warnError = signal(false);
+  protected readonly warnHint = computed(() => {
+    const t = this.timer();
+    if (!t?.warnMs) return '';
+    if (t.warnMs >= t.durationMs) return 'The warning is as long as the respawn, so it never goes off: make it shorter.';
+    const when = formatDuration(t.warnMs);
+    return t.autoNamed ? `It chimes when ${when} is left.` : `At ${when} left it says “${t.name} is up in …”.`;
+  });
   protected readonly npc = computed(() => this.store.npcOf(this.camp()));
 
   /** Kills per hour since the counts were last reset; hidden for the first minute to avoid silly numbers. */
@@ -94,6 +112,15 @@ export class CampCard {
     const ms = parseDuration((e.target as HTMLInputElement).value);
     this.durationError.set(ms === null);
     if (ms !== null) this.store.setTimerDuration(this.camp().timerId, ms);
+  }
+
+  /** "Warn at": a time before it's up, or empty for no warning. */
+  protected setWarn(e: Event): void {
+    const text = (e.target as HTMLInputElement).value.trim();
+    const ms = text ? parseDuration(text) : null;
+    this.warnError.set(!!text && ms === null);
+    if (text && ms === null) return;
+    this.store.updateTimer(this.camp().timerId, { warnMs: ms });
   }
 
   protected setRepeat(e: Event): void {

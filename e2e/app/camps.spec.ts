@@ -158,6 +158,52 @@ test.describe('Named / PH timers', () => {
   });
 });
 
+test.describe('Named / PH warning', () => {
+  test('off by default; "Warn at" in settings speaks and turns the panel amber before it is up', async ({ page }) => {
+    // Catch what would be spoken instead of using the system voice.
+    await page.addInitScript(() => {
+      (window as any).__spoken = [];
+      speechSynthesis.speak = (u: SpeechSynthesisUtterance) => void (window as any).__spoken.push(u.text);
+    });
+    const timer = { id: 't1', name: 'Grimfang', autoNamed: false, durationMs: 10_000, endsAt: null, pausedRemainingMs: null, repeat: false, x: -1, y: -1 };
+    const camp = { id: 'c1', kind: 'namedPh', name: 'Grimfang', timerId: 't1', closed: false, ph: 0, named: 0, phSinceNamed: 0, since: Date.now(), x: 0, y: 0 };
+    await loadState(page, { timers: [timer], counters: [camp] });
+    const card = page.locator('app-camp-card');
+    const spoken = () => page.evaluate(() => (window as any).__spoken as string[]);
+
+    // Off by default.
+    await card.getByTitle('Settings').click();
+    const warnBox = card.getByTitle(/^Warn this long before it's up/);
+    await expect(warnBox).toHaveValue('');
+    await expect(warnBox).toHaveAttribute('placeholder', 'off');
+
+    // A bad entry is flagged and not saved; a good one is.
+    await warnBox.fill('soon');
+    await warnBox.press('Enter');
+    await expect(warnBox).toHaveClass(/invalid/);
+    await warnBox.fill('0:08');
+    await warnBox.press('Enter');
+    await expect(warnBox).not.toHaveClass(/invalid/);
+    await expect(card.locator('dialog .hint')).toContainText('At 0:08 left it says “Grimfang is up in …”.');
+    await card.getByRole('button', { name: 'Done' }).click();
+    expect((await savedState(page)).timers[0].warnMs).toBe(8000);
+
+    // Start the 10 second countdown: about 2 seconds in, it warns.
+    await card.locator('.clock').click();
+    await expect(card.locator('.card')).not.toHaveClass(/warning/);
+    await expect(card.locator('.card')).toHaveClass(/warning/, { timeout: 4000 });
+    await expect.poll(spoken, { timeout: 3000 }).toEqual([expect.stringMatching(/^Grimfang is up in [78] seconds$/)]);
+
+    // Turning it off again (empty box).
+    await card.getByTitle('Settings').click();
+    await warnBox.fill('');
+    await warnBox.press('Enter');
+    await card.getByRole('button', { name: 'Done' }).click();
+    await expect(card.locator('.card')).not.toHaveClass(/warning/);
+    expect((await savedState(page)).timers[0].warnMs ?? null).toBeNull();
+  });
+});
+
 test.describe('buffs', () => {
   test('quick-add a buff, cast it, correct its time', async ({ page }) => {
     await addPanel(page, 'Buff Tracker');

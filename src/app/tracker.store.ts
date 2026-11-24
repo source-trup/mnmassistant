@@ -41,7 +41,7 @@ import {
   TimerSession,
 } from './models';
 import { DEFAULT_THEME, applyTheme, normalizeThemeId, themeById } from './themes';
-import { formatDuration } from './time';
+import { formatDuration, spokenDuration } from './time';
 import {
   MAX_SESSIONS,
   endSession,
@@ -819,6 +819,7 @@ function normalizeState(parsed: any): AppState | null {
     autoNamed: t.autoNamed ?? AUTO_TIMER_NAME.test(t.name ?? ''),
     x: t.x ?? -1,
     y: t.y ?? -1,
+    warnMs: Number(t.warnMs) > 0 ? Number(t.warnMs) : undefined,
     mode: t.mode === 'session' ? ('session' as const) : undefined,
     sessions: t.mode === 'session' ? normalizeSessions(t.sessions) : undefined,
   }));
@@ -1000,6 +1001,8 @@ export class TrackerStore {
 
   /** Alert bookkeeping (not persisted). */
   private readonly timerAlerted = new Set<string>();
+  /** Timers whose "Warn at" has been announced for the current countdown. */
+  private readonly timerWarned = new Set<string>();
   private readonly buffWarned = new Set<string>();
   private readonly buffFaded = new Set<string>();
 
@@ -1172,6 +1175,7 @@ export class TrackerStore {
     const t = this.timers().find((x) => x.id === id);
     if (!t) return;
     this.timerAlerted.delete(id);
+    this.timerWarned.delete(id);
     this.updateTimer(id, { endsAt: Date.now() + t.durationMs, pausedRemainingMs: null });
   }
 
@@ -1198,12 +1202,16 @@ export class TrackerStore {
     const t = this.timers().find((x) => x.id === id);
     if (!t) return;
     this.timerAlerted.delete(id);
+    // You just set it, so don't announce the warning straight away if it's already inside the warning time.
+    if (t.warnMs && remainingMs <= t.warnMs) this.timerWarned.add(id);
+    else this.timerWarned.delete(id);
     if (t.pausedRemainingMs !== null) this.updateTimer(id, { pausedRemainingMs: remainingMs });
     else this.updateTimer(id, { endsAt: Date.now() + remainingMs, pausedRemainingMs: null });
   }
 
   resetTimer(id: string): void {
     this.timerAlerted.delete(id);
+    this.timerWarned.delete(id);
     this.updateTimer(id, { endsAt: null, pausedRemainingMs: null });
   }
 
@@ -1221,6 +1229,7 @@ export class TrackerStore {
     } else if (t.endsAt !== null) {
       const endsAt = Math.max(Date.now(), t.endsAt + deltaMs);
       if (endsAt > Date.now()) this.timerAlerted.delete(id);
+      if (t.warnMs && endsAt - Date.now() > t.warnMs) this.timerWarned.delete(id);
       this.updateTimer(id, { endsAt });
     } else if (t.pausedRemainingMs !== null) {
       this.updateTimer(id, { pausedRemainingMs: Math.max(0, t.pausedRemainingMs + deltaMs) });
@@ -1229,6 +1238,7 @@ export class TrackerStore {
 
   resetAllTimers(): void {
     this.timerAlerted.clear();
+    this.timerWarned.clear();
     this.timers.update((list) => list.map((t) => ({ ...t, endsAt: null, pausedRemainingMs: null })));
   }
 
@@ -2385,6 +2395,7 @@ export class TrackerStore {
     const state = normalizeState(raw);
     if (!state) return false;
     this.timerAlerted.clear();
+    this.timerWarned.clear();
     this.buffWarned.clear();
     this.buffFaded.clear();
     this.lootQueue.set([]);
@@ -2466,6 +2477,15 @@ export class TrackerStore {
 
   private tickTimers(now: number): void {
     let changed = false;
+    for (const t of this.timers()) {
+      // A warning as long as the respawn itself would go off the moment it starts: it only counts when shorter.
+      if (t.endsAt === null || !t.warnMs || t.warnMs >= t.durationMs || this.timerWarned.has(t.id)) continue;
+      const left = t.endsAt - now;
+      if (left > 0 && left <= t.warnMs) {
+        this.timerWarned.add(t.id);
+        this.alert(t.autoNamed, `${t.name} is up in ${spokenDuration(left)}`);
+      }
+    }
     const next = this.timers().map((t) => {
       if (t.endsAt === null || t.endsAt > now || this.timerAlerted.has(t.id)) return t;
       this.timerAlerted.add(t.id);
@@ -2475,6 +2495,7 @@ export class TrackerStore {
       let endsAt = t.endsAt;
       while (endsAt <= now) endsAt += t.durationMs;
       this.timerAlerted.delete(t.id);
+      this.timerWarned.delete(t.id);
       changed = true;
       return { ...t, endsAt };
     });
@@ -2512,6 +2533,7 @@ export class TrackerStore {
     const now = Date.now();
     for (const t of this.timers()) {
       if (t.endsAt !== null && t.endsAt <= now && !t.repeat) this.timerAlerted.add(t.id);
+      if (t.endsAt !== null && t.warnMs && t.endsAt - now <= t.warnMs) this.timerWarned.add(t.id);
     }
     for (const p of this.buffPanels()) {
       for (const b of p.buffs) {

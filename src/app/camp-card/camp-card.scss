@@ -25,6 +25,21 @@
     --accent: var(--done);
     animation: pulse 1.2s ease-in-out infinite;
   }
+  /* Inside its "Warn at" time: amber, gently pulsing (like a buff about to fade). */
+  &.warning[data-status='running'] {
+    --accent: var(--paused);
+    animation: warn 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes warn {
+  50% { background: rgb(229 184 75 / 0.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.warning {
+    animation: none;
+  }
 }
 
 @keyframes pulse {

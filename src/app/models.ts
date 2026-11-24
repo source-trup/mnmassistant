@@ -28,6 +28,8 @@ export interface TimerItem extends GridPos, Sized {
   pausedRemainingMs: number | null;
   /** Automatically start over when it reaches zero. */
   repeat: boolean;
+  /** Warn this long before it reaches zero (a Named / PH timer's "Warn at"); missing or null = no warning. */
+  warnMs?: number | null;
   /**
    * 'session': a Session timer, which counts up instead of down. Each start → end is a session (pauses allowed), and
    * it can hold counters whose counts are kept per session for the stats. Missing means a countdown.

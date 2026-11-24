@@ -3,7 +3,7 @@ import { findFreeSpot, overlaps, sizeOf } from '../../src/app/layout';
 import { LEVEL_CHART, highestPartner, levelDiff, lowestPartner } from '../../src/app/level-range/level-range';
 import { formatItem, parseChecklist, parseLine } from '../../src/app/note-card/checklist-parse';
 import { coin } from '../../src/app/prices/coin';
-import { formatAgo, formatDuration, parseDuration } from '../../src/app/time';
+import { formatAgo, formatDuration, parseDuration, spokenDuration } from '../../src/app/time';
 
 test.describe('time', () => {
   test('parses every documented duration form', () => {
@@ -95,5 +95,16 @@ test.describe('layout', () => {
   test('saved size or the default', () => {
     expect(sizeOf({}, { w: 15, h: 10 })).toEqual({ w: 15, h: 10 });
     expect(sizeOf({ w: 20, h: 12 }, { w: 15, h: 10 })).toEqual({ w: 20, h: 12 });
+  });
+});
+
+test.describe('spoken durations', () => {
+  test('a time as said aloud in a warning', () => {
+    expect(spokenDuration(30_000)).toBe('30 seconds');
+    expect(spokenDuration(1_000)).toBe('1 second');
+    expect(spokenDuration(60_000)).toBe('1 minute');
+    expect(spokenDuration(135_000)).toBe('2 minutes 15 seconds');
+    expect(spokenDuration(3_661_000)).toBe('1 hour 1 minute 1 second');
+    expect(spokenDuration(400)).toBe('1 second');
   });
 });
