@@ -3,6 +3,7 @@ import { findFreeSpot, overlaps, sizeOf } from '../../src/app/layout';
 import { LEVEL_CHART, highestPartner, levelDiff, lowestPartner } from '../../src/app/level-range/level-range';
 import { formatItem, parseChecklist, parseLine } from '../../src/app/note-card/checklist-parse';
 import { coin } from '../../src/app/prices/coin';
+import { dotWikiUrl, wikiPageKind } from '../../src/app/site-links/site-urls';
 import { formatAgo, formatDuration, parseDuration, spokenDuration } from '../../src/app/time';
 
 test.describe('time', () => {
@@ -106,5 +107,24 @@ test.describe('spoken durations', () => {
     expect(spokenDuration(135_000)).toBe('2 minutes 15 seconds');
     expect(spokenDuration(3_661_000)).toBe('1 hour 1 minute 1 second');
     expect(spokenDuration(400)).toBe('1 second');
+  });
+});
+
+test.describe('monstersandmemories.wiki links', () => {
+  test('built from a name the way the site names its pages', () => {
+    expect(dotWikiUrl("Arcane Set Priest's Faceguard", 'item')).toBe('https://monstersandmemories.wiki/items/arcane-set-priests-faceguard');
+    expect(dotWikiUrl('Mia Tarcut', 'npc')).toBe('https://monstersandmemories.wiki/npcs/mia-tarcut');
+    expect(dotWikiUrl('  Bracer of the Fallen (Legacy) ', 'item')).toBe('https://monstersandmemories.wiki/items/bracer-of-the-fallen-legacy');
+    expect(dotWikiUrl('Élan Ring', 'item')).toBe('https://monstersandmemories.wiki/items/elan-ring');
+  });
+
+  test("a Miraheze page's kind from its categories", () => {
+    expect(wikiPageKind(['NPCs', 'Fallen_Pass_NPCs'])).toBe('npc');
+    expect(wikiPageKind(["Ail'Vorith Merchants"])).toBe('npc');
+    expect(wikiPageKind(['Chest', 'Stamina_Items', 'Cleric_Equipment'])).toBe('item');
+    expect(wikiPageKind(['Items'])).toBe('item');
+    expect(wikiPageKind(['Fallen Pass Quests'])).toBeNull();
+    expect(wikiPageKind(['Cleric Spells'])).toBeNull();
+    expect(wikiPageKind([])).toBeNull();
   });
 });

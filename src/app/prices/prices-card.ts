@@ -4,13 +4,14 @@ import { PricePanel } from '../models';
 import { formatAgo } from '../time';
 import { TrackerStore } from '../tracker.store';
 import { ItemTip } from '../item-card/item-tip';
+import { SiteLinks } from '../site-links/site-links';
 import { Listing, MARKET_SERVER, MNMDB_URL, PriceItem, PriceService, coin, itemSources, itemStatLines, median, mnmdbItemUrl } from './price.service';
 
 
 /** Price checker: Trem auction asks and bids, NPC vendor value, and where an item comes from (data from MnMdb). */
 @Component({
   selector: 'app-prices-card',
-  imports: [ItemTip],
+  imports: [ItemTip, SiteLinks],
   templateUrl: './prices-card.html',
   styleUrl: './prices-card.scss',
 })

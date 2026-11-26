@@ -4,6 +4,7 @@ import { AlertsService } from './alerts.service';
 import { PANEL_MIN, PANEL_SIZE, Rect, findFreeSpot, overlaps, sizeOf } from './layout';
 import { GRID } from './layout';
 import { gearClassName } from './gear/gear';
+import { dotWikiUrl } from './site-links/site-urls';
 import {
   AppState,
   BuffEntry,
@@ -133,14 +134,7 @@ export function wikiItemUrl(raw: unknown): string | null {
  * best guess: it may not have been written yet.
  */
 export function wikiItemPageUrl(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/['’`]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `https://monstersandmemories.wiki/items/${slug}`;
+  return dotWikiUrl(name, 'item');
 }
 
 const CLASS_TABS: ClassPanel['tab'][] = ['overview', 'build', 'abilities', 'leveling', 'gear', 'more'];

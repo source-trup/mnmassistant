@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { cacheGet, cacheSet } from '../idb-cache';
+import { SiteKind, wikiPageKind } from '../site-links/site-urls';
 
 /**
  * The community Monsters and Memories Wiki on Miraheze (CC BY-SA 4.0), read through its public MediaWiki API.
@@ -27,6 +28,8 @@ export interface WikiPage {
   /** Rendered page HTML from the wiki. Shown through Angular's sanitizer ([innerHTML]), which strips scripts and styles. */
   html: string;
   url: string;
+  /** An item or NPC page (from its categories), or null for anything else. */
+  kind: SiteKind | null;
 }
 
 export function wikiPageUrl(title: string): string {
@@ -179,14 +182,15 @@ export class CommunityWikiService {
     const data = await this.api({
       action: 'parse',
       page: title,
-      prop: 'text',
+      prop: 'text|categories',
       redirects: '1',
       disableeditsection: '1',
       disabletoc: '1',
       disablelimitreport: '1',
     });
     const p = data?.parse;
-    const page: WikiPage | null = p ? { title: p.title, html: p.text ?? '', url: wikiPageUrl(p.title) } : null;
+    const cats: string[] = (p?.categories ?? []).map((c: any) => String(c?.category ?? ''));
+    const page: WikiPage | null = p ? { title: p.title, html: p.text ?? '', url: wikiPageUrl(p.title), kind: wikiPageKind(cats) } : null;
     this.pages.set(title, page);
     if (page && page.title !== title) this.pages.set(page.title, page);
     return page;

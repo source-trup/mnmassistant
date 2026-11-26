@@ -115,8 +115,9 @@ button:disabled {
 
 .title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   margin-bottom: 6px;
 
   img {
@@ -139,10 +140,6 @@ button:disabled {
     margin-left: auto;
     padding: 0 6px;
     font-size: 0.74rem;
-  }
-  .ext {
-    font-size: 0.74rem;
-    color: var(--spirit);
   }
 }
 

@@ -1,9 +1,10 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CommunityWikiService, wikiPageUrl } from '../community-wiki/community-wiki.service';
+import { CommunityWikiService } from '../community-wiki/community-wiki.service';
 import { atlasMapForZone } from '../map/atlas-maps';
 import { WishItem } from '../models';
 import { PriceService, coin, itemSources, itemStatLines, mnmdbItemUrl } from '../prices/price.service';
-import { TrackerStore, wikiItemPageUrl } from '../tracker.store';
+import { SiteLinks } from '../site-links/site-links';
+import { TrackerStore } from '../tracker.store';
 import { WikiService } from '../wiki.service';
 
 /**
@@ -12,6 +13,7 @@ import { WikiService } from '../wiki.service';
  */
 @Component({
   selector: 'app-wish-details',
+  imports: [SiteLinks],
   template: `
     <div class="details">
       @if (mnmdb(); as it) {
@@ -88,20 +90,17 @@ import { WikiService } from '../wiki.service';
       </label>
 
       <div class="links">
+        <app-site-links
+          [name]="item().name"
+          kind="item"
+          [miraheze]="mirahezeTitle()"
+          [dotWiki]="item().wikiUrl"
+          [mnmdb]="mnmdb() ? mnmdbUrl(mnmdb()!) : null"
+        />
         @if (mirahezeTitle(); as t) {
           <button class="small" (click)="store.showWiki(t)" title="Read it in the Wiki panel">📖 Wiki</button>
-          <a class="small" [href]="pageUrl(t)" target="_blank" rel="noopener" title="Open on the Miraheze wiki">Miraheze ↗</a>
         }
-        <a
-          class="small"
-          [href]="dotWikiUrl()"
-          target="_blank"
-          rel="noopener"
-          [title]="item().wikiUrl ? 'Open on monstersandmemories.wiki' : 'Open on monstersandmemories.wiki (if the page has been written)'"
-          >.wiki ↗</a
-        >
         @if (mnmdb(); as it) {
-          <a class="small" [href]="mnmdbUrl(it)" target="_blank" rel="noopener" title="Open on MnMdb">MnMdb ↗</a>
           <button class="small" (click)="store.showPrice(it.name)" title="Open in the Prices panel">💰 Price</button>
         }
         @if (addingLink()) {
@@ -192,15 +191,6 @@ import { WikiService } from '../wiki.service';
       padding: 2px 8px;
       font-size: 0.78rem;
     }
-    a.small {
-      color: var(--spirit);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      &:hover {
-        background: var(--button-bg);
-      }
-    }
     .ghost {
       background: none;
       color: var(--muted);
@@ -230,8 +220,6 @@ export class WishDetails {
 
   /** The Miraheze wiki page with this item's name, if there is one. */
   protected readonly mirahezeTitle = signal<string | null>(null);
-  /** Its monstersandmemories.wiki page: a link you pasted or the wiki's search found, else one built from the name. */
-  protected readonly dotWikiUrl = computed(() => this.item().wikiUrl ?? wikiItemPageUrl(this.item().name));
   protected readonly addingLink = signal(false);
   protected readonly coin = coin;
 
@@ -252,10 +240,6 @@ export class WishDetails {
         })
         .catch(() => undefined);
     }
-  }
-
-  protected pageUrl(title: string): string {
-    return wikiPageUrl(title);
   }
 
   protected mnmdbUrl(it: NonNullable<ReturnType<typeof this.mnmdb>>): string {

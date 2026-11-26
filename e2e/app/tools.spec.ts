@@ -217,6 +217,12 @@ test.describe('prices', () => {
     await expect(card.locator('.market .v')).toHaveText('25c');
     await expect(card.locator('.vendor b')).toHaveText('1c');
     await expect(card.locator('.market .bids')).toContainText('15c');
+
+    // The item on the other sites: MnMdb, the Miraheze page (it has one) and a .wiki link built from its name.
+    const links = card.locator('.title app-site-links');
+    await expect(links.getByRole('link', { name: 'MnMdb ↗' })).toHaveAttribute('href', /^https:\/\/mnm-db\.com\/#\/item\//);
+    await expect(links.getByRole('link', { name: 'Miraheze ↗' })).toHaveAttribute('href', 'https://monstersandmemories.miraheze.org/wiki/Iron_Ore');
+    await expect(links.getByRole('link', { name: '.wiki ↗' })).toHaveAttribute('href', 'https://monstersandmemories.wiki/items/iron-ore');
   });
 });
 
@@ -247,6 +253,40 @@ test.describe('wiki', () => {
     await openTool(page, 'Class Guides');
     await page.locator('app-classes-card .snap .wk').click();
     await expect(page.locator('app-wiki-card .ptitle')).toHaveText('Shaman');
+  });
+
+  test('a page links to the same page on Miraheze, .wiki and MnMdb', async ({ page }) => {
+    await openTool(page, 'Wiki');
+    const card = page.locator('app-wiki-card');
+    const box = card.getByLabel('Search the wiki');
+
+    // An NPC page (from its categories): Miraheze and a .wiki /npcs/ link; nothing on MnMdb.
+    await box.fill('Night Terror');
+    await box.press('Enter');
+    await card.locator('.hits .hit').first().click();
+    const links = card.locator('.phead app-site-links');
+    await expect(links.getByRole('link', { name: 'Miraheze ↗' })).toHaveAttribute('href', 'https://monstersandmemories.miraheze.org/wiki/Night_Terror');
+    await expect(links.getByRole('link', { name: 'Miraheze ↗' })).toHaveAttribute('target', '_blank');
+    const dot = links.getByRole('link', { name: '.wiki ↗' });
+    await expect(dot).toHaveAttribute('href', 'https://monstersandmemories.wiki/npcs/night-terror');
+    await expect(dot).toHaveAttribute('title', /might not find one/);
+    await expect(links.getByRole('link', { name: 'MnMdb ↗' })).toHaveCount(0);
+
+    // An item page: a .wiki /items/ link, and MnMdb's.
+    await box.fill('Iron Ore');
+    await box.press('Enter');
+    await card.locator('.hits .hit').first().click();
+    await expect(card.locator('.ptitle')).toHaveText('Iron Ore');
+    await expect(links.getByRole('link', { name: '.wiki ↗' })).toHaveAttribute('href', 'https://monstersandmemories.wiki/items/iron-ore');
+    await expect(links.getByRole('link', { name: 'MnMdb ↗' })).toHaveAttribute('href', /^https:\/\/mnm-db\.com\/#\/item\//);
+
+    // Neither (a place): only Miraheze.
+    await box.fill('Night Harbor');
+    await box.press('Enter');
+    await card.locator('.hits .hit', { hasText: 'Night Harbor' }).click();
+    await expect(card.locator('.ptitle')).toHaveText('Night Harbor');
+    await expect(links.getByRole('link')).toHaveCount(1);
+    await expect(links.getByRole('link', { name: 'Miraheze ↗' })).toBeVisible();
   });
 
   test('↗ opens the page on the wiki in a new tab', async ({ page, context }) => {

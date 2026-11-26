@@ -1,5 +1,8 @@
 import { Component, ElementRef, OnInit, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { WikiPanel } from '../models';
+import { PriceService, mnmdbItemUrl } from '../prices/price.service';
+import { SiteLinks } from '../site-links/site-links';
+import { SiteKind } from '../site-links/site-urls';
 import { TrackerStore } from '../tracker.store';
 import { COMMUNITY_WIKI, CommunityWikiService, WikiHit, WikiPage, wikiPageUrl } from './community-wiki.service';
 
@@ -18,10 +21,12 @@ type View =
   selector: 'app-wiki-card',
   templateUrl: './wiki-card.html',
   styleUrl: './wiki-card.scss',
+  imports: [SiteLinks],
 })
 export class WikiCard implements OnInit {
   readonly panel = input.required<WikiPanel>();
   protected readonly store = inject(TrackerStore);
+  private readonly prices = inject(PriceService);
   private readonly wiki = inject(CommunityWikiService);
   private readonly body = viewChild<ElementRef<HTMLElement>>('body');
 
@@ -119,6 +124,8 @@ export class WikiCard implements OnInit {
     }
     this.view.set({ kind: 'page', page });
     this.store.updateWikiPanel({ page: page.title });
+    // An item: MnMdb's data gives its MnMdb link (fetched once, like opening the Prices panel).
+    if (page.kind === 'item') void this.prices.load();
     setTimeout(() => this.body()?.nativeElement.scrollTo({ top: 0 }));
   }
 
@@ -181,6 +188,18 @@ export class WikiCard implements OnInit {
 
   protected pageUrl(title: string): string {
     return wikiPageUrl(title);
+  }
+
+  /** An item or NPC (from the page's categories, or an item MnMdb knows by that name); null for anything else. */
+  protected pageKind(page: WikiPage): SiteKind | null {
+    return page.kind ?? (this.prices.find(page.title) ? 'item' : null);
+  }
+
+  /** The item's MnMdb page, when MnMdb has it. */
+  protected mnmdbUrl(page: WikiPage): string | null {
+    if (this.pageKind(page) !== 'item') return null;
+    const it = this.prices.find(page.title);
+    return it ? mnmdbItemUrl(it) : null;
   }
 
   protected currentUrl(): string {

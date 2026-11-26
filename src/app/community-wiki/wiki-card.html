@@ -2,7 +2,7 @@
   <div class="head drag-handle" title="Drag to move">
     <span class="grip">⠿</span>
     <span class="name">📖 Wiki</span>
-    <a class="icon ext" [href]="currentUrl()" target="_blank" rel="noopener" title="Open this on the wiki (new tab)">↗</a>
+    <a class="icon ext" [href]="currentUrl()" target="_blank" rel="noopener" title="Open this on the Miraheze wiki (new tab)">↗</a>
     <button class="icon" (click)="store.toggleWiki()" title="Hide (show it again from Tools)">✕</button>
   </div>
 
@@ -72,7 +72,10 @@
       @case ('page') {
         @if (view(); as v) {
           @if (v.kind === 'page') {
-            <h3 class="ptitle">{{ v.page.title }}</h3>
+            <div class="phead">
+              <h3 class="ptitle">{{ v.page.title }}</h3>
+              <app-site-links [name]="v.page.title" [kind]="pageKind(v.page)" [miraheze]="v.page.title" [mnmdb]="mnmdbUrl(v.page)" />
+            </div>
             <!-- The wiki's HTML goes through Angular's sanitizer: scripts, styles and event handlers are removed. -->
             <div class="wiki" [innerHTML]="v.page.html" (click)="onPageClick($event)"></div>
           }

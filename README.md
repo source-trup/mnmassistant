@@ -102,6 +102,7 @@ you last read).
 | Search | Type an NPC, item, quest, zone… and press Enter. A page with exactly that name comes first, then pages that mention it. |
 | Read | Click a result to read the page here, restyled to match the app. Links to other wiki pages open in the panel; **←** goes back. Images, categories and other sites open in a new tab. |
 | On the wiki | **↗** in the header opens the page (or search) on the wiki itself. |
+| Other sites | Beside a page's title, **Miraheze ↗** opens it on the Miraheze wiki in a new tab. An item or NPC page (told apart by its wiki categories) also gets **.wiki ↗**, the same name on monstersandmemories.wiki (see [other sites](#other-sites)), and an item MnMdb has gets **MnMdb ↗**. |
 
 **📖 buttons** around the app look things up here: the NPC in a Named / PH timer's [history](#history-view-) (once
 it's named after the NPC) and each loot item there; the item in [Prices](#prices); an open spell in
@@ -114,6 +115,20 @@ which removes scripts and styles.
 
 *Wiki content: the [Monsters and Memories Wiki](https://monstersandmemories.miraheze.org/) contributors,
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).*
+
+### Other sites
+
+Wherever the app shows an item (or, in the Wiki panel, an NPC), a small group of links opens it on the community
+sites in a new tab: **Miraheze ↗ · .wiki ↗ · MnMdb ↗**. It's in the [Wiki](#wiki) panel beside a page's title, in
+[Prices](#prices) beside the item's name, and in an opened [Wishlist](#wishlist) item.
+
+- **Miraheze ↗**: the page on the Miraheze wiki. It shows only when that page exists (the app checks the wiki live).
+- **.wiki ↗**: the same name on monstersandmemories.wiki, at the address the site uses: `/items/<name>` for items
+  (`/items/arcane-set-priests-faceguard`) and `/npcs/<name>` for NPCs (`/npcs/mia-tarcut`). That site doesn't let
+  apps check its pages, so the address is built from the name and may lead nowhere when the page isn't written yet
+  or is named differently; hovering the link says so. Wiki pages that are neither an item nor an NPC (zones,
+  quests…) have no .wiki link.
+- **MnMdb ↗**: the item on mnm-db.com, when MnMdb has it.
 
 ---
 
@@ -149,7 +164,7 @@ back in the same spot and size).
 | Trem market | **Typical ask** is the median price per item among sellers, with the cheapest and highest. Below it: how many sellers, how recent the newest listing is, and what buyers offer (WTB). Switch between the last **7 days** and **30 days**. Fewer than 3 sellers is flagged as a rough guide. |
 | Vendor | What an NPC merchant pays for it, and how the player price compares ("players ask 30× the vendor price"). |
 | Listings | **For sale** (cheapest first) and **Wanted** (highest offer first): price each, as listed (e.g. `3s / 20` for a stack), the player and when it was last seen. |
-| Item | Slot, AC, stats, classes, which mobs drop it (with drop rates where enough kills are logged), whether it's gathered, which tradeskills use it and which merchants sell it. **🧭** opens a zone in the [Map](#map) panel. **MnMdb ↗** opens the item on mnm-db.com. |
+| Item | Slot, AC, stats, classes, which mobs drop it (with drop rates where enough kills are logged), whether it's gathered, which tradeskills use it and which merchants sell it. **🧭** opens a zone in the [Map](#map) panel. **Miraheze ↗ · .wiki ↗ · MnMdb ↗** beside the name open the item on those sites (see [other sites](#other-sites)). |
 | Refresh | **↻** in the header reloads the latest data. |
 | Item card | Rest the pointer on a suggestion, a recent chip or the item's name for its card (see [Gear Planner](#gear-planner) item cards), with MnMdb's details. |
 
@@ -185,14 +200,11 @@ so it needs an internet connection and shows whatever MnMdb has now (it updates 
   - **Where it drops (your note):** your own words, for items the sites don't know or anything to add (camp, quest,
     who has one). A new item MnMdb knows nothing about opens here straight away.
   - **Links:**
-    - **📖 Wiki** reads it in the Wiki panel, and **Miraheze ↗** opens it on the Miraheze wiki. These show only when
-      the page exists: the app checks the wiki live for a page with the item's name.
-    - **.wiki ↗** opens it on monstersandmemories.wiki, at the address the wiki uses for item pages
-      (`/items/wyvern-hide-tunic` for Wyvern Hide Tunic). The app can't check whether that page exists, so it's always
-      shown, and leads nowhere when nobody has written the page yet. Running locally with the partner key, the wiki's
-      item search supplies the exact address instead. If the address is wrong, **✎ .wiki link** lets you paste the
-      right one (clear the box to go back to the built one).
-    - **MnMdb ↗** and **💰 Price** (the Prices panel), when MnMdb has the item.
+    - **Miraheze ↗ · .wiki ↗ · MnMdb ↗** open the item on those sites in a new tab (see [other sites](#other-sites)).
+      Running locally with the partner key, the wiki's item search supplies the exact .wiki address. If the .wiki
+      address is wrong, **✎ .wiki link** lets you paste the right one (clear the box to go back to the built one).
+    - **📖 Wiki** reads it in the Wiki panel (when the Miraheze wiki has a page with its name), and **💰 Price** opens
+      it in the Prices panel (when MnMdb has it).
 - **☐** marks an item as got: it's struck through and moves to the bottom. **◉ / ◌** in the header hides or shows
   the items you've got. **✕** removes an item (Shift + click skips the question).
 

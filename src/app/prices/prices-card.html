@@ -63,7 +63,7 @@
               }
             </div>
             <button class="small wiki" (click)="store.showWiki(it.name)" [title]="'Look up ' + it.name + ' on the wiki'">📖 Wiki</button>
-            <a class="ext" [href]="itemUrl(it)" target="_blank" rel="noopener" title="Open on MnMdb">MnMdb ↗</a>
+            <app-site-links [name]="it.name" kind="item" [mnmdb]="itemUrl(it)" />
           </div>
 
           <!-- Player market -->

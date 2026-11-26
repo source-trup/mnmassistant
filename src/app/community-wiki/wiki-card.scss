@@ -93,8 +93,17 @@
   }
 }
 
-.ptitle {
+/* The page's title, with the same page on the other sites beside it (or below, when the panel is narrow). */
+.phead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
   margin: 2px 0 6px;
+}
+
+.ptitle {
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.15rem;
   color: var(--bone);

@@ -77,11 +77,13 @@ export const mnmdbVendors = { vendors: [{ name: 'A miner', sells: ['Iron Ore'], 
 
 // ---------- The community wiki (MediaWiki API) ----------
 
-const PAGES: Record<string, { html: string }> = {
+const PAGES: Record<string, { html: string; categories?: string[] }> = {
   'Silver Comb of House Torvald': {
     html: '<div class="mw-parser-output"><p>A silver comb carried by Handmaiden Mira.</p></div>',
+    categories: ['Hair', 'All_Race_Equipment'],
   },
   'Night Terror': {
+    categories: ['NPCs', 'Fallen_Pass_NPCs'],
     html:
       '<div class="mw-parser-output"><style>.x{color:red}</style><p onclick="alert(1)">A rare <b>bat</b> that only comes out at night.</p>' +
       '<script>window.__pwned = true</script><ul><li><a href="/wiki/Night_Terror%27s_Wing">Night Terror\'s Wing</a></li>' +
@@ -89,7 +91,7 @@ const PAGES: Record<string, { html: string }> = {
       '<li><a href="/wiki/Category:NPCs">NPCs</a></li></ul></div>',
   },
   "Night Terror's Wing": { html: '<div class="mw-parser-output"><p>A wing from the giant bat known as Night Terror.</p></div>' },
-  'Iron Ore': { html: '<div class="mw-parser-output"><p>Ore used in Smelting.</p></div>' },
+  'Iron Ore': { html: '<div class="mw-parser-output"><p>Ore used in Smelting.</p></div>', categories: ['Items'] },
   Shaman: { html: '<div class="mw-parser-output"><h2>Description</h2><p>Shamans commune with spirits.</p></div>' },
   'Night Harbor': { html: '<div class="mw-parser-output"><p>A port city.</p></div>' },
   // The left-hand sidebar shows the in-game time; the wiki fills it from this page.
@@ -111,7 +113,9 @@ export function wikiApi(q: URLSearchParams): unknown {
   if (action === 'parse') {
     const title = q.get('page') ?? '';
     const page = PAGES[title];
-    return page ? { parse: { title, pageid: 1, text: page.html } } : { error: { code: 'missingtitle' } };
+    return page
+      ? { parse: { title, pageid: 1, text: page.html, categories: (page.categories ?? []).map((category) => ({ sortkey: '', category })) } }
+      : { error: { code: 'missingtitle' } };
   }
   if (action === 'query' && q.get('list') === 'search') {
     const term = (q.get('srsearch') ?? '').toLowerCase();
