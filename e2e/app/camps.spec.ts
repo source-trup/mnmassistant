@@ -236,14 +236,17 @@ test.describe('player lists', () => {
 });
 
 test.describe('dragging', () => {
-  test('a panel dropped on another springs back', async ({ page }) => {
+  test('a panel dropped on another, with no room to shrink into, pushes it down', async ({ page }) => {
     await addTimer(page, 5);
     await addTimer(page, 6);
     const panels = page.locator('.panel');
     const first = (await panels.nth(0).boundingBox())!;
     const second = (await panels.nth(1).boundingBox())!;
     await dragBy(page, panels.nth(1).locator('.head'), first.x - second.x + 20, 0);
-    await expect.poll(async () => Math.round((await panels.nth(1).boundingBox())!.x)).toBe(Math.round(second.x));
+    await expect.poll(async () => (await savedState(page)).timers.map((t: any) => [t.x, t.y])).toEqual([
+      [0, 10], // pushed down below the dropped one
+      [1, 0], // where it was dropped, full size
+    ]);
   });
 });
 

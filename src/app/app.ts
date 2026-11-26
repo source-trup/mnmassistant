@@ -8,7 +8,7 @@ import { LootPrompt } from './loot/loot-prompt';
 import { ConfirmService } from './confirm.service';
 import { CounterCard } from './counter-card/counter-card';
 import { CampCard } from './camp-card/camp-card';
-import { GRID, maxX } from './layout';
+import { GRID, fitRect, makeRoom, maxX } from './layout';
 import { NamedPhCounter, NoteItem } from './models';
 import { NoteCard } from './note-card/note-card';
 import { LevelRangeCard } from './level-range/level-range-card';
@@ -63,6 +63,9 @@ interface DragState {
   offY: number;
   /** A plain counter, which can be dropped onto a Session timer. */
   counter: boolean;
+  /** Smallest it may shrink to when dropped into a gap too small for it (grid cells). */
+  minW: number;
+  minH: number;
 }
 
 function wishCount(n: number): string {
@@ -144,15 +147,30 @@ export class App {
 
   protected readonly drag = signal<DragState | null>(null);
 
-  /** Where the dragged panel would land, snapped to the grid. */
+  /**
+   * Where the dragged panel would land, snapped to the grid. If that spot is taken, in order:
+   * 1. it fits itself into the gap: shrunk (never below its smallest size) and/or slid a cell or two (`fitted`);
+   * 2. failing that, it keeps its size and the panels in its way make room: sideways if they can, otherwise down
+   *    (`pushed`: their new spots; they slide there while you drag, and back if you move on).
+   */
   protected readonly preview = computed(() => {
     const d = this.drag();
     if (!d) return null;
-    const x = Math.min(maxX(this.store.cols(), d.w), Math.max(0, Math.round(d.px / GRID)));
+    const cols = this.store.cols();
+    const x = Math.min(maxX(cols, d.w), Math.max(0, Math.round(d.px / GRID)));
     const y = Math.max(0, Math.round(d.py / GRID));
     const rect = { x, y, w: d.w, h: d.h };
-    return { ...rect, valid: this.store.canPlace(d.id, rect) };
+    const none = new Map<string, { x: number; y: number }>();
+    if (this.store.canPlace(d.id, rect)) return { ...rect, valid: true, fitted: false, pushed: none, how: null };
+    const others = this.store.panels().filter((p) => p.id !== d.id);
+    const fit = fitRect(rect, { w: d.minW, h: d.minH }, others, cols);
+    if (fit) return { ...fit, valid: true, fitted: true, pushed: none, how: null };
+    const room = makeRoom(rect, others, cols);
+    return { ...rect, valid: true, fitted: false, pushed: room.moves, how: room.how };
   });
+
+  /** Panels being moved out of the way by the drag in progress: their new spots. */
+  private readonly pushed = computed(() => (this.dropTarget() ? null : this.preview()?.pushed) ?? null);
 
   protected readonly resize = signal<ResizeState | null>(null);
 
@@ -164,7 +182,7 @@ export class App {
     const w = Math.min(maxW, Math.max(r.minW, Math.round(r.pw / GRID) + 1));
     const h = Math.max(r.minH, Math.round(r.ph / GRID) + 1);
     const rect = { x: r.x, y: r.y, w, h };
-    return { ...rect, valid: this.store.canPlace(r.id, rect) };
+    return { ...rect, valid: this.store.canPlace(r.id, rect), fitted: false, pushed: new Map<string, { x: number; y: number }>(), how: null };
   });
 
   /** The Session timer a dragged counter is over (dropping it there asks to add it). */
@@ -175,7 +193,8 @@ export class App {
 
   protected readonly boardHeight = computed(() => {
     let rows = 0;
-    for (const p of this.store.panels()) rows = Math.max(rows, p.y + p.h);
+    const pushed = this.pushed();
+    for (const p of this.store.panels()) rows = Math.max(rows, (pushed?.get(p.id)?.y ?? p.y) + p.h);
     const prev = this.ghost();
     if (prev) rows = Math.max(rows, prev.y + prev.h);
     return (rows + 6) * GRID;
@@ -376,12 +395,14 @@ export class App {
 
   protected left(p: Panel): number {
     const d = this.drag();
-    return d && d.id === p.id ? d.px : p.x * GRID;
+    if (d && d.id === p.id) return d.px;
+    return (this.pushed()?.get(p.id)?.x ?? p.x) * GRID;
   }
 
   protected top(p: Panel): number {
     const d = this.drag();
-    return d && d.id === p.id ? d.py : p.y * GRID;
+    if (d && d.id === p.id) return d.py;
+    return (this.pushed()?.get(p.id)?.y ?? p.y) * GRID;
   }
 
   protected onPointerDown(e: PointerEvent, p: Panel): void {
@@ -392,6 +413,7 @@ export class App {
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const { x, y } = this.pointerInBoard(e);
+    const min = this.store.minSize(p);
     this.drag.set({
       id: p.id,
       w: p.w,
@@ -401,6 +423,8 @@ export class App {
       offX: x - p.x * GRID,
       offY: y - p.y * GRID,
       counter: p.kind === 'counter' && p.item.kind === 'standard',
+      minW: min.w,
+      minH: min.h,
     });
   }
 
@@ -419,7 +443,11 @@ export class App {
     this.drag.set(null);
     this.dropTarget.set(null);
     if (d && target) void this.dropOnTimer(d.id, target);
-    else if (d && prev?.valid) this.store.movePanel(d.id, prev.x, prev.y);
+    else if (d && prev?.valid) {
+      if (prev.pushed.size) this.store.pushAndPlace(d.id, prev, prev.pushed);
+      else if (prev.fitted) this.store.placePanel(d.id, prev);
+      else this.store.movePanel(d.id, prev.x, prev.y);
+    }
   }
 
   protected onPointerCancel(): void {

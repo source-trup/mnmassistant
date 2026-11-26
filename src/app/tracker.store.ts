@@ -1035,6 +1035,30 @@ export class TrackerStore {
     else this.updateNote(id, { x, y });
   }
 
+  /** Moves and resizes a panel in one go (a drop fitted into a gap), if the new footprint is free and big enough. */
+  placePanel(id: string, rect: Rect): boolean {
+    const p = this.panels().find((x) => x.id === id);
+    if (!p || !this.canPlace(id, rect)) return false;
+    const min = this.minSize(p);
+    if (rect.w < Math.min(min.w, p.w) || rect.h < Math.min(min.h, p.h) || rect.x + rect.w - 1 > this.cols()) return false;
+    this.movePanel(id, rect.x, rect.y);
+    if (rect.w !== p.w || rect.h !== p.h) this.resizePanel(id, rect.w, rect.h);
+    return true;
+  }
+
+  /** A drop that made room: the panels in the way move to their new spots, then the dropped one goes in. */
+  pushAndPlace(id: string, rect: Rect, pushed: ReadonlyMap<string, { x: number; y: number }>): boolean {
+    const ids = new Set(this.panels().map((p) => p.id));
+    for (const [other, spot] of pushed) {
+      if (other !== id && ids.has(other)) this.movePanel(other, spot.x, spot.y);
+    }
+    if (this.canPlace(id, rect)) {
+      this.movePanel(id, rect.x, rect.y);
+      return true;
+    }
+    return false;
+  }
+
   /** Packs every panel into the grid, keeping their current reading order. */
   autoArrange(): void {
     const ordered = [...this.panels()].sort((a, b) => a.y - b.y || a.x - b.x);

@@ -175,11 +175,18 @@
       <div
         class="ghost"
         [class.invalid]="!g.valid"
+        [class.fit]="g.fitted || g.pushed.size > 0"
         [style.left.px]="g.x * GRID"
         [style.top.px]="g.y * GRID"
         [style.width.px]="(g.w - 1) * GRID"
         [style.height.px]="(g.h - 1) * GRID"
-      ></div>
+      >
+        @if (g.pushed.size) {
+          <span class="fit-note">Moves {{ g.pushed.size === 1 ? '1 panel' : g.pushed.size + ' panels' }} {{ g.how === 'aside' ? 'aside' : 'down' }}</span>
+        } @else if (g.fitted && drag(); as d) {
+          <span class="fit-note">{{ g.w === d.w && g.h === d.h ? 'Fits here' : 'Resized to fit' }}</span>
+        }
+      </div>
     }
 
     @for (p of store.panels(); track p.id) {
@@ -188,6 +195,8 @@
         [class.lifted]="drag()?.id === p.id"
         [class.drop-target]="dropTarget() === p.id"
         [class.over-target]="!!dropTarget() && drag()?.id === p.id"
+        [class.fitting]="drag()?.id === p.id && !dropTarget() && (!!preview()?.fitted || !!preview()?.pushed?.size)"
+        [class.pushed]="!!drag() && drag()?.id !== p.id && !dropTarget() && !!preview()?.pushed?.has(p.id)"
         [style.left.px]="left(p)"
         [style.top.px]="top(p)"
         [class.resizing]="resize()?.id === p.id"

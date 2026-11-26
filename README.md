@@ -466,7 +466,9 @@ counters, Buff Trackers and notes you've added.
 | --- | --- |
 | Move a panel | Drag it by its **header** (the title bar with ⠿). A dot grid appears while you drag. |
 | Resize a panel | Drag its **bottom-right corner**. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. Each kind of panel has a smallest size so its buttons never get cut off. Timer clocks and counter numbers grow with the panel. |
-| See where it will land | A dashed outline shows the snap spot: **green** is free, **red** would overlap (the panel springs back). |
+| See where it will land | A dashed outline shows the snap spot when it's free. |
+| Drop into a gap | If the spot is a little too small, the panel fits itself in: it shrinks to the gap (never below its smallest size) or slides a cell or two to where it fits at full size, whichever keeps it bigger. A solid outline marked **Resized to fit** (or **Fits here**, when only sliding) shows its new spot and size before you let go. |
+| Drop onto other panels | When shrinking won't make it fit, the panel keeps its size and the panels in its way make room. First they try sliding **sideways** in their own row: each moves away from the side of the dropped panel it's on (left or right), nudging any neighbours along. If that would push one off the edge of the board, they're pushed straight **down** instead (and any they'd land on, in turn). They slide while you drag, so you can see the result, and slide back if you move on; the outline says how many will move and which way. Panels not in the way stay put. |
 | Neat layout | **☰ → Tidy panels** packs every panel onto the grid, keeping their order. |
 | Delete a panel | **✕** in its header asks for confirmation. **Shift + click ✕** deletes immediately. |
 | Rename a panel | **Right-click its title**, type, then Enter (or click away). Esc cancels. Works on every panel type. |

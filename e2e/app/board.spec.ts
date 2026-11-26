@@ -1,4 +1,4 @@
-import { addPanel, addTimer, dragBy, expect, savedState, test, toolButton } from '../support/fixtures';
+import { addPanel, addTimer, dragBy, expect, loadState, savedState, test, toolButton } from '../support/fixtures';
 
 test.describe('board and toolbar', () => {
   test('quick and custom timers are added from ＋ Add and saved', async ({ page }) => {
@@ -34,6 +34,68 @@ test.describe('board and toolbar', () => {
     await expect(page.locator('app-buff-card')).toHaveCount(1);
     await expect(page.locator('app-note-card')).toHaveCount(2);
     await expect(page.locator('#add-menu')).not.toBeVisible();
+  });
+
+  test('a panel dropped into a gap too small for it shrinks to fit', async ({ page }) => {
+    const timer = (id: string, x: number, y: number) => ({ id, name: id, autoNamed: false, durationMs: 300_000, endsAt: null, pausedRemainingMs: null, repeat: false, x, y });
+    // A and C leave a gap 13 cells wide between them; B (15 wide, can shrink to 13) sits below.
+    await loadState(page, { timers: [timer('A', 0, 0), timer('C', 28, 0), timer('B', 0, 12)] });
+    const b = page.locator('.panel', { has: page.getByTitle('B — right-click to rename') });
+    const head = (await b.locator('.head').boundingBox())!;
+    const sx = head.x + 30;
+    const sy = head.y + head.height / 2;
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx + 15 * 20, sy - 12 * 20, { steps: 8 });
+    // While dragging, the outline shows where and how big it'll be.
+    await expect(page.locator('.ghost.fit .fit-note')).toHaveText('Resized to fit');
+    await expect(b).toHaveClass(/fitting/);
+    await page.mouse.up();
+
+    await expect.poll(async () => (await savedState(page)).timers.find((t: any) => t.id === 'B')).toMatchObject({ x: 15, y: 0, w: 13, h: 10 });
+    await expect(page.locator('.ghost')).toHaveCount(0);
+  });
+
+  test('when shrinking won’t do, the panels in the way slide down while you drag, and back if you move on', async ({ page }) => {
+    const timer = (id: string, x: number, y: number) => ({ id, name: id, autoNamed: false, durationMs: 300_000, endsAt: null, pausedRemainingMs: null, repeat: false, x, y });
+    await loadState(page, { timers: [timer('A', 0, 0), timer('B', 30, 0)] });
+    const a = page.locator('.panel', { has: page.getByTitle('A — right-click to rename') });
+    const b = page.locator('.panel', { has: page.getByTitle('B — right-click to rename') });
+    const aTop = (await a.boundingBox())!.y;
+    const head = (await b.locator('.head').boundingBox())!;
+    const sx = head.x + 30;
+    const sy = head.y + head.height / 2;
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    // Over the middle of A: A slides down out of the way.
+    await page.mouse.move(sx - 25 * 20, sy, { steps: 8 });
+    await expect(page.locator('.ghost .fit-note')).toHaveText('Moves 1 panel down');
+    await expect(a).toHaveClass(/pushed/);
+    await expect.poll(async () => (await a.boundingBox())!.y).toBeGreaterThan(aTop + 150);
+    // Back over open space: A returns.
+    await page.mouse.move(sx, sy, { steps: 8 });
+    await expect(a).not.toHaveClass(/pushed/);
+    await expect.poll(async () => (await a.boundingBox())!.y).toBe(aTop);
+    await page.mouse.up();
+    expect((await savedState(page)).timers.find((t: any) => t.id === 'A')).toMatchObject({ x: 0, y: 0 });
+  });
+
+  test('the panel in the way slides aside when it can, before anything moves down', async ({ page }) => {
+    const timer = (id: string, x: number, y: number) => ({ id, name: id, autoNamed: false, durationMs: 300_000, endsAt: null, pausedRemainingMs: null, repeat: false, x, y });
+    await loadState(page, { timers: [timer('A', 20, 0), timer('B', 0, 12)] });
+    const b = page.locator('.panel', { has: page.getByTitle('B — right-click to rename') });
+    const head = (await b.locator('.head').boundingBox())!;
+    const sx = head.x + 30;
+    const sy = head.y + head.height / 2;
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx + 14 * 20, sy - 12 * 20, { steps: 8 });
+    await expect(page.locator('.ghost .fit-note')).toHaveText('Moves 1 panel aside');
+    await page.mouse.up();
+    await expect.poll(async () => (await savedState(page)).timers.map((t: any) => [t.id, t.x, t.y])).toEqual([
+      ['A', 29, 0], // slid right, same row
+      ['B', 14, 0],
+    ]);
   });
 
   test('panels move by their title bar and resize from the corner', async ({ page }) => {
