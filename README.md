@@ -79,7 +79,7 @@ Across the top of the page, left to right:
 | Part | What it does |
 | --- | --- |
 | **The tools** | A button for each tool panel, beside the title. Point at one and a tooltip says what it does straight away; click it to show its panel, and again to hide it. A lit button is showing. [Wiki](#wiki), [Map](#map), [Price Checker](#prices), [Wishlist](#wishlist), [Gear Planner](#gear-planner) (each character's current gear and the upgrades you can get), [Leveling Spots](#leveling), [Spells](#spells), [Class Guides](#classes), [Group Range](#level-range) (enter a level, see who it can group with), then the [Naughty and Nice lists](#naughty-and-nice-lists). On a wide screen they sit on the same row as everything else; on a narrower one they get a row of their own under the title. |
-| **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). A [Session timer](#session-timers) counts up instead. **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers and notes you've put away; click one to bring it back. The number on the button is how many are saved. |
+| **＋ Add ▾** | Adds the panels you can have as many of as you like. **Timers:** a [Timer](#timers) or a [Named / PH timer](#named--ph-timers); clicking the name adds a 6 minute one, **5m 6m 8m 10m** under it add those lengths, and the box takes any other (`7:30`, `90s`, `1h30m`, then Enter). A [Session timer](#session-timers) counts up instead. **Panels:** Count, Buff Tracker, Note, Checklist. **Saved:** the Named / PH timers, notes and checklists you've put away, one row per kind with how many there are; point at a row (or click it) to see them in a list beside the menu, then click one to bring it back. The number on the button is how many are saved. |
 | **🕰️ Game time** | The [game clock](#game-time), with how long until 6 PM and 6 AM; click it for more. |
 | **?** | The quick guide. |
 | **🔔 / 🔕** | Mutes all alerts. |
@@ -467,8 +467,8 @@ counters, Buff Trackers and notes you've added.
 | Move a panel | Drag it by its **header** (the title bar with ⠿). A dot grid appears while you drag. |
 | Resize a panel | Drag its **bottom-right corner**. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. Each kind of panel has a smallest size so its buttons never get cut off. Timer clocks and counter numbers grow with the panel. |
 | See where it will land | A dashed outline shows the snap spot when it's free. |
-| Drop into a gap | If the spot is a little too small, the panel fits itself in: it shrinks to the gap (never below its smallest size) or slides a cell or two to where it fits at full size, whichever keeps it bigger. A solid outline marked **Resized to fit** (or **Fits here**, when only sliding) shows its new spot and size before you let go. |
-| Drop onto other panels | When shrinking won't make it fit, the panel keeps its size and the panels in its way make room. First they try sliding **sideways** in their own row: each moves away from the side of the dropped panel it's on (left or right), nudging any neighbours along. If that would push one off the edge of the board, they're pushed straight **down** instead (and any they'd land on, in turn). They slide while you drag, so you can see the result, and slide back if you move on; the outline says how many will move and which way. Panels not in the way stay put. |
+| Drop into a gap | If the spot is a little too small, the panel fits itself in: it shrinks away from whatever it's overlapping, on any side, to fill the free space it was dropped on (never below its smallest size), or slides a cell or two to where it fits at full size, whichever keeps it bigger. A solid outline marked **Resized to fit** (or **Fits here**, when only sliding) shows its new spot and size before you let go. |
+| Drop onto other panels | Only when even its smallest size won't fit does the panel keep its size and the panels in its way make room. First they try sliding **sideways** in their own row: each moves away from the side of the dropped panel it's on (left or right), nudging any neighbours along. If that would push one off the edge of the board, they're pushed straight **down** instead (and any they'd land on, in turn). They slide while you drag, so you can see the result, and slide back if you move on; the outline says how many will move and which way. Panels not in the way stay put. |
 | Neat layout | **☰ → Tidy panels** packs every panel onto the grid, keeping their order. |
 | Delete a panel | **✕** in its header asks for confirmation. **Shift + click ✕** deletes immediately. |
 | Rename a panel | **Right-click its title**, type, then Enter (or click away). Esc cancels. Works on every panel type. |
@@ -552,7 +552,7 @@ respawn typed in the box).
 | **−PH / −N** | Undo a mis-click. Removes the latest kill of that type (the countdown isn't touched). |
 | **Reset counts** | Zeroes the counts (asks first). The kill log is **kept**. |
 | **📜** | Opens the [camp history](#camp-history-and-loot) |
-| **—** | Puts it away: it leaves the board (its countdown stops) but keeps its counts, respawn and history. **＋ Add** lists it under **Saved**; click it to bring it back, in its old spot if that's still free. **✕** there deletes it. |
+| **—** | Puts it away: it leaves the board (its countdown stops) but keeps its counts, respawn and history. **＋ Add** lists it under **Saved → Named / PH timers** (point at that row to see them); click it to bring it back, in its old spot if that's still free. **✕** there deletes it. |
 
 The countdown works like a [timer](#timers): click the clock to start or restart it, right-click it to set the time left,
 **−1m / +1m**, Pause and Reset. The restart happens **the instant you click** + PH or + Named; it never waits for loot
@@ -702,7 +702,7 @@ A free-text panel for camp notes, quest steps, who to group with, and so on.
 | Text size | **A−** / **A+** in the header (10px to 32px, 2px per click) |
 | Rename | Right-click the title, or **⚙** (or double-click the title) |
 | Put away | **—** in the header (or **Put away** in ⚙). The note leaves the board but keeps its text. |
-| Bring it back | **＋ Add** in the toolbar lists saved notes (and checklists) under **Saved**, with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
+| Bring it back | **＋ Add** in the toolbar lists saved notes under **Saved → Notes** (and checklists under **Checklists**): point at the row to see them, with a preview of each. Click one to put it back on the board, in its old spot if that's still free. **✕** there deletes it for good. |
 | Resize | Drag the bottom-right corner. The size snaps to the grid; a red outline means it would overlap another panel, and the size stays as it was. |
 
 The text area takes up the whole panel and scrolls if the note gets long. The number on **＋ Add** shows how many notes

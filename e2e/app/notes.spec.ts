@@ -21,10 +21,50 @@ test.describe('notes', () => {
     await expect(page.locator('.add-btn .badge')).toHaveText('1');
 
     await page.locator('.add-btn').click();
-    await page.locator('#add-menu .saved-note .open').first().click();
+    await page.locator('#add-menu .saved-kind', { hasText: 'Notes' }).hover();
+    await page.locator('#add-menu .saved-fly .saved-note .open').first().click();
     await expect(page.locator('app-note-card textarea')).toHaveValue('Camp the cemetery at night');
     const s = await savedState(page);
     expect(s.notes[0].fontSize).toBe(16);
+  });
+
+  test('＋ Add lists saved panels by kind; pointing at a kind shows them beside the menu', async ({ page }) => {
+    for (const kind of ['Note', 'Note', 'Checklist']) {
+      await addPanel(page, kind);
+      await page.locator('app-note-card').first().getByTitle(/^Put away/).click();
+    }
+    await page.locator('.add-btn').click();
+    const kinds = page.locator('#add-menu .saved-kind');
+    await expect(kinds).toHaveCount(2);
+    const notes = kinds.filter({ hasText: 'Notes' });
+    const lists = kinds.filter({ hasText: 'Checklists' });
+    await expect(notes.locator('.count')).toHaveText('2');
+    await expect(lists.locator('.count')).toHaveText('1');
+    const fly = page.locator('#add-menu .saved-fly');
+    await expect(fly).toHaveCount(0);
+
+    await notes.hover();
+    await expect(fly.locator('.saved-note')).toHaveCount(2);
+    // Beside the menu, not inside it.
+    const menuBox = (await page.locator('#add-menu').boundingBox())!;
+    const flyBox = (await fly.boundingBox())!;
+    expect(flyBox.x + flyBox.width).toBeLessThanOrEqual(menuBox.x);
+
+    await lists.hover();
+    await expect(fly.locator('.menu-title')).toHaveText('Checklists');
+    await expect(fly.locator('.saved-note')).toHaveCount(1);
+    await expect(fly).toContainText('☑ (empty)');
+
+    // Moving off it hides the list; the menu stays open.
+    await page.locator('#add-menu .menu-title', { hasText: 'Timers' }).hover();
+    await expect(fly).toHaveCount(0);
+    await expect(page.locator('#add-menu')).toBeVisible();
+
+    // Clicking a kind also opens it (touch, keyboard).
+    await lists.locator('.item').click();
+    await fly.locator('.open').click();
+    await expect(page.locator('app-note-card')).toHaveCount(1);
+    await expect(page.locator('#add-menu')).not.toBeVisible();
   });
 });
 

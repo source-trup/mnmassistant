@@ -116,7 +116,8 @@ test.describe('Named / PH timers', () => {
     await expect(page.locator('.add-btn .badge')).toHaveText('1');
 
     await page.locator('.add-btn').click();
-    const saved = page.locator('#add-menu .saved-note', { hasText: 'Named / PH' });
+    await page.locator('#add-menu .saved-kind', { hasText: 'Named / PH timers' }).hover();
+    const saved = page.locator('#add-menu .saved-fly .saved-note', { hasText: 'Named / PH' });
     await expect(saved).toContainText('1 PH · 0 named · 6:00 respawn');
     await saved.locator('.open').click();
     await expect(camp.locator('.big.ph')).toHaveText('1');

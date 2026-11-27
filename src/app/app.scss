@@ -251,6 +251,58 @@ h1 {
     right: anchor(right);
   }
 
+  /* Saved: one row per kind put away; pointing at it shows them in a list beside the menu. */
+  .saved-kind {
+    display: flex;
+    flex-direction: column;
+
+    > .item .count {
+      flex: none;
+      min-width: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    > .item .chev {
+      flex: none;
+      color: var(--muted);
+    }
+    &.shown > .item {
+      background: var(--spirit-soft);
+      .count {
+        color: var(--bg);
+        background: var(--spirit);
+        border-color: var(--spirit);
+      }
+    }
+  }
+  /* Fixed, so the menu's scrolling doesn't clip it; placed by App.placeSaved. */
+  .saved-fly {
+    position: fixed;
+    z-index: 1;
+    width: 300px; // keep in sync with placeSaved in app.ts
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background: var(--dialog-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 20px var(--card-glow);
+    animation: saved-fly-in 0.12s ease-out;
+
+    .open {
+      padding: 4px 8px;
+    }
+  }
+
   /* Timer / Named / PH timer: the item adds a 6 minute one; the lengths under it add others. */
   .timed {
     display: flex;
@@ -272,6 +324,18 @@ h1 {
       padding: 2px 6px;
       font-size: 0.8rem;
     }
+  }
+}
+
+@keyframes saved-fly-in {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .add-menu .saved-fly {
+    animation: none;
   }
 }
 

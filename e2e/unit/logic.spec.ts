@@ -126,6 +126,15 @@ test.describe('fitting a dropped panel into a gap', () => {
     expect(fitRect({ x: 15, y: 0, w: 15, h: 10 }, min, [left, below], 60)).toEqual({ x: 15, y: 0, w: 15, h: 9 });
   });
 
+  test('shrinks away from a panel it overlaps on the left or above, not just the right and below', () => {
+    // Dropped 3 cells into the left panel, with a 15-wide gap: it shrinks from the left instead of pushing.
+    expect(fitRect({ x: 12, y: 0, w: 15, h: 10 }, min, [left, { ...right, x: 30 }], 60)).toEqual({ x: 15, y: 0, w: 14, h: 10 });
+    // Dropped 3 rows into the panel above: it shrinks from the top.
+    expect(fitRect({ x: 0, y: 7, w: 15, h: 10 }, min, [left], 60)).toEqual({ x: 0, y: 10, w: 15, h: 9 });
+    // Too far in to shrink that much: nothing fits.
+    expect(fitRect({ x: 0, y: 4, w: 15, h: 10 }, min, [left], 60)).toBeNull();
+  });
+
   test('a full-size spot a cell or two away beats shrinking', () => {
     // Dropped one cell into the left panel: it slides right instead of getting narrower.
     expect(fitRect({ x: 14, y: 0, w: 15, h: 10 }, min, [left], 60)).toEqual({ x: 15, y: 0, w: 15, h: 10 });

@@ -40,7 +40,7 @@
     }
   </button>
 
-  <div #addMenu id="add-menu" class="menu anchored add-menu" popover>
+  <div #addMenu id="add-menu" class="menu anchored add-menu" popover (toggle)="onAddMenuToggle($event)">
     <span class="menu-title">Timers</span>
     <div class="timed">
       <button class="item" (click)="addTimed('timer', 6, addMenu)" title="Add a 6 minute timer">
@@ -108,22 +108,44 @@
     }
     <hr />
     <span class="menu-title">Saved</span>
-    @for (c of store.closedCamps(); track c.id) {
-      <div class="saved-note">
-        <button class="open" (click)="openCamp(c.id, addMenu)" title="Put this Named / PH timer back on the board">
-          <span class="nm">{{ c.name }}</span>
-          <span class="sub">{{ campPreview(c) }}</span>
+    @for (g of savedGroups(); track g.kind) {
+      <div
+        #row
+        class="saved-kind"
+        [class.shown]="savedOpen() === g.kind"
+        (mouseenter)="showSaved(g.kind, row, addMenu)"
+        (mouseleave)="hideSavedSoon()"
+        (focusout)="onSavedFocusOut($event, row, addMenu)"
+      >
+        <button
+          class="item"
+          aria-haspopup="true"
+          [attr.aria-expanded]="savedOpen() === g.kind"
+          (click)="showSaved(g.kind, row, addMenu, true)"
+          [title]="'Your saved ' + g.label + ': point here to see them'"
+        >
+          <span class="ic" aria-hidden="true">{{ g.icon }}</span>
+          <span class="txt">
+            <span class="nm">{{ g.label }}</span>
+            <span class="sub">{{ savedNames(g) }}</span>
+          </span>
+          <span class="count">{{ g.entries.length }}</span>
+          <span class="chev" aria-hidden="true">‹</span>
         </button>
-        <button class="del" (click)="deleteCamp(c, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
-      </div>
-    }
-    @for (n of store.closedNotes(); track n.id) {
-      <div class="saved-note">
-        <button class="open" (click)="openNote(n.id, addMenu)" title="Put this note back on the board">
-          <span class="nm">{{ n.name }}</span>
-          <span class="sub">{{ notePreview(n) }}</span>
-        </button>
-        <button class="del" (click)="deleteNote(n, $event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+        @if (savedOpen() === g.kind) {
+          <div class="saved-fly" role="group" [attr.aria-label]="'Saved ' + g.label" [style.left.px]="flyPos().left" [style.top.px]="flyPos().top">
+            <span class="menu-title">{{ g.label }}</span>
+            @for (e of g.entries; track e.id) {
+              <div class="saved-note">
+                <button class="open" (click)="openSaved(e, addMenu)" title="Put it back on the board">
+                  <span class="nm">{{ e.name }}</span>
+                  <span class="sub">{{ e.sub }}</span>
+                </button>
+                <button class="del" (click)="e.del($event)" title="Delete (Shift+click to skip confirmation)">✕</button>
+              </div>
+            }
+          </div>
+        }
       </div>
     }
     @if (!savedCount()) {

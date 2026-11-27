@@ -65,10 +65,11 @@ export function maxX(cols: number, w: number): number {
 }
 
 /**
- * Where a panel dropped on an occupied spot can go instead: the biggest footprint, no smaller than `min` and no bigger
- * than the panel, with its top-left at the drop point or up to `reach` cells from it. The biggest wins (so a full-size
- * spot a cell or two away beats shrinking in place); among equals, the one closest to the drop point. Null if nothing
- * fits. `occupied` must leave out the panel being dragged.
+ * Where a panel dropped on an occupied spot can go instead: the biggest free footprint, no smaller than `min` and no
+ * bigger than the panel, inside the spot it was dropped on widened by `reach` cells on every side. So it shrinks away
+ * from whichever sides are blocked (left and top as well as right and bottom), and can slide a cell or two. The biggest
+ * wins (so a full-size spot a cell or two away beats shrinking in place); among equals, the one whose centre is closest
+ * to the drop's. Null if nothing fits. `occupied` must leave out the panel being dragged.
  */
 export function fitRect(
   drop: Rect,
@@ -80,15 +81,18 @@ export function fitRect(
   let best: (Rect & { area: number; dist: number }) | null = null;
   const minW = Math.min(min.w, drop.w);
   const minH = Math.min(min.h, drop.h);
-  for (let dy = -reach; dy <= reach; dy++) {
-    for (let dx = -reach; dx <= reach; dx++) {
-      const x = drop.x + dx;
-      const y = drop.y + dy;
-      if (x < 0 || y < 0) continue;
-      const dist = Math.abs(dx) + Math.abs(dy);
-      // Widest first; for each width, the tallest that's free (anything above the drop row in its columns blocks it).
-      for (let w = Math.min(drop.w, cols - x + 1); w >= minW; w--) {
-        let room = drop.h;
+  // The area the result must lie in, kept on the board (a footprint's gutter may overhang the right edge by one).
+  const left = Math.max(0, drop.x - reach);
+  const top = Math.max(0, drop.y - reach);
+  const right = Math.min(drop.x + drop.w + reach, cols + 1); // exclusive
+  const bottom = drop.y + drop.h + reach; // exclusive
+  const cx = drop.x + drop.w / 2;
+  const cy = drop.y + drop.h / 2;
+  for (let y = top; y + minH <= bottom; y++) {
+    for (let x = left; x + minW <= right; x++) {
+      // Each width from the widest down; for each, the tallest that's free (anything in its columns covering row y blocks it).
+      for (let w = Math.min(drop.w, right - x); w >= minW; w--) {
+        let room = Math.min(drop.h, bottom - y);
         for (const o of occupied) {
           if (o.x >= x + w || x >= o.x + o.w) continue; // not in these columns
           if (o.y + o.h <= y) continue; // above
@@ -96,6 +100,7 @@ export function fitRect(
         }
         if (room < minH) continue;
         const area = w * room;
+        const dist = Math.abs(x + w / 2 - cx) + Math.abs(y + room / 2 - cy);
         if (!best || area > best.area || (area === best.area && dist < best.dist)) best = { x, y, w, h: room, area, dist };
       }
     }

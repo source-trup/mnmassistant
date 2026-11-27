@@ -1,4 +1,4 @@
-import { Component, ElementRef, afterNextRender, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Analytics, eventSlug } from './analytics.service';
 import { Backdrop } from './art/backdrop';
 import { DalgrimmMark } from './art/dalgrimm-mark';
@@ -66,6 +66,23 @@ interface DragState {
   /** Smallest it may shrink to when dropped into a gap too small for it (grid cells). */
   minW: number;
   minH: number;
+}
+
+/** One panel put away, as listed under ＋ Add → Saved. */
+interface SavedEntry {
+  id: string;
+  name: string;
+  sub: string;
+  open: () => void;
+  del: (e: MouseEvent) => void;
+}
+
+/** A kind of panel that's been put away, and the ones that are. */
+interface SavedGroup {
+  kind: 'camps' | 'notes' | 'checklists';
+  icon: string;
+  label: string;
+  entries: SavedEntry[];
 }
 
 function wishCount(n: number): string {
@@ -266,12 +283,104 @@ export class App {
   /** A saved Named / PH timer's line in the ＋ Add menu. */
   protected campPreview(c: NamedPhCounter): string {
     const t = this.store.campTimer(c);
-    return `👑 ${c.ph} PH · ${c.named} named${t ? ' · ' + formatDuration(t.durationMs) + ' respawn' : ''}`;
+    return `${c.ph} PH · ${c.named} named${t ? ' · ' + formatDuration(t.durationMs) + ' respawn' : ''}`;
   }
 
-  protected openCamp(id: string, menu: HTMLElement): void {
-    this.store.openCamp(id);
+  // ---------- saved panels in ＋ Add: one row per kind; pointing at it shows what's saved beside the menu ----------
+
+  /** The kinds that have something put away, each with its saved panels. */
+  protected readonly savedGroups = computed<SavedGroup[]>(() => {
+    const notes = this.store.closedNotes();
+    const note = (n: NoteItem): SavedEntry => ({
+      id: n.id,
+      name: n.name,
+      sub: this.notePreview(n),
+      open: () => this.store.openNote(n.id),
+      del: (e) => this.deleteNote(n, e),
+    });
+    const groups: SavedGroup[] = [
+      {
+        kind: 'camps',
+        icon: '👑',
+        label: 'Named / PH timers',
+        entries: this.store.closedCamps().map((c) => ({
+          id: c.id,
+          name: c.name,
+          sub: this.campPreview(c),
+          open: () => this.store.openCamp(c.id),
+          del: (e) => this.deleteCamp(c, e),
+        })),
+      },
+      { kind: 'notes', icon: '📝', label: 'Notes', entries: notes.filter((n) => n.type !== 'checklist').map(note) },
+      { kind: 'checklists', icon: '☑️', label: 'Checklists', entries: notes.filter((n) => n.type === 'checklist').map(note) },
+    ];
+    return groups.filter((g) => g.entries.length);
+  });
+
+  /** The kind whose saved panels are showing, and where (viewport pixels). */
+  protected readonly savedOpen = signal<SavedGroup['kind'] | null>(null);
+  protected readonly flyPos = signal({ left: 0, top: 0 });
+  private flyTimer?: ReturnType<typeof setTimeout>;
+  private readonly injector = inject(Injector);
+
+  /**
+   * Shows a kind's saved panels beside the menu. Switching from another kind waits a moment, so passing over a row on
+   * the way to the open list doesn't swap it.
+   */
+  protected showSaved(kind: SavedGroup['kind'], row: HTMLElement, menu: HTMLElement, now = false): void {
+    clearTimeout(this.flyTimer);
+    if (this.savedOpen() === kind) return;
+    const open = () => this.placeSaved(kind, row, menu);
+    if (this.savedOpen() && !now) this.flyTimer = setTimeout(open, 150);
+    else open();
+  }
+
+  /** Hides the list a moment after the pointer leaves, so crossing the gap to it doesn't close it. */
+  protected hideSavedSoon(): void {
+    clearTimeout(this.flyTimer);
+    this.flyTimer = setTimeout(() => this.savedOpen.set(null), 300);
+  }
+
+  /** Tabbing from one kind's row to something else in the menu closes its list. */
+  protected onSavedFocusOut(e: FocusEvent, row: HTMLElement, menu: HTMLElement): void {
+    const to = e.relatedTarget as Node | null;
+    if (to && menu.contains(to) && !row.contains(to)) this.hideSavedSoon();
+  }
+
+  protected onAddMenuToggle(e: Event): void {
+    if ((e as ToggleEvent).newState === 'closed') {
+      clearTimeout(this.flyTimer);
+      this.savedOpen.set(null);
+    }
+  }
+
+  /** The row's hint: the names of what's saved. */
+  protected savedNames(g: SavedGroup): string {
+    return g.entries.map((e) => e.name).join(', ');
+  }
+
+  protected openSaved(entry: SavedEntry, menu: HTMLElement): void {
+    entry.open();
     menu.hidePopover();
+  }
+
+  /** Beside the menu (left of it, where there's room; otherwise right), level with the row, kept on screen. */
+  private placeSaved(kind: SavedGroup['kind'], row: HTMLElement, menu: HTMLElement): void {
+    const r = row.getBoundingClientRect();
+    const m = menu.getBoundingClientRect();
+    const width = 300; // keep in sync with .saved-fly in app.scss
+    const gap = 4;
+    const left = m.left - gap - width >= 8 ? m.left - gap - width : Math.min(m.right + gap, innerWidth - width - 8);
+    const top = r.top - 7; // its first row level with this one (padding and border)
+    this.flyPos.set({ left: Math.max(8, left), top });
+    this.savedOpen.set(kind);
+    afterNextRender(
+      () => {
+        const h = row.querySelector<HTMLElement>('.saved-fly')?.offsetHeight ?? 0;
+        if (top + h > innerHeight - 8) this.flyPos.update((p) => ({ ...p, top: Math.max(8, innerHeight - 8 - h) }));
+      },
+      { injector: this.injector },
+    );
   }
 
   protected async deleteCamp(c: NamedPhCounter, e: MouseEvent): Promise<void> {
@@ -308,11 +417,6 @@ export class App {
   }
 
   // ---------- saved notes ----------
-
-  protected openNote(id: string, menu: HTMLElement): void {
-    this.store.openNote(id);
-    menu.hidePopover();
-  }
 
   /** First line of a note (or a checklist's progress), for the saved-notes list. */
   protected notePreview(n: NoteItem): string {
